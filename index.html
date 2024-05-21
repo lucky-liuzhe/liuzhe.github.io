@@ -180,22 +180,22 @@
 <p>192.168.1.5 gitlab.ctnrs.com</p>
 <p>安装jenkins需要的插件：</p>
 <p>ansible 插件</p>
-<p><img src="/media/fe30fc112c15b9e012c366b05db211dd.jpeg" alt="插件.JPG"></p>
+<p><img src="/test/fe30fc112c15b9e012c366b05db211dd.jpeg" alt="插件.JPG"></p>
 <p>系统管理—-&gt;节点管理—-新建节点（配置slave从节点）</p>
-<p><img src="/media/7493f7816f391814f58d1c3d80ef9596.png" alt="clipboard.png"></p>
-<p><img src="/media/c2d91b6ac615b60e80063ae46589a76b.png" alt="clipboard.png"></p>
-<p><img src="/media/f694852c04c098b9fe4bfb2f8e19e003.png" alt="clipboard.png"></p>
+<p><img src="/test/7493f7816f391814f58d1c3d80ef9596.png" alt="clipboard.png"></p>
+<p><img src="/test/c2d91b6ac615b60e80063ae46589a76b.png" alt="clipboard.png"></p>
+<p><img src="/test/f694852c04c098b9fe4bfb2f8e19e003.png" alt="clipboard.png"></p>
 <p>在jenkins客户端执行并创建工作目录&#x2F;opt&#x2F;jenkins：</p>
 <p>安装Agent 1、节点安装JDK 2、下载agent.jar 3、使用nohup xxx &amp;&gt;slave.log &amp;</p>
 <p>新建项目—&gt;进入到项目配置页面（配置项目）</p>
-<p><img src="/media/4b2b06b9312a853ff7f57bb4f0107ff8.png" alt="clipboard.png"></p>
-<p><img src="/media/589c940e10c2d37d1f6828bb2d6e2ccf.png" alt="clipboard.png"></p>
-<p><img src="/media/82c352d2a5d1a27f3a28b5f58fd8e2b0.png" alt="clipboard.png"></p>
-<p><img src="/media/c524ef564c591b73e0721830540a4e35.png" alt="clipboard.png"></p>
-<p><img src="/media/0065f9d36d6e55e32f9d16df84a066e3.png" alt="clipboard.png"></p>
-<p><img src="/media/7e02afa82f29876382dc32cce452c0da.png" alt="clipboard.png"></p>
-<p><img src="/media/40ede2c7c32b3a2d4bda139b2877fc05.png" alt="clipboard.png"></p>
-<p><img src="/media/1203db9d554b6ea4db6b35c5558f71fb.png" alt="clipboard.png"></p>
+<p><img src="/test/4b2b06b9312a853ff7f57bb4f0107ff8.png" alt="clipboard.png"></p>
+<p><img src="/test/589c940e10c2d37d1f6828bb2d6e2ccf.png" alt="clipboard.png"></p>
+<p><img src="/test/82c352d2a5d1a27f3a28b5f58fd8e2b0.png" alt="clipboard.png"></p>
+<p><img src="/test/c524ef564c591b73e0721830540a4e35.png" alt="clipboard.png"></p>
+<p><img src="/test/0065f9d36d6e55e32f9d16df84a066e3.png" alt="clipboard.png"></p>
+<p><img src="/test/7e02afa82f29876382dc32cce452c0da.png" alt="clipboard.png"></p>
+<p><img src="/test/40ede2c7c32b3a2d4bda139b2877fc05.png" alt="clipboard.png"></p>
+<p><img src="/test/1203db9d554b6ea4db6b35c5558f71fb.png" alt="clipboard.png"></p>
 <p>4.在jnekins的slave上安装ansible，maven，jdk</p>
 <p>配置域名解析</p>
 <p>cat &#x2F;etc&#x2F;hosts</p>
@@ -240,7 +240,7 @@
 <p>private_key_file &#x3D; &#x2F;root&#x2F;.ssh&#x2F;id_rsa</p>
 <p>#使用root账户生成一对密钥</p>
 <p>ssh-keygen</p>
-<p>ssh-copy <a href="mailto:&#x72;&#x6f;&#x6f;&#116;&#64;&#120;&#46;&#x78;&#x2e;&#x78;&#46;&#x78;">&#x72;&#x6f;&#x6f;&#116;&#64;&#120;&#46;&#x78;&#x2e;&#x78;&#46;&#x78;</a> (拷贝到要部署的web服务器上实现免密登录)</p>
+<p>ssh-copy <a href="mailto:&#114;&#x6f;&#x6f;&#x74;&#x40;&#120;&#x2e;&#120;&#x2e;&#120;&#x2e;&#120;">&#114;&#x6f;&#x6f;&#x74;&#x40;&#120;&#x2e;&#120;&#x2e;&#120;&#x2e;&#120;</a> (拷贝到要部署的web服务器上实现免密登录)</p>
 <p>#使用ansible命令测试一下</p>
 <p>ansible webserver1 -m shell -a “ls &#x2F;root” -u root</p>
 <p>#在&#x2F;opt&#x2F;jenkins目录下新建文件playbook.yml</p>
