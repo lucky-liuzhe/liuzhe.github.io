@@ -13,7 +13,7 @@
 <meta property="og:site_name" content="Hexo">
 <meta property="og:description" content="实验环境：    gitlab（4G） jenkins（3G） slave&#x2F;ansible nginx tomcat tomcat    192.168.1.2&#x2F;24 192.168.1.3&#x2F;24 192.168.1.4&#x2F;24 192.168.1.5&#x2F;24 192.168.1.6&#x2F;24 192.168.1.7&#x2F;24   架构原理">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/fe30fc112c15b9e012c366b05db211dd.jpeg">
+<meta property="og:image" content="http://example.com/test/fe30fc112c15b9e012c366b05db211dd.jpeg">
 <meta property="og:image" content="http://example.com/test/7493f7816f391814f58d1c3d80ef9596.png">
 <meta property="og:image" content="http://example.com/test/c2d91b6ac615b60e80063ae46589a76b.png">
 <meta property="og:image" content="http://example.com/test/f694852c04c098b9fe4bfb2f8e19e003.png">
@@ -26,10 +26,10 @@
 <meta property="og:image" content="http://example.com/test/40ede2c7c32b3a2d4bda139b2877fc05.png">
 <meta property="og:image" content="http://example.com/test/1203db9d554b6ea4db6b35c5558f71fb.png">
 <meta property="article:published_time" content="2024-05-21T14:04:13.000Z">
-<meta property="article:modified_time" content="2024-05-21T14:35:04.177Z">
+<meta property="article:modified_time" content="2024-05-21T14:41:07.818Z">
 <meta property="article:author" content="John Doe">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/fe30fc112c15b9e012c366b05db211dd.jpeg">
+<meta name="twitter:image" content="http://example.com/test/fe30fc112c15b9e012c366b05db211dd.jpeg">
   
     <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
   
@@ -195,7 +195,7 @@
 <p>192.168.1.5 gitlab.ctnrs.com</p>
 <p>安装jenkins需要的插件：</p>
 <p>ansible 插件</p>
-<p><img src="/fe30fc112c15b9e012c366b05db211dd.jpeg" alt="插件.JPG"></p>
+<p><img src="/./test/fe30fc112c15b9e012c366b05db211dd.jpeg" alt="插件.JPG"></p>
 <p>系统管理—-&gt;节点管理—-新建节点（配置slave从节点）</p>
 <p><img src="/./test/7493f7816f391814f58d1c3d80ef9596.png" alt="clipboard.png"></p>
 <p><img src="/./test/c2d91b6ac615b60e80063ae46589a76b.png" alt="clipboard.png"></p>
@@ -255,7 +255,7 @@
 <p>private_key_file &#x3D; &#x2F;root&#x2F;.ssh&#x2F;id_rsa</p>
 <p>#使用root账户生成一对密钥</p>
 <p>ssh-keygen</p>
-<p>ssh-copy <a href="mailto:&#x72;&#111;&#111;&#x74;&#64;&#120;&#46;&#x78;&#x2e;&#120;&#x2e;&#x78;">&#x72;&#111;&#111;&#x74;&#64;&#120;&#46;&#x78;&#x2e;&#120;&#x2e;&#x78;</a> (拷贝到要部署的web服务器上实现免密登录)</p>
+<p>ssh-copy <a href="mailto:&#x72;&#111;&#111;&#x74;&#x40;&#120;&#46;&#x78;&#x2e;&#120;&#x2e;&#x78;">&#x72;&#111;&#111;&#x74;&#x40;&#120;&#46;&#x78;&#x2e;&#120;&#x2e;&#x78;</a> (拷贝到要部署的web服务器上实现免密登录)</p>
 <p>#使用ansible命令测试一下</p>
 <p>ansible webserver1 -m shell -a “ls &#x2F;root” -u root</p>
 <p>#在&#x2F;opt&#x2F;jenkins目录下新建文件playbook.yml</p>
