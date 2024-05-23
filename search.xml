@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>Hello World</title>
+    <url>/2024/05/21/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start">Quick Start</h2>
+<h3 id="Create-a-new-post">Create a new post</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server">Run server</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files">Generate static files</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites">Deploy to remote sites</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+      <categories>
+        <category>DevOps</category>
+      </categories>
+      <tags>
+        <tag>DevOps</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>test</title>
+    <url>/2024/05/21/test/</url>
+    <content><![CDATA[<p><strong>实验环境</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>gitlab（4G）</th>
+<th>jenkins（3G）</th>
+<th>slave/ansible</th>
+<th>nginx</th>
+<th>tomcat</th>
+<th>tomcat</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>192.168.1.2/24</td>
+<td>192.168.1.3/24</td>
+<td>192.168.1.4/24</td>
+<td>192.168.1.5/24</td>
+<td>192.168.1.6/24</td>
+<td>192.168.1.7/24</td>
+</tr>
+</tbody>
+</table>
+<p><strong>架构原理</strong>：使用gitlab作为代码版本管理系统，jenkins作为代码持续集成测试，结合ansible实现批量部署多台web服务器，nginx作为反向代理服务器代理后端web集群。</p>
+<p><strong>自动化部署流程</strong>：</p>
+<p>1.git代码拉取</p>
+<p>2.编译构建</p>
+<p>3.推送到远程web服务器</p>
+<p>4.备份web服务器上网站根目录的程序文件</p>
+<p>5.部署新的程序文件到网站根目录</p>
+<p>6.重启web服务验证访问</p>
+<p><strong>部署</strong>：</p>
+<p>1. 安装docker(gitlab服务器和jenkins服务器）</p>
+<p><a href="https://blog.csdn.net/qq_24760259/article/details/106785283">https://blog.csdn.net/qq_24760259/article/details/106785283</a></p>
+<p>2. 安装gitlab</p>
+<p>###########安装配置gitlab##############</p>
+<p>mkdir /opt/gitlab</p>
+<p>GITLAB_HOME=/opt/gitlab # 数据持久化目录</p>
+<p>docker run --detach \</p>
+<p>--hostname <a href="http://gitlab.ctnrs.com">gitlab.ctnrs.com</a> \</p>
+<p>--publish 80:80 --publish 2222:22 \</p>
+<p>--name gitlab \</p>
+<p>--restart always \</p>
+<p>--volume $GITLAB_HOME/config:/etc/gitlab \</p>
+<p>--volume $GITLAB_HOME/logs:/var/log/gitlab \</p>
+<p>--volume $GITLAB_HOME/data:/var/opt/gitlab \</p>
+<p>gitlab/gitlab-ce:latest</p>
+<p>[root@localhost ~]# docker exec -it gitlab bash</p>
+<p>root@gitlab:/# gitlab-ctl reconfigure #加载配置并启动</p>
+<p>页面登录后新建用户—&gt;新建组—&gt;将用户加入组中（赋予作者权限）—&gt;在组中新建项目</p>
+<p>#############上传java网站代码#############</p>
+<p>yum install git</p>
+<p>git clone <a href="https://github.com/lizhenliang/tomcat-java-demo">https://github.com/lizhenliang/tomcat-java-demo</a></p>
+<p>cd tomcat-java-demo</p>
+<p>git init #初始化为.git的目录</p>
+<p>git remote add origin <a href="http://gitlab.ctnrs.com/group-lz/java-demo.git">http://gitlab.ctnrs.com/group-lz/java-demo.git</a></p>
+<p>#修改为自己的仓库地址</p>
+<p>cat .git/config</p>
+<p>url = <a href="http://gitlab.ctnrs.com/group-lz/java-demo.git">http://gitlab.ctnrs.com/group-lz/java-demo.git</a></p>
+<p>git add . #添加到暂存区</p>
+<p>git commit -m “java-demo” #提交到本地仓库</p>
+<p>git push origin master #上传到远程仓库的master分支</p>
+<p>3.安装jenkins</p>
+<p>############安装jenkins###########</p>
+<p>tar zxvf jdk-8u45-linux-x64.tar.gz</p>
+<p>mv jdk1.8.0_45 /usr/local/jdk</p>
+<p>tar zxf apache-maven-3.5.0-bin.tar.gz</p>
+<p>mv apache-maven-3.5.0 /usr/local/maven</p>
+<p>docker run -d --name jenkins -p 8080:8080 -p 50000:50000 -u root -v /opt/jenkins_home:/var/jenkins_home -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /usr/local/maven:/usr/local/maven -v /usr/local/jdk:/usr/local/jdk -v /etc/localtime:/etc/localtime --restart=always --add-host=gitlab.ctnrs.com:192.168.0.5 --name jenkins jenkins/jenkins:lts</p>
+<p>#########配置jdk和mvn环境##########</p>
+<p># vi /etc/profile</p>
+<p>JAVA_HOME=/usr/local/jdk</p>
+<p>PATH=$JAVA_HOME/bin:$PATH:/usr/local/jdk/bin</p>
+<p>export JAVA_HOME PATH</p>
+<p># source /etc/profile</p>
+<p>配置插件加速器：</p>
+<p>docker exec -it jenkins bash</p>
+<p>cd /var/jenkins_home/updates</p>
+<p>sed -i ‘s/https:\/\/updates.jenkins.io\/download/https:\/\/mirrors.tuna.tsinghua.edu.cn\/jenkins/g’ default.json</p>
+<p>sed -i ‘s/http:\/\/www.google.com/https:\/\/www.baidu.com/g’ default.json</p>
+<p>jenkins访问页面非常慢的办法：</p>
+<p>cat /opt/jenkins_home/hudson.model.UpdateCenter.xml</p>
+<p>修改为以下地址：</p>
+<p><a href="http://mirror.xmission.com/jenkins/updates/update-center.json">http://mirror.xmission.com/jenkins/updates/update-center.json</a></p>
+<p>#重启jenkins服务</p>
+<p>docker restart jenkins或者<a href="http://ip:8080/restart">http://ip:8080/restart</a></p>
+<p>配置域名解析</p>
+<p>cat /etc/hosts</p>
+<p>192.168.1.5 <a href="http://gitlab.ctnrs.com">gitlab.ctnrs.com</a></p>
+<p>安装jenkins需要的插件：</p>
+<p>ansible 插件</p>
+<p><img src="/2024/05/21/test/fe30fc112c15b9e012c366b05db211dd.jpeg" alt="插件.JPG"></p>
+<p>系统管理----&gt;节点管理----新建节点（配置slave从节点）</p>
+<p><img src="/2024/05/21/test/7493f7816f391814f58d1c3d80ef9596.png" alt="clipboard.png"></p>
+<p><img src="/2024/05/21/test/c2d91b6ac615b60e80063ae46589a76b.png" alt="clipboard.png"></p>
+<p><img src="/2024/05/21/test/f694852c04c098b9fe4bfb2f8e19e003.png" alt="clipboard.png"></p>
+<p>在jenkins客户端执行并创建工作目录/opt/jenkins：</p>
+<p>安装Agent 1、节点安装JDK 2、下载agent.jar 3、使用nohup xxx &amp;&gt;slave.log &amp;</p>
+<p>新建项目—&gt;进入到项目配置页面（配置项目）</p>
+<p><img src="/2024/05/21/test/4b2b06b9312a853ff7f57bb4f0107ff8.png" alt="clipboard.png"></p>
+<p><img src="/2024/05/21/test/589c940e10c2d37d1f6828bb2d6e2ccf.png" alt="clipboard.png"></p>
+<p><img src="/2024/05/21/test/82c352d2a5d1a27f3a28b5f58fd8e2b0.png" alt="clipboard.png"></p>
+<p><img src="/2024/05/21/test/c524ef564c591b73e0721830540a4e35.png" alt="clipboard.png"></p>
+<p><img src="/2024/05/21/test/0065f9d36d6e55e32f9d16df84a066e3.png" alt="clipboard.png"></p>
+<p><img src="/2024/05/21/test/7e02afa82f29876382dc32cce452c0da.png" alt="clipboard.png"></p>
+<p><img src="/2024/05/21/test/40ede2c7c32b3a2d4bda139b2877fc05.png" alt="clipboard.png"></p>
+<p><img src="/2024/05/21/test/1203db9d554b6ea4db6b35c5558f71fb.png" alt="clipboard.png"></p>
+<p>4.在jnekins的slave上安装ansible，maven，jdk</p>
+<p>配置域名解析</p>
+<p>cat /etc/hosts</p>
+<p>192.168.1.5 <a href="http://gitlab.ctnrs.com">gitlab.ctnrs.com</a></p>
+<p>#安装ansible</p>
+<p>yum -y install ansible</p>
+<p>#安装git工具 (jenkins工作节点要去远程仓库拉取代码)</p>
+<p>yum -y install git</p>
+<p>#安装jdk和maven</p>
+<p>tar zxvf jdk-8u45-linux-x64.tar.gz</p>
+<p>mv jdk1.8.0_45 /usr/local/jdk</p>
+<p>tar zxf apache-maven-3.5.0-bin.tar.gz</p>
+<p>mv apache-maven-3.5.0 /usr/local/maven</p>
+<p>#配置环境变量</p>
+<p>vi /etc/profile</p>
+<p>JAVA_HOME=/usr/local/jdk</p>
+<p>PATH=$JAVA_HOME/bin:$PATH:/usr/local/maven/bin</p>
+<p>export JAVA_HOME PATH</p>
+<p>#加载生效</p>
+<p>source /etc/profile</p>
+<p>#配置文件修改：</p>
+<p>cat /etc/ansible/hosts #主机清单文件</p>
+<p>[webserver1]</p>
+<p>192.168.1.2</p>
+<p>192.168.1.5</p>
+<p>cat /etc/ansible/ansible.cfg #配置文件</p>
+<p>#主机清单 inventory 文 件，就是一些需要连接的 主机</p>
+<p>inventory = /etc/ansible/hosts</p>
+<p>#并发进程数。多少个进程 同时工作，可以根据控制 主机的性能和被管理节点 的数量来确定。</p>
+<p>forks = 5</p>
+<p>#提权</p>
+<p>sudo_user = root</p>
+<p>#连接被管理服务器默认端 口</p>
+<p>remote_port = 22</p>
+<p>#是否检查 SSH 主机的密钥</p>
+<p>host_key_checking = False</p>
+<p>#SSH 连接超时时间，单位 秒，可以增大值</p>
+<p>timeout = 10</p>
+<p>#默认不记录日志，如果想 记录日志需要开启指定日 志文件，需要 ansible 用 户有写入日志权限</p>
+<p>log_path = /var/log/ansible.log</p>
+<p>#私钥 key</p>
+<p>private_key_file = /root/.ssh/id_rsa</p>
+<p>#使用root账户生成一对密钥</p>
+<p>ssh-keygen</p>
+<p>ssh-copy root@x.x.x.x (拷贝到要部署的web服务器上实现免密登录)</p>
+<p>#使用ansible命令测试一下</p>
+<p>ansible webserver1 -m shell -a “ls /root” -u root</p>
+<p>#在/opt/jenkins目录下新建文件playbook.yml</p>
+<p>cat playbook.yml</p>
+<p>-–</p>
+<p>- hosts: “”</p>
+<p>tasks:</p>
+<p>- name: copy file</p>
+<p>copy: src=/opt/jenkins/workspace/java-demo/target/ly-simple-tomcat-0.0.1-SNAPSHOT.war dest=/tmp</p>
+<p>- name: deploy</p>
+<p>shell: |</p>
+<p>tomcat=/usr/local/tomcat</p>
+<p>cd $tomcat/webapps</p>
+<p>mv ROOT.war /data/backup/$(date +%F_%T)_ROOT.war</p>
+<p>mv /tmp/ly-simple-tomcat-0.0.1-SNAPSHOT.war $tomcat/webapps/ROOT.war</p>
+<p>pid=$(ps -ef |grep tomcat |egrep -v “grep|$$” |awk ‘{print $2}’)</p>
+<p>[ -n $pid ] &amp;&amp; kill -9 $pid</p>
+<p>nohup /usr/local/tomcat/bin/startup.sh</p>
+<p>5.nginx反向代理服务器配置</p>
+<p>#配置nginx yum源（使用yum安装nginx)</p>
+<p>[root@localhost ~]# cat /etc/yum.repos.d/nginx.repo</p>
+<p>[nginx]</p>
+<p>name=nginx repo</p>
+<p>baseurl=<a href="http://nginx.org/packages/centos/7/%5C$basearch/">http://nginx.org/packages/centos/7/\$basearch/</a></p>
+<p>gpgcheck=0</p>
+<p>enabled=1</p>
+<p>#配置nginx虚拟主机配置文件</p>
+<p>[root@localhost ~]# cat /etc/nginx/conf.d/default.conf</p>
+<p>upstream java-demo {</p>
+<p>server 192.168.1.2:8080;</p>
+<p>server 192.168.1.5:8080;</p>
+<p>}</p>
+<p>server {</p>
+<p>listen 80;</p>
+<p>server_name localhost;</p>
+<p>#access_log /var/log/nginx/host.access.log main;</p>
+<p>location / {</p>
+<p>root /usr/share/nginx/html;</p>
+<p>proxy_pass <a href="http://java-demo">http://java-demo</a>;</p>
+<p>}</p>
+<p>}</p>
+<p>#重启nginx</p>
+<p>systemctl restart nginx</p>
+<p>6.tomcat服务器（两台web服务器一样的配置）：</p>
+<p>#安装tomcat</p>
+<p>tar zxvf jdk-8u45-linux-x64.tar.gz</p>
+<p>mv jdk1.8.0_45 /usr/local/jdk</p>
+<p>tar -zxf apache-tomcat-8.5.59.tar.gz</p>
+<p>mv apache-tomcat-8.5.59 /usr/local/tomcat</p>
+<p>cd /usr/local/tomcat/webapps/</p>
+<p>rm -rf *</p>
+<p>touch ROOT.war</p>
+<p>#新建备份数据目录</p>
+<p>mkdir /data/backup -p</p>
+<p>#配置jdk环境变量</p>
+<p>vi /etc/profile</p>
+<p>JAVA_HOME=/usr/local/jdk</p>
+<p>PATH=$JAVA_HOME/bin:$PATH:/usr/local/maven/bin</p>
+<p>export JAVA_HOME PATH</p>
+<p>#加载生效</p>
+<p>source /etc/profile</p>
+<p>验证：</p>
+<p>访问nginx反向代理服务器</p>
+<p>192.168.1.5:80</p>
+<p>访问tomcat web服务器1</p>
+<p>192.168.1.6:8080</p>
+<p>访问tomcat web服务器2</p>
+<p>192.168.1.7:8080</p>
+<p>模拟提交代码验证:</p>
+<p>#修改页面代码</p>
+<p>vim java-demo/src/main/resources/templates/index.ftl</p>
+<p>git add .</p>
+<p>git commit -m “demo”</p>
+<p>git push origin master</p>
+<p>提交代码等待jenkins触发构建，验证查看页面是否变化</p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+</search>
