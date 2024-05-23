@@ -1,7 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>harbor</title>
+    <title>Hello World</title>
+    <url>/2024/05/21/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start">Quick Start</h2>
+<h3 id="Create-a-new-post">Create a new post</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server">Run server</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files">Generate static files</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites">Deploy to remote sites</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+      <categories>
+        <category>DevOps</category>
+      </categories>
+      <tags>
+        <tag>DevOps</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Harbor部署</title>
     <url>/2024/05/23/harbor/</url>
     <content><![CDATA[<p><strong>Harbor 概述</strong></p>
 <p>Harbor是由VMWare公司开源的容器镜像仓库。事实上，Harbor是在Docker Registry上进行了相应的企业级扩展， 从而获得了更加广泛的应用，这些新的企业级特性包括：管理用户界面，基于角色的访问控制 ，AD/LDAP集成以及 审计日志等，足以满足基本企业需求。</p>
@@ -21,17 +46,7 @@
 <p><strong>1、先安装Docker和Docker Compose</strong></p>
 <p><a href="https://github.com/docker/compose/releases">https://github.com/docker/compose/releases</a></p>
 <p><strong>2、部署Harbor HTTP</strong></p>
-<p>mv docker-compose-Linux-x86_64 /usr/bin/docker-compose</p>
-<p>chmod +x /usr/bin/docker-compose</p>
-<p>tar zxvf harbor-offline-installer-v2.0.0.tgz</p>
-<p>cd harbor</p>
-<p>cp harbor.yml.tmpl harbor.yml</p>
-<p>vi harbor.yml</p>
-<p>hostname: <a href="http://reg.azhe.com">reg.azhe.com</a></p>
-<p>#https: # 先注释https相关配置</p>
-<p>harbor_admin_password: Harbor12345</p>
-<p>./prepare</p>
-<p>./install.sh</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">mv</span> docker-compose-Linux-x86_64 /usr/bin/docker-compose</span><br><span class="line"></span><br><span class="line"><span class="built_in">chmod</span> +x /usr/bin/docker-compose</span><br><span class="line"></span><br><span class="line">tar zxvf harbor-offline-installer-v2.0.0.tgz</span><br><span class="line"></span><br><span class="line"><span class="built_in">cd</span> harbor</span><br><span class="line"></span><br><span class="line"><span class="built_in">cp</span> harbor.yml.tmpl harbor.yml</span><br><span class="line"></span><br><span class="line">vi harbor.yml</span><br><span class="line"></span><br><span class="line">hostname: reg.azhe.com</span><br><span class="line"></span><br><span class="line">\<span class="comment">#https: \# 先注释https相关配置</span></span><br><span class="line"></span><br><span class="line">harbor_admin_password: Harbor12345</span><br><span class="line"></span><br><span class="line">./prepare</span><br><span class="line"></span><br><span class="line">./install.sh</span><br></pre></td></tr></table></figure>
 <p><strong>3、访问harbor</strong></p>
 <p><a href="http://reg.azhe.com/">http://reg.azhe.com/</a></p>
 <p><img src="/2024/05/23/harbor/fcff357ae763b386b17580e91eb57d57.png" alt="clipboard.png"></p>
@@ -198,31 +213,6 @@
       </categories>
       <tags>
         <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/2024/05/21/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start">Quick Start</h2>
-<h3 id="Create-a-new-post">Create a new post</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server">Run server</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files">Generate static files</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites">Deploy to remote sites</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-      <categories>
-        <category>DevOps</category>
-      </categories>
-      <tags>
-        <tag>DevOps</tag>
       </tags>
   </entry>
   <entry>
