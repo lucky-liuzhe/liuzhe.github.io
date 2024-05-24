@@ -2,7 +2,7 @@
 <search>
   <entry>
     <title>Harbor部署</title>
-    <url>/2022/05/25/Harbor%E9%83%A8%E7%BD%B2/</url>
+    <url>/2022/05/25/harbor%E9%83%A8%E7%BD%B2/</url>
     <content><![CDATA[<p>Harbor 概述</p>
 <p>Harbor是由VMWare公司开源的容器镜像仓库。事实上，Harbor是在Docker Registry上进行了相应的企业级扩展， 从而获得了更加广泛的应用，这些新的企业级特性包括：管理用户界面，基于角色的访问控制 ，AD/LDAP集成以及 审计日志等，足以满足基本企业需求。</p>
 <p>官方：<a href="https://goharbor.io/">https://goharbor.io/</a></p>
@@ -83,7 +83,7 @@
   </entry>
   <entry>
     <title>JAVA项目镜像构建：Tomcat</title>
-    <url>/2022/05/23/JAVA%E9%A1%B9%E7%9B%AE%E9%95%9C%E5%83%8F%E6%9E%84%E5%BB%BA/</url>
+    <url>/2022/05/23/java%E9%A1%B9%E7%9B%AE%E9%95%9C%E5%83%8F%E6%9E%84%E5%BB%BA/</url>
     <content><![CDATA[<p>JAVA项目镜像构建：Tomcat</p>
 <p>tomcat目录文件：1.apache-tomcat-8.5.43.tar.gz  2.Dockerfile   3.Dockerfile2  4.ROOT.war</p>
 <p>Dockerfile（环境镜像）</p>
@@ -113,8 +113,108 @@
       </tags>
   </entry>
   <entry>
+    <title>kubectl命令行管理工具</title>
+    <url>/2022/06/12/kubectl%E5%91%BD%E4%BB%A4%E8%A1%8C%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/</url>
+    <content><![CDATA[<h2 id="kubeconfig配置文件">kubeconfig配置文件</h2>
+<p>kube-apiserver两个端口：</p>
+<ul>
+<li>
+<p>localhost:8080  非安全端口，是kubectl默认先连接8080，如果你配置kubeconfig（.kube/config）就直接走这个配置连接的安全端口</p>
+</li>
+<li>
+<p>masterip:6443   安全端口</p>
+</li>
+</ul>
+<p>命令行指定配置文件：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get node --kubeconfig=admin.conf</span><br></pre></td></tr></table></figure>
+<p>拷贝认证文件到其他节点的（.kube/config）下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">scp .kube/config root@192.168.0.12:.kube/</span><br></pre></td></tr></table></figure>
+<p>kubectl使用kubeconfig认证文件连接K8s集群， 使用kubectl config指令生成kubeconfig文件。</p>
+<p><img src="/images/44B7D7962FFC4A6084E5B03245B92B45clipboard.png" alt></p>
+<h2 id="kubectl管理命令概要">kubectl管理命令概要</h2>
+<p><img src="/images/B5A0EFF109924D819F7F247722B89244clipboard.png" alt></p>
+<p>官方文档参考地址：<a href="https://kubernetes.io/zh/docs/reference/kubectl/overview/">https://kubernetes.io/zh/docs/reference/kubectl/overview/</a></p>
+<p><img src="/images/FE0CA664ABC643C6AC7DF7A84860042Cclipboard.png" alt></p>
+<h2 id="牛刀小试，快速部署一个网站">牛刀小试，快速部署一个网站</h2>
+<p>使用Deployment控制器部署镜像：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create deployment web --image=lizhenliang/java-demo </span><br><span class="line">kubectl get deploy,pods</span><br></pre></td></tr></table></figure>
+<p>使用Service将Pod暴露出去：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl expose deployment web --port=80 --target-port=8080 --<span class="built_in">type</span>=NodePort </span><br><span class="line">kubectl get service</span><br></pre></td></tr></table></figure>
+<p>访问应用：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">http://NodeIP:Port <span class="comment"># 端口随机生成，通过get svc获取</span></span><br></pre></td></tr></table></figure>
+<h2 id="基本资源概念">基本资源概念</h2>
+<ul>
+<li>
+<p>Pod：K8s最小部署单元，一组容器的集合</p>
+</li>
+<li>
+<p>Deployment：最常见的控制器，用于更高级别部署和管理Pod</p>
+</li>
+<li>
+<p>Service：为一组Pod提供负载均衡，对外提供统一访问入口</p>
+</li>
+<li>
+<p>Label ：标签，附加到某个资源上，用于关联对象、查询和筛选</p>
+</li>
+<li>
+<p>Namespaces ：命名空间，将对象逻辑上隔离，也利于权限控制</p>
+</li>
+</ul>
+<h2 id="命名空间">命名空间</h2>
+<p>命名空间（Namespace）：Kubernetes将资源对象逻辑上隔离，从而形成多个虚拟集群。</p>
+<p>应用场景：</p>
+<ul>
+<li>
+<p>根据不同团队划分命名空间</p>
+</li>
+<li>
+<p>根据项目划分命名空间</p>
+</li>
+</ul>
+<p>kubectl get namespace</p>
+<ul>
+<li>
+<p>default：默认命名空间</p>
+</li>
+<li>
+<p>kube-system：K8s系统方面的命名空间</p>
+</li>
+<li>
+<p>kube-public：公开的命名空间，谁都可以访问，</p>
+</li>
+<li>
+<p>kube-node-lease：K8s内部命名空间</p>
+</li>
+</ul>
+<p>两种方法指定资源命名空间：</p>
+<ul>
+<li>
+<p>命令行加 -n</p>
+</li>
+<li>
+<p>yaml资源元数据里指定namespace字段</p>
+</li>
+</ul>
+<p>1、使用kubeadm搭建一个K8s集群</p>
+<p>2、新建命名空间，在该命名空间中创建一个pod</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create namespace azhe</span><br></pre></td></tr></table></figure>
+<p>3、创建一个deployment并暴露Service，可以在浏览器访问</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create deployment java-demo --image=lizhenliang/java-demo -n azhe </span><br><span class="line">kubectl expose deployment java-demo --port 80 --target-port=8080 --<span class="built_in">type</span>=NodePort  -n azhe </span><br></pre></td></tr></table></figure>
+<p>4、列出命名空间下指定标签pod</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get pod -n azhe --show-labels</span><br><span class="line">kubectl get pod -l app=java-demo -n azhe </span><br><span class="line">kubectl get pod,svc,deploy -o wide -n azhe  <span class="comment">#查看azhe命名空间下的pod，svc,deploy资源</span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/4D8950519EAC4C08B9D400C984FD4308clipboard.png" alt></p>
+<p>注：自由发挥，实现需求即可</p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Kubernetes核心概念</title>
-    <url>/2022/06/10/Kubernetes%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/</url>
+    <url>/2022/06/10/kubernetes%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/</url>
     <content><![CDATA[<h2 id="有了Docker，为什么还用Kubernetes？">有了Docker，为什么还用Kubernetes？</h2>
 <h4 id="为提高业务并发和高可用，会使用多台服务器，因此会面向这些问题：">为提高业务并发和高可用，会使用多台服务器，因此会面向这些问题：</h4>
 <ul>
@@ -185,7 +285,7 @@
   </entry>
   <entry>
     <title>Service(对外暴露你的应用）</title>
-    <url>/2022/06/17/Service(%E5%AF%B9%E5%A4%96%E6%9A%B4%E9%9C%B2%E4%BD%A0%E7%9A%84%E5%BA%94%E7%94%A8%EF%BC%89/</url>
+    <url>/2022/06/17/service%E5%AF%B9%E5%A4%96%E6%9A%B4%E9%9C%B2%E4%BD%A0%E7%9A%84%E5%BA%94%E7%94%A8/</url>
     <content><![CDATA[<h2 id="Service是什么与Service存在的意义">Service是什么与Service存在的意义</h2>
 <p>Service引入主要是解决Pod的动态变化，提供统一访问入口：</p>
 <ul>
@@ -364,108 +464,8 @@
       </tags>
   </entry>
   <entry>
-    <title>kubectl命令行管理工具</title>
-    <url>/2022/06/12/kubectl%E5%91%BD%E4%BB%A4%E8%A1%8C%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/</url>
-    <content><![CDATA[<h2 id="kubeconfig配置文件">kubeconfig配置文件</h2>
-<p>kube-apiserver两个端口：</p>
-<ul>
-<li>
-<p>localhost:8080  非安全端口，是kubectl默认先连接8080，如果你配置kubeconfig（.kube/config）就直接走这个配置连接的安全端口</p>
-</li>
-<li>
-<p>masterip:6443   安全端口</p>
-</li>
-</ul>
-<p>命令行指定配置文件：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get node --kubeconfig=admin.conf</span><br></pre></td></tr></table></figure>
-<p>拷贝认证文件到其他节点的（.kube/config）下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">scp .kube/config root@192.168.0.12:.kube/</span><br></pre></td></tr></table></figure>
-<p>kubectl使用kubeconfig认证文件连接K8s集群， 使用kubectl config指令生成kubeconfig文件。</p>
-<p><img src="/images/44B7D7962FFC4A6084E5B03245B92B45clipboard.png" alt></p>
-<h2 id="kubectl管理命令概要">kubectl管理命令概要</h2>
-<p><img src="/images/B5A0EFF109924D819F7F247722B89244clipboard.png" alt></p>
-<p>官方文档参考地址：<a href="https://kubernetes.io/zh/docs/reference/kubectl/overview/">https://kubernetes.io/zh/docs/reference/kubectl/overview/</a></p>
-<p><img src="/images/FE0CA664ABC643C6AC7DF7A84860042Cclipboard.png" alt></p>
-<h2 id="牛刀小试，快速部署一个网站">牛刀小试，快速部署一个网站</h2>
-<p>使用Deployment控制器部署镜像：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create deployment web --image=lizhenliang/java-demo </span><br><span class="line">kubectl get deploy,pods</span><br></pre></td></tr></table></figure>
-<p>使用Service将Pod暴露出去：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl expose deployment web --port=80 --target-port=8080 --<span class="built_in">type</span>=NodePort </span><br><span class="line">kubectl get service</span><br></pre></td></tr></table></figure>
-<p>访问应用：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">http://NodeIP:Port <span class="comment"># 端口随机生成，通过get svc获取</span></span><br></pre></td></tr></table></figure>
-<h2 id="基本资源概念">基本资源概念</h2>
-<ul>
-<li>
-<p>Pod：K8s最小部署单元，一组容器的集合</p>
-</li>
-<li>
-<p>Deployment：最常见的控制器，用于更高级别部署和管理Pod</p>
-</li>
-<li>
-<p>Service：为一组Pod提供负载均衡，对外提供统一访问入口</p>
-</li>
-<li>
-<p>Label ：标签，附加到某个资源上，用于关联对象、查询和筛选</p>
-</li>
-<li>
-<p>Namespaces ：命名空间，将对象逻辑上隔离，也利于权限控制</p>
-</li>
-</ul>
-<h2 id="命名空间">命名空间</h2>
-<p>命名空间（Namespace）：Kubernetes将资源对象逻辑上隔离，从而形成多个虚拟集群。</p>
-<p>应用场景：</p>
-<ul>
-<li>
-<p>根据不同团队划分命名空间</p>
-</li>
-<li>
-<p>根据项目划分命名空间</p>
-</li>
-</ul>
-<p>kubectl get namespace</p>
-<ul>
-<li>
-<p>default：默认命名空间</p>
-</li>
-<li>
-<p>kube-system：K8s系统方面的命名空间</p>
-</li>
-<li>
-<p>kube-public：公开的命名空间，谁都可以访问，</p>
-</li>
-<li>
-<p>kube-node-lease：K8s内部命名空间</p>
-</li>
-</ul>
-<p>两种方法指定资源命名空间：</p>
-<ul>
-<li>
-<p>命令行加 -n</p>
-</li>
-<li>
-<p>yaml资源元数据里指定namespace字段</p>
-</li>
-</ul>
-<p>1、使用kubeadm搭建一个K8s集群</p>
-<p>2、新建命名空间，在该命名空间中创建一个pod</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create namespace azhe</span><br></pre></td></tr></table></figure>
-<p>3、创建一个deployment并暴露Service，可以在浏览器访问</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create deployment java-demo --image=lizhenliang/java-demo -n azhe </span><br><span class="line">kubectl expose deployment java-demo --port 80 --target-port=8080 --<span class="built_in">type</span>=NodePort  -n azhe </span><br></pre></td></tr></table></figure>
-<p>4、列出命名空间下指定标签pod</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get pod -n azhe --show-labels</span><br><span class="line">kubectl get pod -l app=java-demo -n azhe </span><br><span class="line">kubectl get pod,svc,deploy -o wide -n azhe  <span class="comment">#查看azhe命名空间下的pod，svc,deploy资源</span></span><br></pre></td></tr></table></figure>
-<p><img src="/images/4D8950519EAC4C08B9D400C984FD4308clipboard.png" alt></p>
-<p>注：自由发挥，实现需求即可</p>
-]]></content>
-      <categories>
-        <category>K8S</category>
-      </categories>
-      <tags>
-        <tag>K8S</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>基于Docker构建企业Jenkins平台</title>
-    <url>/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/</url>
+    <url>/2022/05/27/%E5%9F%BA%E4%BA%8Edocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9Ajenkins%E5%B9%B3%E5%8F%B0/</url>
     <content><![CDATA[<p>CI/CD概述</p>
 <p>持续集成（Continuous Integration，CI）：代码合并、构建、部署、测试都在一起，不断地执行这个过程，并对结果反馈。</p>
 <p>持续部署（Continuous Deployment，CD）：部署到测试环境、预生产环境、生产环境。</p>
@@ -606,7 +606,7 @@
   </entry>
   <entry>
     <title>实现Docker容器多主机通信</title>
-    <url>/2022/05/26/%E5%AE%9E%E7%8E%B0Docker%E5%AE%B9%E5%99%A8%E5%A4%9A%E4%B8%BB%E6%9C%BA%E9%80%9A%E4%BF%A1/</url>
+    <url>/2022/05/26/%E5%AE%9E%E7%8E%B0docker%E5%AE%B9%E5%99%A8%E5%A4%9A%E4%B8%BB%E6%9C%BA%E9%80%9A%E4%BF%A1/</url>
     <content><![CDATA[<p>跨主机网络：实现Docker容器多主机通信</p>
 <p>Flannel是CoreOS维护的一个网络组件，在每个主机上运行守护 进程负责维护本地路由转发，Flannel使用ETCD来存储容器网络 与主机之前的关系。</p>
 <p>其他主流容器跨主机网络方案：</p>
@@ -845,7 +845,7 @@
   </entry>
   <entry>
     <title>快速部署一个K8s集群</title>
-    <url>/2022/06/11/%E5%BF%AB%E9%80%9F%E9%83%A8%E7%BD%B2%E4%B8%80%E4%B8%AAK8s%E9%9B%86%E7%BE%A4/</url>
+    <url>/2022/06/11/%E5%BF%AB%E9%80%9F%E9%83%A8%E7%BD%B2%E4%B8%80%E4%B8%AAk8s%E9%9B%86%E7%BE%A4/</url>
     <content><![CDATA[<h2 id="生产环境部署K8s的2种方式">生产环境部署K8s的2种方式</h2>
 <h4 id="kubeadm">kubeadm</h4>
 <p>Kubeadm是一个工具，提供kubeadm init和kubeadm join，用于快速部署Kubernetes集群。</p>
@@ -1043,7 +1043,7 @@
   </entry>
   <entry>
     <title>深入理解Pod对象：基本管理</title>
-    <url>/2022/06/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Pod%E5%AF%B9%E8%B1%A1%EF%BC%9A%E5%9F%BA%E6%9C%AC%E7%AE%A1%E7%90%86/</url>
+    <url>/2022/06/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3pod%E5%AF%B9%E8%B1%A1%E5%9F%BA%E6%9C%AC%E7%AE%A1%E7%90%86/</url>
     <content><![CDATA[<h2 id="Pod基本概念">Pod基本概念</h2>
 <p>Pod是Kubernetes创建和管理的最小单元，一个Pod由一个容器 或多个容器组成，这些容器共享存储、网络。</p>
 <p><img src="/images/3E268FAA2D524894BEC9CE7602E5ACDFclipboard.png" alt></p>
@@ -1223,7 +1223,7 @@
   </entry>
   <entry>
     <title>深入理解Pod对象：调度</title>
-    <url>/2022/06/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Pod%E5%AF%B9%E8%B1%A1%EF%BC%9A%E8%B0%83%E5%BA%A6/</url>
+    <url>/2022/06/15/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3pod%E5%AF%B9%E8%B1%A1%E8%B0%83%E5%BA%A6/</url>
     <content><![CDATA[<h2 id="创建一个Pod的工作流程">创建一个Pod的工作流程</h2>
 <p>Kubernetes基于list-watch机制的控制器架构，实现组件间交 互的解耦。 其他组件监控自己负责的资源，当这些资源发生变化时，kubeapiserver会通知这些组件，这个过程类似于发布与订阅。</p>
 <p><img src="/images/D8794DF48C0F4816BA54E7FA97CDBB36clipboard.png" alt></p>
@@ -1399,7 +1399,7 @@
   </entry>
   <entry>
     <title>资源编排（YAML）</title>
-    <url>/2022/06/13/%E8%B5%84%E6%BA%90%E7%BC%96%E6%8E%92%EF%BC%88YAML%EF%BC%89/</url>
+    <url>/2022/06/13/%E8%B5%84%E6%BA%90%E7%BC%96%E6%8E%92/</url>
     <content><![CDATA[<h2 id="YAML文件格式说明">YAML文件格式说明</h2>
 <p>K8s是一个容器编排引擎，使用YAML文件编排要部署应用，因此在学习之前，应先了解YAML语法格式：</p>
 <ul>
@@ -1451,7 +1451,7 @@
   </entry>
   <entry>
     <title>镜像的制作CMD与ENTRYPOINT区别</title>
-    <url>/2022/05/24/%E9%95%9C%E5%83%8F%E7%9A%84%E5%88%B6%E4%BD%9CCMD%E4%B8%8EENTRYPOINT%E5%8C%BA%E5%88%AB/</url>
+    <url>/2022/05/24/%E9%95%9C%E5%83%8F%E7%9A%84%E5%88%B6%E4%BD%9Ccmd%E4%B8%8Eentrypoint%E5%8C%BA%E5%88%AB/</url>
     <content><![CDATA[<p>1.构建镜像时必须指定一个CMD 或者ENTRYPOINT 去夯住进程，不让它退出，放在容器前台执行，否则容器就退出了。</p>
 <p>2.CMD exec 形式变量传参需要指定（“sh”,“-c”,“/usr/bin/run.sh $abc”）</p>
 <p>FROM centos:7</p>
