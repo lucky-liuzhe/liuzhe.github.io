@@ -82,6 +82,139 @@
       </tags>
   </entry>
   <entry>
+    <title>Ingress最佳方式对外暴露应用</title>
+    <url>/2022/07/10/ingress%E6%9C%80%E4%BD%B3%E6%96%B9%E5%BC%8F%E5%AF%B9%E5%A4%96%E6%9A%B4%E9%9C%B2%E5%BA%94%E7%94%A8/</url>
+    <content><![CDATA[<h2 id="Ingress是什么">Ingress是什么</h2>
+<p>NodePort存在的不足：</p>
+<ul>
+<li>
+<p>一个端口只能一个服务使用，端口需提前规划</p>
+</li>
+<li>
+<p>只支持4层负载均衡</p>
+</li>
+</ul>
+<p>Ingress：Ingress公开了从集群外部到集群内服务的HTTP和HTTPS路由的规则集合，而具体实现流量路 由则是由Ingress Controller负责。</p>
+<ul>
+<li>
+<p>Ingress：K8s中的一个抽象资源，给管理员 提供一个暴露应用的入口定义方法</p>
+</li>
+<li>
+<p>Ingress Controller：根据Ingress生成具体 的路由规则，并对Pod负载均衡器</p>
+</li>
+</ul>
+<p><img src="/images/A2C7CDD3D8F548A98C5BF3FF5833B996clipboard.png" alt></p>
+<h2 id="Ingress-Controller">Ingress Controller</h2>
+<p>Ingress Controller有很多实现，我们这里采用官方维护的Nginx控制器。</p>
+<p>项目地址：<a href="https://github.com/kubernetes/ingress-nginx">https://github.com/kubernetes/ingress-nginx</a></p>
+<p>部署：kubectl apply -f <a href="https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx0.30.0/deploy/static/mandatory.yaml">https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx0.30.0/deploy/static/mandatory.yaml</a></p>
+<p>注意事项：</p>
+<ul>
+<li>
+<p>镜像地址修改成国内的：lizhenliang/nginx-ingress-controller:0.30.0</p>
+</li>
+<li>
+<p>将Ingress Controller暴露，一般使用宿主机网络（hostNetwork: true）或者使用NodePort</p>
+</li>
+</ul>
+<p>其他控制器：<a href="https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/">https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/</a></p>
+<h2 id="Ingress">Ingress</h2>
+<p>部署deployment与serivce</p>
+<p>vim web1-deploy-svc.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web1</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 3 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: web1</span><br><span class="line">        image: nginx:1.15</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web</span><br><span class="line">  name: web1</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 80 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 80 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>访问</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f web1-deploy-svc.yaml </span><br><span class="line">kubectl get svc</span><br><span class="line">curl 10.99.227.165</span><br></pre></td></tr></table></figure>
+<p>部署ingress（基于域名方式访问）</p>
+<p>vim ingress-web1.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web1</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: web1.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 80          <span class="comment">#ClusterIP的端口</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><a href="http://xn--web1-z03g362j2w5b9jdn63a.ctnrs.com">浏览器访问web1.ctnrs.com</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f ingress-web1.yaml </span><br><span class="line">kubectl get ingress</span><br></pre></td></tr></table></figure>
+<p>测试：本地电脑绑定hosts记录对应ingress里面配置的域名</p>
+<p>例： &lt;Ingress Controller Pod所在Node IP&gt; <a href="http://foo.bar.com">foo.bar.com</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get pod -n ingress-nginx -o wide</span><br></pre></td></tr></table></figure>
+<h2 id="Ingress：基于URI路由多个服务">Ingress：基于URI路由多个服务</h2>
+<p>vim web2-deploy-svc.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web2</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web2</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web2 <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx</span><br><span class="line">        image: nginx:1.15</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web2</span><br><span class="line">  name: web2</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 80 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 80 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web2 <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>vim web22-deploy-svc.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web22</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web22</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web22 <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: web22</span><br><span class="line">        image: lizhenliang/java-demo</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web22</span><br><span class="line">  name: web22</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 8080 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 8080 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web22 <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>vim ingress-web2.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web2</span><br><span class="line">  annotations:</span><br><span class="line">    nginx.ingress.kubernetes.io/rewrite-target: /<span class="variable">$2</span></span><br><span class="line">    nginx.ingress.kubernetes.io/server-snippet: |</span><br><span class="line">      rewrite ^/css/(.*)$ /bar/css/<span class="variable">$1</span> redirect;</span><br><span class="line">      rewrite ^/images/(.*)$ /bar/images/<span class="variable">$1</span> redirect;</span><br><span class="line">      rewrite ^/js/(.*)$ /bar/js/<span class="variable">$1</span> redirect;</span><br><span class="line"></span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: web2.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /foo                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web2            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 80          <span class="comment">#ClusterIP的端口</span></span><br><span class="line">      - path: /bar(/|$)(.*)                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web22            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 8080          <span class="comment">#ClusterIP的端口</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f web2-deploy-svc.yaml </span><br><span class="line">kubectl apply -f web22-deploy-svc.yaml </span><br><span class="line">kubectl apply -f ingress-web2.yaml </span><br><span class="line">kubectl get pod </span><br><span class="line">kubectl get svc</span><br><span class="line">kubectl get ingress</span><br></pre></td></tr></table></figure>
+<p>访问</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">http://web2.ctnrs.com/bar</span><br><span class="line">http://web2.ctnrs.com/foo</span><br></pre></td></tr></table></figure>
+<h2 id="Ingress-：基于名称的虚拟主机">Ingress ：基于名称的虚拟主机</h2>
+<p><img src="/images/F43B7E2488D24867918ACC44A42437CEclipboard.png" alt></p>
+<p>vim web3-deploy-svc.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web3</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 3 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web-tomcat</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web-tomcat <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: java-demo</span><br><span class="line">        image: lizhenliang/java-demo</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web-tomcat</span><br><span class="line">  name: web3</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 88 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 8080 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web-tomcat <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>vim ingress-web3.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web3</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: web3-1.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 80          <span class="comment">#ClusterIP的端口</span></span><br><span class="line">  - host: web3-2.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web3            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 88          <span class="comment">#ClusterIP的端口</span></span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f web3-deploy-svc.yaml </span><br><span class="line">kubectl apply -f ingress-web3.yaml </span><br><span class="line">kubectl get ingress</span><br></pre></td></tr></table></figure>
+<p>访问</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">web3-1.ctnrs.com</span><br><span class="line">web3-2.ctnrs.com </span><br></pre></td></tr></table></figure>
+<h2 id="Ingress：HTTPS">Ingress：HTTPS</h2>
+<p>配置HTTPS步骤：</p>
+<p>1、准备域名证书文件（来自：openssl/cfssl工具自签或者权威机构颁发）</p>
+<p>vim <a href="http://cfssl.sh">cfssl.sh</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://pkg.cfssl.org/R1.2/cfssl_linux-amd64</span><br><span class="line">wget https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64</span><br><span class="line">wget https://pkg.cfssl.org/R1.2/cfssl-certinfo_linux-amd64</span><br><span class="line"><span class="built_in">chmod</span> +x cfssl*</span><br><span class="line"><span class="built_in">mv</span> cfssl_linux-amd64 /usr/bin/cfssl</span><br><span class="line"><span class="built_in">mv</span> cfssljson_linux-amd64 /usr/bin/cfssljson</span><br><span class="line"><span class="built_in">mv</span> cfssl-certinfo_linux-amd64 /usr/bin/cfssl-certinfo</span><br></pre></td></tr></table></figure>
+<p>vim <a href="http://certs.sh">certs.sh</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> &gt; ca-config.json &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">&#123;</span></span><br><span class="line"><span class="string">  &quot;signing&quot;: &#123;</span></span><br><span class="line"><span class="string">    &quot;default&quot;: &#123;</span></span><br><span class="line"><span class="string">      &quot;expiry&quot;: &quot;87600h&quot;</span></span><br><span class="line"><span class="string">    &#125;,</span></span><br><span class="line"><span class="string">    &quot;profiles&quot;: &#123;</span></span><br><span class="line"><span class="string">      &quot;kubernetes&quot;: &#123;</span></span><br><span class="line"><span class="string">         &quot;expiry&quot;: &quot;87600h&quot;,</span></span><br><span class="line"><span class="string">         &quot;usages&quot;: [</span></span><br><span class="line"><span class="string">            &quot;signing&quot;,</span></span><br><span class="line"><span class="string">            &quot;key encipherment&quot;,</span></span><br><span class="line"><span class="string">            &quot;server auth&quot;,</span></span><br><span class="line"><span class="string">            &quot;client auth&quot;</span></span><br><span class="line"><span class="string">        ]</span></span><br><span class="line"><span class="string">      &#125;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">  &#125;</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">cat</span> &gt; ca-csr.json &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">&#123;</span></span><br><span class="line"><span class="string">    &quot;CN&quot;: &quot;kubernetes&quot;,</span></span><br><span class="line"><span class="string">    &quot;key&quot;: &#123;</span></span><br><span class="line"><span class="string">        &quot;algo&quot;: &quot;rsa&quot;,</span></span><br><span class="line"><span class="string">        &quot;size&quot;: 2048</span></span><br><span class="line"><span class="string">    &#125;,</span></span><br><span class="line"><span class="string">    &quot;names&quot;: [</span></span><br><span class="line"><span class="string">        &#123;</span></span><br><span class="line"><span class="string">            &quot;C&quot;: &quot;CN&quot;,</span></span><br><span class="line"><span class="string">            &quot;L&quot;: &quot;Beijing&quot;,</span></span><br><span class="line"><span class="string">            &quot;ST&quot;: &quot;Beijing&quot;</span></span><br><span class="line"><span class="string">        &#125;</span></span><br><span class="line"><span class="string">    ]</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line">cfssl gencert -initca ca-csr.json | cfssljson -bare ca -</span><br><span class="line"></span><br><span class="line"><span class="built_in">cat</span> &gt; web4.ctnrs.com-csr.json &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">&#123;</span></span><br><span class="line"><span class="string">  &quot;CN&quot;: &quot;web4.ctnrs.com&quot;,</span></span><br><span class="line"><span class="string">  &quot;hosts&quot;: [],</span></span><br><span class="line"><span class="string">  &quot;key&quot;: &#123;</span></span><br><span class="line"><span class="string">    &quot;algo&quot;: &quot;rsa&quot;,</span></span><br><span class="line"><span class="string">    &quot;size&quot;: 2048</span></span><br><span class="line"><span class="string">  &#125;,</span></span><br><span class="line"><span class="string">  &quot;names&quot;: [</span></span><br><span class="line"><span class="string">    &#123;</span></span><br><span class="line"><span class="string">      &quot;C&quot;: &quot;CN&quot;,</span></span><br><span class="line"><span class="string">      &quot;L&quot;: &quot;BeiJing&quot;,</span></span><br><span class="line"><span class="string">      &quot;ST&quot;: &quot;BeiJing&quot;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">  ]</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line">cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes web4.ctnrs.com-csr.json | cfssljson -bare web4.ctnrs.com</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>生成证书</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash cfssl.sh</span><br><span class="line">bash certs.sh</span><br></pre></td></tr></table></figure>
+<p>2、将证书文件保存到Secret</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create secret tls web4-ctnrs-com --cert=ssl/web4.ctnrs.com.pem --key=ssl/web4.ctnrs.com-key.pem</span><br><span class="line">kubectl get secrets </span><br></pre></td></tr></table></figure>
+<p>3、Ingress规则配置tls</p>
+<p>vim ingress-web4-https.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web4</span><br><span class="line">spec:</span><br><span class="line">  tls:</span><br><span class="line">  - hosts:</span><br><span class="line">    - web4.ctnrs.com                 <span class="comment">#自签证书对应的域名</span></span><br><span class="line">    secretName: web4-ctnrs-com       <span class="comment">#Secret的名字</span></span><br><span class="line">  rules:</span><br><span class="line">  - host: web4.ctnrs.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1</span><br><span class="line">            port:</span><br><span class="line">              number: 80</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f ingress-web4-https.yaml </span><br><span class="line">kubectl get ingress</span><br></pre></td></tr></table></figure>
+<p>配置本地hosts文件解析</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">192.168.1.12      web1.ctnrs.com  web4.ctnrs.com  </span><br><span class="line">192.168.1.13      web1.ctnrs.com  web4.ctnrs.com  </span><br></pre></td></tr></table></figure>
+<p>访问</p>
+<p><img src="/images/5BA66364BB194B94A5D1992F439DB35Aclipboard.png" alt></p>
+<h2 id="Ingress：个性化配置">Ingress：个性化配置</h2>
+<p>示例1：设置代理超时参数</p>
+<p>vim ingress-annotations.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: annotations</span><br><span class="line">  annotations:</span><br><span class="line">    kubernetes.io/ingress.class: <span class="string">&quot;nginx&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-connect-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-send-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-read-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: annotations.ctnrs.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1</span><br><span class="line">            port:</span><br><span class="line">              number: 80</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f ingress-annotations.yaml </span><br><span class="line">kubectl get ingress</span><br><span class="line">kubectl get pod -n ingress-nginx </span><br><span class="line">kubectl <span class="built_in">exec</span> -it nginx-ingress-controller-qj4vg bash -n ingress-nginx </span><br><span class="line"><span class="variable">$vi</span> /etc/nginx/nginx.conf</span><br></pre></td></tr></table></figure>
+<p>查看是否有代理的配置</p>
+<p><img src="/images/7342077EDF3E4812AED83A5730609A01clipboard.png" alt></p>
+<p>示例2：设置客户端上传文件大小</p>
+<p>vim ingress-annotations.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: annotations</span><br><span class="line">  annotations:</span><br><span class="line">    kubernetes.io/ingress.class: <span class="string">&quot;nginx&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-connect-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-send-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-read-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-body-size: <span class="string">&quot;10m&quot;</span></span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: annotations.ctnrs.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1</span><br><span class="line">            port:</span><br><span class="line">              number: 80</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f ingress-annotations.yaml </span><br><span class="line">kubectl get pod -n ingress-nginx </span><br><span class="line">kubectl <span class="built_in">exec</span> -it nginx-ingress-controller-qj4vg bash -n ingress-nginx </span><br><span class="line"><span class="variable">$vi</span> /etc/nginx/nginx.conf</span><br></pre></td></tr></table></figure>
+<p>查看annotations.ctnrs.com域名下有没有相关的配置</p>
+<p><img src="/images/2DF62D4954594D6DB5667A0BD8C86C6Eclipboard.png" alt></p>
+<p>示例3：重定向</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nginx.ingress.kubernetes.io/rewrite-target: https://www.baidu.com</span><br></pre></td></tr></table></figure>
+<p>示例4：自定义规则</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nginx.ingress.kubernetes.io/server-snippet: |</span><br><span class="line">  <span class="keyword">if</span> (<span class="variable">$http_user_agent</span> ~* <span class="string">&#x27;(Android|iPhone)&#x27;</span>) &#123;</span><br><span class="line">    rewrite ^/(.*) http://m.baidu.com <span class="built_in">break</span>;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>vim web5-deploy-svc.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web5</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web5</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web5 <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: web5-java-demo</span><br><span class="line">        image: lizhenliang/java-demo</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web5</span><br><span class="line">  name: web5</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 8888 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 8080 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web5 <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="vim-ingress-web5-yaml">vim ingress-web5.yaml</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web5</span><br><span class="line">  annotations:</span><br><span class="line">    nginx.ingress.kubernetes.io/server-snippet: |</span><br><span class="line">      <span class="keyword">if</span> (<span class="variable">$http_user_agent</span> ~* <span class="string">&#x27;(Android|iPhone)&#x27;</span>) &#123;</span><br><span class="line">        rewrite ^/(.*) http://m.baidu.com <span class="built_in">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: web5.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web5        <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 8888          <span class="comment">#ClusterIP的端口</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证访问</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f web5-deploy-svc.yaml </span><br><span class="line">kubectl apply -f ingress-web5.yaml </span><br><span class="line">kubectl get ingress</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>电脑端访问：<a href="http://web5.ctnrs.com/">http://web5.ctnrs.com/</a></p>
+<p><img src="/images/04BC8BD141DD47EF9D3744B923B3C53Aclipboard.png" alt></p>
+<p>使用电脑火狐浏览器模仿手机端访问跳转到百度页面</p>
+<p><img src="/images/EC681CFC0F3C4BF7822277C1AFDB0999clipboard.png" alt></p>
+<p>注：上面这些配置都是针对Nginx Server块生效</p>
+<p>更多使用方法：<a href="https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md">https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md</a></p>
+<h2 id="Ingress-Controller-2">Ingress Controller</h2>
+<p>Ingress Contronler怎么工作的？</p>
+<p>Ingress Contronler通过与 Kubernetes API 交互，动态的去感知集群中 Ingress 规则变化，然后读取它， 按照自定义的规则，规则就是写明了哪个域名对应哪个service，生成一段 Nginx 配置，应用到管理的 Nginx服务，然后热加载生效。 以此来达到Nginx负载均衡器配置及动态更新的问题。</p>
+<p>流程包流程：客户端 -&gt;Ingress Controller（nginx） -&gt; 分布在各节点Pod</p>
+<h2 id="Ingress-Controller高可用方案">Ingress Controller高可用方案</h2>
+<p>一般Ingress Controller会以DaemonSet+nodeSelector部署到几台特定 Node，然后将这几台挂载到公网负载均衡器对外提供服务。</p>
+<p><img src="/images/9267ADA4F67F4FE9BDD1C7371BEA7534clipboard.png" alt></p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>JAVA项目镜像构建：Tomcat</title>
     <url>/2022/05/23/java%E9%A1%B9%E7%9B%AE%E9%95%9C%E5%83%8F%E6%9E%84%E5%BB%BA/</url>
     <content><![CDATA[<p>JAVA项目镜像构建：Tomcat</p>
@@ -110,6 +243,275 @@
       </categories>
       <tags>
         <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>K8s安全控制</title>
+    <url>/2022/07/14/k8s%E5%AE%89%E5%85%A8%E6%8E%A7%E5%88%B6/</url>
+    <content><![CDATA[<h2 id="Kubernetes-安全框架">Kubernetes 安全框架</h2>
+<p>K8S安全控制框架主要由下面3个阶段进行控制，每一个阶段都 支持插件方式，通过API Server配置来启用插件。</p>
+<ol>
+<li>
+<p>Authentication（鉴权）</p>
+</li>
+<li>
+<p>Authorization（授权）</p>
+</li>
+<li>
+<p>Admission Control（准入控制）</p>
+</li>
+</ol>
+<p>客户端要想访问K8s集群API Server，一般需要证书、Token或 者用户名+密码；如果Pod访问，需要ServiceAccount</p>
+<p><img src="/images/BA1BA2242FE74CF5AF4D103D2CE779B6clipboard.png" alt></p>
+<h2 id="鉴权（Authentication）">鉴权（Authentication）</h2>
+<p>三种客户端身份认证：</p>
+<ul>
+<li>
+<p>HTTPS 证书认证：基于CA证书签名的数字证书认证</p>
+</li>
+<li>
+<p>HTTP Token认证：通过一个Token来识别用户</p>
+</li>
+<li>
+<p>HTTP Base认证：用户名+密码的方式认证</p>
+</li>
+</ul>
+<h2 id="授权（Authorization）">授权（Authorization）</h2>
+<p>RBAC（Role-Based Access Control，基于角色的访问控制）：负责完成授权（Authorization）工作。</p>
+<p>RBAC根据API请求属性，决定允许还是拒绝。</p>
+<p>比较常见的授权维度：</p>
+<ul>
+<li>
+<p>user：用户名</p>
+</li>
+<li>
+<p>group：用户分组</p>
+</li>
+<li>
+<p>资源，例如pod、deployment</p>
+</li>
+<li>
+<p>资源操作方法：get，list，create，update，patch，watch，delete</p>
+</li>
+<li>
+<p>命名空间</p>
+</li>
+<li>
+<p>API组</p>
+</li>
+</ul>
+<h2 id="准入控制（Admission-Control）">准入控制（Admission Control）</h2>
+<p>Adminssion Control实际上是一个准入控制器插件列表，发送到API Server 的请求都需要经过这个列表中的每个准入控制器插件的检查，检查不通过， 则拒绝请求。</p>
+<h2 id="基于角色的权限访问控制：RBAC">基于角色的权限访问控制：RBAC</h2>
+<p>RBAC（Role-Based Access Control，基于角色的访问控 制），允许通过Kubernetes API动态配置策略。</p>
+<p>角色</p>
+<ul>
+<li>
+<p>Role：授权特定命名空间的访问权限</p>
+</li>
+<li>
+<p>ClusterRole：授权所有命名空间的访问权限</p>
+</li>
+</ul>
+<p>角色绑定</p>
+<ul>
+<li>
+<p>RoleBinding：将角色绑定到主体（即subject）</p>
+</li>
+<li>
+<p>ClusterRoleBinding：将集群角色绑定到主体</p>
+</li>
+</ul>
+<p>主体（subject）</p>
+<ul>
+<li>
+<p>User：用户</p>
+</li>
+<li>
+<p>Group：用户组</p>
+</li>
+<li>
+<p>ServiceAccount：服务账号</p>
+</li>
+</ul>
+<p><img src="/images/00B32E081B29474B860179448537BA37clipboard.png" alt></p>
+<h2 id="案例：为指定用户授权访问不同命名空间权限">案例：为指定用户授权访问不同命名空间权限</h2>
+<p>示例：为azhe用户授权default命名空间Pod读取权限</p>
+<ol>
+<li>用K8S CA签发客户端证书</li>
+</ol>
+<p>安装cfssl工具</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vim cfssl.sh</span></span><br><span class="line">wget https://pkg.cfssl.org/R1.2/cfssl_linux-amd64</span><br><span class="line">wget https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64</span><br><span class="line">wget https://pkg.cfssl.org/R1.2/cfssl-certinfo_linux-amd64</span><br><span class="line"><span class="built_in">chmod</span> +x cfssl*</span><br><span class="line"><span class="built_in">mv</span> cfssl_linux-amd64 /usr/bin/cfssl</span><br><span class="line"><span class="built_in">mv</span> cfssljson_linux-amd64 /usr/bin/cfssljson</span><br><span class="line"><span class="built_in">mv</span> cfssl-certinfo_linux-amd64 /usr/bin/cfssl-certinfo</span><br><span class="line"></span><br><span class="line"><span class="comment">#bash cfssl.sh</span></span><br></pre></td></tr></table></figure>
+<p>生成证书</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vim cert.sh </span></span><br><span class="line"></span><br><span class="line"><span class="built_in">cat</span> &gt; ca-config.json &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">&#123;</span></span><br><span class="line"><span class="string">  &quot;signing&quot;: &#123;</span></span><br><span class="line"><span class="string">    &quot;default&quot;: &#123;</span></span><br><span class="line"><span class="string">      &quot;expiry&quot;: &quot;87600h&quot;</span></span><br><span class="line"><span class="string">    &#125;,</span></span><br><span class="line"><span class="string">    &quot;profiles&quot;: &#123;</span></span><br><span class="line"><span class="string">      &quot;kubernetes&quot;: &#123;</span></span><br><span class="line"><span class="string">        &quot;usages&quot;: [</span></span><br><span class="line"><span class="string">            &quot;signing&quot;,</span></span><br><span class="line"><span class="string">            &quot;key encipherment&quot;,</span></span><br><span class="line"><span class="string">            &quot;server auth&quot;,</span></span><br><span class="line"><span class="string">            &quot;client auth&quot;</span></span><br><span class="line"><span class="string">        ],</span></span><br><span class="line"><span class="string">        &quot;expiry&quot;: &quot;87600h&quot;</span></span><br><span class="line"><span class="string">      &#125;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">  &#125;</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">cat</span> &gt; azhe-csr.json &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">&#123;</span></span><br><span class="line"><span class="string">  &quot;CN&quot;: &quot;azhe&quot;,</span></span><br><span class="line"><span class="string">  &quot;hosts&quot;: [],</span></span><br><span class="line"><span class="string">  &quot;key&quot;: &#123;</span></span><br><span class="line"><span class="string">    &quot;algo&quot;: &quot;rsa&quot;,</span></span><br><span class="line"><span class="string">    &quot;size&quot;: 2048</span></span><br><span class="line"><span class="string">  &#125;,</span></span><br><span class="line"><span class="string">  &quot;names&quot;: [</span></span><br><span class="line"><span class="string">    &#123;</span></span><br><span class="line"><span class="string">      &quot;C&quot;: &quot;CN&quot;,</span></span><br><span class="line"><span class="string">      &quot;ST&quot;: &quot;BeiJing&quot;,</span></span><br><span class="line"><span class="string">      &quot;L&quot;: &quot;BeiJing&quot;,</span></span><br><span class="line"><span class="string">      &quot;O&quot;: &quot;k8s&quot;,</span></span><br><span class="line"><span class="string">      &quot;OU&quot;: &quot;System&quot;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">  ]</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line">cfssl gencert -ca=/etc/kubernetes/pki/ca.crt -ca-key=/etc/kubernetes/pki/ca.key -config=ca-config.json -profile=kubernetes azhe-csr.json | cfssljson -bare azhe</span><br><span class="line"></span><br><span class="line"><span class="comment">#bash cert.sh </span></span><br></pre></td></tr></table></figure>
+<p>数字证书和key</p>
+<p><img src="/images/0A9228A856504E6EB4AF08FF1961AEE3clipboard.png" alt></p>
+<ol start="2">
+<li>生成kubeconfig授权文件</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#生成kubeconfig授权文件：</span></span><br><span class="line">kubectl config set-cluster kubernetes \</span><br><span class="line">--certificate-authority=/etc/kubernetes/pki/ca.crt \</span><br><span class="line">--embed-certs=<span class="literal">true</span> \</span><br><span class="line">--server=https://192.168.1.11:6443 \</span><br><span class="line">--kubeconfig=azhe.kubeconfig</span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置客户端认证</span></span><br><span class="line">kubectl config set-credentials azhe \</span><br><span class="line">--client-key=azhe-key.pem \</span><br><span class="line">--client-certificate=azhe.pem \</span><br><span class="line">--embed-certs=<span class="literal">true</span> \</span><br><span class="line">--kubeconfig=azhe.kubeconfig</span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置默认上下文</span></span><br><span class="line">kubectl config set-context kubernetes \</span><br><span class="line">--cluster=kubernetes \</span><br><span class="line">--user=azhe \</span><br><span class="line">--kubeconfig=azhe.kubeconfig</span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置当前使用配置</span></span><br><span class="line">kubectl config use-context kubernetes --kubeconfig=azhe.kubeconfig</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>创建RBAC权限策略</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vim rbac.yaml</span></span><br><span class="line"></span><br><span class="line">kind: Role</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">metadata:</span><br><span class="line">  namespace: default</span><br><span class="line">  name: pod-reader</span><br><span class="line">rules:</span><br><span class="line">- apiGroups: [<span class="string">&quot;&quot;</span>]</span><br><span class="line">  resources: [<span class="string">&quot;pods&quot;</span>]</span><br><span class="line">  verbs: [<span class="string">&quot;get&quot;</span>, <span class="string">&quot;watch&quot;</span>, <span class="string">&quot;list&quot;</span>]</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line"></span><br><span class="line">kind: RoleBinding</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">metadata:</span><br><span class="line">  name: read-pods</span><br><span class="line">  namespace: default</span><br><span class="line">subjects:</span><br><span class="line">- kind: User</span><br><span class="line">  name: azhe</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">roleRef:</span><br><span class="line">  kind: Role</span><br><span class="line">  name: pod-reader</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证查看pod</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f rbac.yaml </span><br><span class="line"><span class="comment">#指定kubeconfig文件测试：</span></span><br><span class="line">kubectl get pod --kubeconfig=./azhe.kubeconfig </span><br></pre></td></tr></table></figure>
+<p>查看deployment和service（修改rbac文件）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vim rbac.yaml </span></span><br><span class="line"></span><br><span class="line">kind: Role</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">metadata:</span><br><span class="line">  namespace: default</span><br><span class="line">  name: pod-reader</span><br><span class="line">rules:</span><br><span class="line">- apiGroups: [<span class="string">&quot;&quot;</span>,<span class="string">&quot;apps&quot;</span>]</span><br><span class="line">  resources: [<span class="string">&quot;pods&quot;</span>,<span class="string">&quot;deployments&quot;</span>,<span class="string">&quot;services&quot;</span>]  <span class="comment">#资源类型权限</span></span><br><span class="line">  verbs: [<span class="string">&quot;get&quot;</span>, <span class="string">&quot;watch&quot;</span>, <span class="string">&quot;list&quot;</span>]</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line"></span><br><span class="line">kind: RoleBinding</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">metadata:</span><br><span class="line">  name: read-pods</span><br><span class="line">  namespace: default</span><br><span class="line">subjects:</span><br><span class="line">- kind: User</span><br><span class="line">  name: azhe</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">roleRef:</span><br><span class="line">  kind: Role</span><br><span class="line">  name: pod-reader</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证查看</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f rbac.yaml </span><br><span class="line">kubectl get deployments.apps --kubeconfig=./azhe.kubeconfig </span><br><span class="line">kubectl get services --kubeconfig=./azhe.kubeconfig </span><br><span class="line">kubectl api-versions <span class="comment">#查看k8s资源组</span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/861B72416FB74D8892A146DE804610C7clipboard.png" alt></p>
+<p>当客户端使用kubectl时，它会向APIserver发送请求，它会根据你客户端的身份，比如数字认证方式，它会提取证书里面cn字段，cn字段作为你的用户名，会先验证你的身份是不是可信任的，或者证书是不是ca颁发的，验证没问题后会检查有没有给你授权，还有准入控制器插件列表检查，如果通过后你查看就会返回成功。</p>
+<p>客户端要想访问k8s集群，需要拿着kubeconfig授权文件去访问。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#拷贝kubeconfig授权文件到客户端</span></span><br><span class="line">scp azhe.kubeconfig root@192.168.0.13:~</span><br><span class="line"><span class="comment">#客户端指定授权文件访问</span></span><br><span class="line">kubectl get services --kubeconfig=azhe.kubeconfig </span><br><span class="line"><span class="comment">#如果不想指定授权文件访问，可以将授权文件移动到kube目录下，这时就不需要指定了</span></span><br><span class="line"><span class="built_in">mkdir</span> .kube/</span><br><span class="line"><span class="built_in">mv</span> azhe.kubeconfig  .kube/config</span><br></pre></td></tr></table></figure>
+<p>ServiceAccount：服务账号</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get sa -n kubernetes-dashboard</span><br><span class="line">kubectl describe sa -n kubernetes-dashboard </span><br><span class="line">kubectl get secrets -n kubernetes-dashboard </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>ui——&gt;token（保存至secret中）——&gt;apiserver——&gt;rbac（ServiceAccount）</p>
+<p>User和Group是针对用户授权访问APIserver的，ServiceAccount是针对程序访问APIserver的。</p>
+<p>例如：ui程序在pod yaml配置文件里面指定ServiceAccount，在创建pod时引用ServiceAccount创建的token，token是保存在secret里面的，这样你的程序就带着token去访问apiserver，然后rbac是对ServiceAccount进行授权的。</p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>K8s应用包管理器Helm初探</title>
+    <url>/2022/07/15/k8s%E5%BA%94%E7%94%A8%E5%8C%85%E7%AE%A1%E7%90%86%E5%99%A8helm%E5%88%9D%E6%8E%A2/</url>
+    <content><![CDATA[<h2 id="为什么需要Helm">为什么需要Helm</h2>
+<p><img src="/images/18AA965627B942638BC076553CD7789Cclipboard.png" alt></p>
+<p>由于Kubernetes缺少对发布的应用版本管理和控制，使得部署的应 用维护和更新等面临诸多的挑战，主要面临以下问题：</p>
+<ul>
+<li>
+<p>如何将这些服务作为一个整体管理？</p>
+</li>
+<li>
+<p>这些资源文件如何高效复用？</p>
+</li>
+<li>
+<p>不支持应用级别的版本管理</p>
+</li>
+</ul>
+<h2 id="Helm介绍">Helm介绍</h2>
+<p>Helm是一个Kubernetes的包管理工具，就像Linux下的包管理器，如yum/apt等，可以很方便的将之前 打包好的yaml文件部署到kubernetes上。</p>
+<p>Helm有3个重要概念：</p>
+<ul>
+<li>
+<p>helm：一个命令行客户端工具，主要用于Kubernetes应用chart的创建、打包、发布和管理。</p>
+</li>
+<li>
+<p>Chart：应用描述，一系列用于描述 k8s 资源相关文件的集合。</p>
+</li>
+<li>
+<p>Release：基于Chart的部署实体，一个 chart 被 Helm 运行后将会生成对应的一个 release；将在 k8s中创建出真实运行的资源对象。</p>
+</li>
+</ul>
+<p>Helm目前有两个大版本：v2和v3</p>
+<p>2019年11月Helm团队发布v3版本，相比v2版本最 大变化是将Tiller删除，并将大部分代码重构。</p>
+<p><img src="/images/3821E58785BB4DCAAB4341A7EB2A7B98clipboard.png" alt></p>
+<h2 id="Helm客户端">Helm客户端</h2>
+<p>使用helm很简单，你只需要下载一个二进制客户端包即可，会通过kubeconfig配置（通常 $HOME/.kube/config）来连接Kubernetes。</p>
+<p>下载Helm客户端：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://get.helm.sh/helm-v3.2.4-linux-amd64.tar.gz</span><br><span class="line">tar zxvf helm-v3.2.4-linux-amd64.tar.gz </span><br><span class="line"><span class="built_in">mv</span> linux-amd64/helm /usr/bin/</span><br></pre></td></tr></table></figure>
+<p><img src="/images/370E0ADEBC8049AA957517226C3D7E38clipboard.png" alt></p>
+<h2 id="Helm基本使用">Helm基本使用</h2>
+<p>Helm管理应用生命周期：</p>
+<ul>
+<li>
+<p>helm create 制作Chart</p>
+</li>
+<li>
+<p>helm install 部署</p>
+</li>
+<li>
+<p>helm upgrade 更新</p>
+</li>
+<li>
+<p>helm rollback 回滚</p>
+</li>
+<li>
+<p>helm uninstall 卸载</p>
+</li>
+</ul>
+<h2 id="Helm基本使用：制作Chart">Helm基本使用：制作Chart</h2>
+<p>创建chart：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm create mychart </span><br></pre></td></tr></table></figure>
+<p>打包chart：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm package mychart</span><br></pre></td></tr></table></figure>
+<ul>
+<li>
+<p>Chart.yaml：用于描述这个 Chart的基本信息，包括名字、描述信息以及 版本等。</p>
+</li>
+<li>
+<p>values.yaml ：用于存储 templates 目录中模板文件中用到变量的值。</p>
+</li>
+<li>
+<p>Templates： 目录里面存放所有yaml模板文件。</p>
+</li>
+<li>
+<p>charts：目录里存放这个chart依赖的所有子chart。</p>
+</li>
+<li>
+<p>NOTES.txt ：用于介绍Chart帮助信息， helm install 部署后展示给用户。 例如：如何使用这个 Chart、列出缺省的设置等。</p>
+</li>
+<li>
+<p>_helpers.tpl：放置模板的地方，可以在整个 chart 中重复使用。</p>
+</li>
+</ul>
+<h2 id="Helm基本使用：部署">Helm基本使用：部署</h2>
+<p>Helm核心是模板，即模板化K8s YAML文件。</p>
+<p>部署多个应用时，将需要改动的字段进行模板 化，可动态传入。</p>
+<p><img src="/images/C2E4292AE5C64932B9400425D070613Eclipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> mychart/templates/</span><br><span class="line"><span class="comment">#部署deployment</span></span><br><span class="line">vim deployment.yaml</span><br><span class="line"></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: &#123;&#123; .Release.Name &#125;&#125;-deployment</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: &#123;&#123; .Values.replicas &#125;&#125; <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: web1</span><br><span class="line">        image: &#123;&#123; .Values.image &#125;&#125;:&#123;&#123; .Values.imageTag &#125;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">#部署service</span></span><br><span class="line">vim service.yaml</span><br><span class="line"></span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web</span><br><span class="line">  name: &#123;&#123; .Release.Name &#125;&#125;-service</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: NodePort <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 80 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 80 <span class="comment"># 容器端口</span></span><br><span class="line">    nodePort: 30009    <span class="comment">#nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">cd</span> mychart/</span><br><span class="line"><span class="comment">#渲染变量</span></span><br><span class="line">vim values.yaml</span><br><span class="line">replicas: 3</span><br><span class="line">image: <span class="string">&quot;nginx&quot;</span></span><br><span class="line">imageTag: <span class="string">&quot;1.17&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#部署Chart：</span></span><br><span class="line">helm install web mychart/</span><br><span class="line"><span class="comment">#查看Release：</span></span><br><span class="line">helm list -n default</span><br><span class="line"><span class="comment">#查看部署的Pod：</span></span><br><span class="line">kubectl get pod </span><br><span class="line">kubectl get svc</span><br></pre></td></tr></table></figure>
+<p><img src="/images/8AEE0351668B4BA986921D2584E58C14clipboard.png" alt></p>
+<h2 id="Helm基本使用：升级">Helm基本使用：升级</h2>
+<p>为了实现Chart复用，可动态传参修改values.yaml中的 变量值，有两种方式：</p>
+<ul>
+<li>
+<p>–values，-f</p>
+</li>
+<li>
+<p>–set</p>
+</li>
+</ul>
+<p>例如将升级应用版本和副本数：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm upgrade --<span class="built_in">set</span> imageTag=1.18,replicas=1 web mychart/</span><br><span class="line">helm list </span><br><span class="line">helm <span class="built_in">history</span> web   <span class="comment">#查看历史版本</span></span><br><span class="line">kubectl get pod -o wdie</span><br><span class="line">curl -I 10.244.36.67  <span class="comment">#访问验证是否升级到指定版本  </span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/FA77FD2C2FBB45C58F9290D439233EF1clipboard.png" alt></p>
+<h2 id="Helm基本使用：回滚、卸载">Helm基本使用：回滚、卸载</h2>
+<p>回滚到上一个版本：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm rollback web</span><br></pre></td></tr></table></figure>
+<p>查看历史版本：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm <span class="built_in">history</span> web</span><br></pre></td></tr></table></figure>
+<p>回滚到指定版本：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm rollback web 1</span><br></pre></td></tr></table></figure>
+<p>卸载应用：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm uninstall web</span><br></pre></td></tr></table></figure>
+<h2 id="Helm基本使用：工作流程">Helm基本使用：工作流程</h2>
+<p><img src="/images/B139AB7AC42745A4A3F2E5687D96D0B6clipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm install web mychart/ --dry-run   <span class="comment">#尝试运行但不执行，调式</span></span><br><span class="line">helm install web mychart/</span><br><span class="line">helm get manifest web   <span class="comment">#显示web的清单</span></span><br></pre></td></tr></table></figure>
+<h2 id="公共Chart仓库">公共Chart仓库</h2>
+<p>国内Chart仓库，可直接使用它们制作好的包：</p>
+<ul>
+<li>
+<p>微软仓库（<a href="http://mirror.azure.cn/kubernetes/charts/%EF%BC%89">http://mirror.azure.cn/kubernetes/charts/）</a></p>
+</li>
+<li>
+<p>阿里云仓库（<a href="https://kubernetes.oss-cn-hangzhou.aliyuncs.com/charts">https://kubernetes.oss-cn-hangzhou.aliyuncs.com/charts</a> ）</p>
+</li>
+<li>
+<p>官方仓库（<a href="https://hub.kubeapps.com/charts/incubator%EF%BC%89">https://hub.kubeapps.com/charts/incubator）</a></p>
+</li>
+</ul>
+<p>添加仓库方式：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm repo add azure http://mirror.azure.cn/kubernetes/charts/</span><br><span class="line">helm repo add aliyun https://kubernetes.oss-cn-hangzhou.aliyuncs.com/charts </span><br><span class="line">helm repo update                       <span class="comment">#更新</span></span><br><span class="line">helm repo list                         <span class="comment">#列出当前的仓库</span></span><br><span class="line">helm search repo mysql                 <span class="comment">#搜索MySQL的chart包</span></span><br><span class="line">helm install mysql aliyun/mysql        <span class="comment">#安装</span></span><br><span class="line">helm pull aliyun/mysql --untar         <span class="comment">#从远程仓库中下载chart并解压到本地</span></span><br><span class="line">helm package mychart/                  <span class="comment">#打包自己的chart</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
       </tags>
   </entry>
   <entry>
@@ -462,6 +864,98 @@
       </tags>
   </entry>
   <entry>
+    <title>再谈有状态应用部署：StatefulSet控制器</title>
+    <url>/2022/07/13/%E5%86%8D%E8%B0%88%E6%9C%89%E7%8A%B6%E6%80%81%E5%BA%94%E7%94%A8%E9%83%A8%E7%BD%B2statefulset%E6%8E%A7%E5%88%B6%E5%99%A8/</url>
+    <content><![CDATA[<h2 id="无状态与有状态">无状态与有状态</h2>
+<p>Deployment控制器设计原则：管理的所有Pod一模一样，提供同一个服务，也不考虑在哪台Node 运行，可随意扩容和缩容。这种应用称为“无状态”，例如Web服务</p>
+<p>在实际的场景中，并不能满足所有应用，尤其是分布式应用，会部署多个实例，这些实例之间往往有 依赖关系，例如主从关系、主备关系，这种应用称为“有状态”，例如MySQL主从、Etcd集群</p>
+<h2 id="StatefulSet-控制器概述">StatefulSet 控制器概述</h2>
+<p>StatefulSet控制器用于部署有状态应用，满足一些有状态应 用的需求：</p>
+<ul>
+<li>
+<p>Pod有序的部署、扩容、删除和停止</p>
+</li>
+<li>
+<p>Pod分配一个稳定的且唯一的网络标识</p>
+</li>
+<li>
+<p>Pod分配一个独享的存储</p>
+</li>
+</ul>
+<h2 id="StatefulSet-控制器：网络标识">StatefulSet 控制器：网络标识</h2>
+<p>稳定的网络标识：使用Headless Service（相比普通Service只是将spec.clusterIP定义为None）来维 护Pod网络身份，会为每个Pod分配一个数字编号并且按照编号顺序部署。还需要在StatefulSet添加 serviceName: “nginx”字段指定StatefulSet控制器要使用这个Headless Service。</p>
+<p>稳定主要体现在主机名和Pod A记录：</p>
+<p>主机名：&lt;statefulset名称&gt;-&lt;编号&gt;</p>
+<p>Pod DNS A记录：&lt;statefulset名称-编号&gt;.<service-name>.<namespace>.svc.cluster.local</namespace></service-name></p>
+<p>部署statefulset控制器</p>
+<p>vim statefulset-web.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: StatefulSet</span><br><span class="line">metadata:</span><br><span class="line">  name: statefulset-web</span><br><span class="line">spec:</span><br><span class="line">  serviceName: <span class="string">&quot;handless-service&quot;</span></span><br><span class="line">  replicas: 3</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: nginx</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: nginx</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx</span><br><span class="line">        image: nginx</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br><span class="line">          name: web</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>部署handless-service</p>
+<p>vim handless-service.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: handless-service</span><br><span class="line">spec:</span><br><span class="line">  clusterIP: None</span><br><span class="line">  selector:</span><br><span class="line">    app: nginx</span><br><span class="line">  ports:</span><br><span class="line">    - protocol: TCP</span><br><span class="line">      port: 80</span><br><span class="line">      targetPort: 9376</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证查看</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f statefulset-web.yaml</span><br><span class="line">kubectl apply -f handless-service.yaml </span><br><span class="line">kubectl get pod,svc</span><br><span class="line">kubectl get statefulsets.apps </span><br></pre></td></tr></table></figure>
+<p>查看Pod创建顺序：</p>
+<p><img src="/images/80B71B676C07446E9B2AA1C978F26318clipboard.png" alt></p>
+<p>查看主机名：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl <span class="built_in">exec</span> statefulset-web-0 -- hostname</span><br><span class="line">kubectl <span class="built_in">exec</span> statefulset-web-1 -- hostname</span><br><span class="line">kubectl <span class="built_in">exec</span> statefulset-web-2 -- hostname</span><br></pre></td></tr></table></figure>
+<p><img src="/images/755E9E6EDA8941558B1745290F2D917Cclipboard.png" alt></p>
+<p>测试A记录解析：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl run -it dns-test --<span class="built_in">rm</span> --image=busybox:1.28.4 -- sh</span><br><span class="line">nslookup handless-service </span><br></pre></td></tr></table></figure>
+<p>解析出对应的三个Pod IP记录，其他Pod可使用这个名称访问：</p>
+<p><img src="/images/FAC6C069723344C2A0DB0C8F849AE00Dclipboard.png" alt></p>
+<h2 id="StatefulSet-控制器：独享存储">StatefulSet 控制器：独享存储</h2>
+<p>独享存储：StatefulSet的存储卷使用VolumeClaimTemplate创建，称为卷申请模板，当StatefulSet使用 VolumeClaimTemplate创建一个PersistentVolume时，同样也会为每个Pod分配并创建一个编号的PVC， 每个PVC绑定对应的PV，从而保证每个Pod都拥有独立的存储。</p>
+<p>部署nfs</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装nfs安装包（每个k8s节点都要安装）</span></span><br><span class="line">yum install nfs-utils</span><br><span class="line"></span><br><span class="line"><span class="comment">#创建nfs共享目录</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /nfs/kubernetes</span><br><span class="line"></span><br><span class="line"><span class="comment">#修改nfs配置文件</span></span><br><span class="line">vim /etc/exports</span><br><span class="line">/nfs/kubernetes *(rw,no_root_squash)</span><br><span class="line"></span><br><span class="line"><span class="comment">#启动nfs并加入开机自启</span></span><br><span class="line">systemctl start nfs</span><br><span class="line">systemctl <span class="built_in">enable</span> nfs</span><br><span class="line"></span><br><span class="line"><span class="comment">#尝试在别的K8s节点挂载nfs共享目录</span></span><br><span class="line">mount -t nfs 192.168.0.13:/nfs/kubernetes /mnt/</span><br></pre></td></tr></table></figure>
+<p>部署nfs-storage</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/kubernetes-incubator/external-storage </span><br><span class="line"><span class="built_in">cd</span> nfs-client/deploy </span><br><span class="line">kubectl apply -f rbac.yaml <span class="comment"># 授权访问apiserver </span></span><br><span class="line">kubectl apply -f deployment.yaml <span class="comment"># 部署插件，需修改里面NFS服务器地址与共享目录 </span></span><br><span class="line">kubectl apply -f class.yaml <span class="comment"># 创建存储类</span></span><br><span class="line"></span><br><span class="line">kubectl get sc  <span class="comment"># 查看存储类</span></span><br></pre></td></tr></table></figure>
+<p>部署statefulset控制器</p>
+<p>vim statefulset-web.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: StatefulSet</span><br><span class="line">metadata:</span><br><span class="line">  name: statefulset-web</span><br><span class="line">spec:</span><br><span class="line">  serviceName: <span class="string">&quot;handless-service&quot;</span></span><br><span class="line">  replicas: 3</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: nginx</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: nginx</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx</span><br><span class="line">        image: nginx</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br><span class="line">          name: web</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - name: www</span><br><span class="line">          mountPath: /usr/share/nginx/html</span><br><span class="line">  volumeClaimTemplates:</span><br><span class="line">  - metadata:</span><br><span class="line">      name: www</span><br><span class="line">    spec:</span><br><span class="line">      storageClassName: <span class="string">&quot;managed-nfs-storage&quot;</span></span><br><span class="line">      accessModes:</span><br><span class="line">      - ReadWriteOnce</span><br><span class="line">      resources:</span><br><span class="line">        requests:</span><br><span class="line">          storage: 1G</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl delete -f statefulset-web.yaml </span><br><span class="line">kubectl apply -f statefulset-web.yaml </span><br></pre></td></tr></table></figure>
+<p><img src="/images/050E337CBA4347278B9D0F4B2D7BBB2Aclipboard.png" alt></p>
+<p>nfs服务器共享目录</p>
+<p><img src="/images/BD3FFB854BCE4CEF8A11A7EE1B494B72clipboard.png" alt></p>
+<p>测试在这三个pv目录下创建三个不同内容的index.html页面，然后访问对应不同的Pod的IP</p>
+<p><img src="/images/BDD71F15C8FF4D99B2BC00D24806B61Dclipboard.png" alt></p>
+<p>验证访问</p>
+<p><img src="/images/127B91087C4C4170B0479529BD161B90clipboard.png" alt></p>
+<p>从上面图中，我们可以看到每个pod的数据都是独立存储的。</p>
+<p>测试删除statefulset控制器</p>
+<p><img src="/images/F37B91C5C39D4B548C6632FF7971A806clipboard.png" alt></p>
+<p>从上图可以看出，当我们删除pod的时候，并没有删除对应pvc和pv，而是做了数据的持久化。</p>
+<p>再次重建测试能否访问之前的数据</p>
+<p><img src="/images/907C87901FA54AF4A7B760C74CB4BBF7clipboard.png" alt></p>
+<p><img src="/images/AF4D65A9A4C84C3DB178061646047519clipboard.png" alt></p>
+<p>从上图可以看出，重建之后，数据还是之前的数据，每个pvc对应绑定每个pv，pod的IP发生了变化。</p>
+<p>kubernetes根据pod的编号找同样编号的pvc去挂载，从而实现了数据持久化。</p>
+<p>通过编号保证每个pod的启动顺序</p>
+<p>通过编号为每个pod创建不同的主机名以及dns A记录</p>
+<p>通过编号为每个pod创建独立的pvc</p>
+<h2 id="StatefulSet-控制器：小结">StatefulSet 控制器：小结</h2>
+<p>StatefulSet与Deployment区别：有身份的！</p>
+<p>身份三要素：</p>
+<ul>
+<li>
+<p>域名</p>
+</li>
+<li>
+<p>主机名</p>
+</li>
+<li>
+<p>存储（PVC）</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>基于Docker构建企业Jenkins平台</title>
     <url>/2022/05/27/%E5%9F%BA%E4%BA%8Edocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9Ajenkins%E5%B9%B3%E5%8F%B0/</url>
     <content><![CDATA[<p>CI/CD概述</p>
@@ -633,6 +1127,77 @@
       </categories>
       <tags>
         <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>实际项目部署案例</title>
+    <url>/2022/07/16/%E5%AE%9E%E9%99%85%E9%A1%B9%E7%9B%AE%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B/</url>
+    <content><![CDATA[<p>部署项目前的梳理：</p>
+<p>1.项目的代码构成，什么语言开发的</p>
+<p>2.项目的依赖环境</p>
+<p>3.项目的配置文件在哪里</p>
+<p>4.项目的端口清单</p>
+<p>5.项目有没有做数据的持久化</p>
+<h2 id="容器交付流程">容器交付流程</h2>
+<p><img src="/images/7327EAB29F8F4C73A7B379DF9D660DDEclipboard.png" alt></p>
+<h2 id="在K8s平台部署项目流程">在K8s平台部署项目流程</h2>
+<p><img src="/images/0749CCA49C9444DA9A410901C5F3C4B8clipboard.png" alt></p>
+<h2 id="在K8s平台部署Java网站项目">在K8s平台部署Java网站项目</h2>
+<p>阿里云maven源地址： <a href="https://maven.aliyun.com/mvn/guide">https://maven.aliyun.com/mvn/guide</a></p>
+<p>第一步：制作镜像</p>
+<p><img src="/images/1506058D05CA4D20B52B277B065B60ABclipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install java-1.8.0-openjdk maven git -y</span><br><span class="line">git <span class="built_in">clone</span> https://github.com/lizhenliang/tomcat-java-demo</span><br><span class="line">mvn clean package -Dmaven.test.skip=<span class="literal">true</span> <span class="comment"># 代码编译构建</span></span><br><span class="line">unzip target/*.war -d target/ROOT <span class="comment"># 解压构建文件</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">FROM lizhenliang/tomcat </span><br><span class="line">LABEL maintainer www.ctnrs.com</span><br><span class="line">RUN <span class="built_in">rm</span> -rf /usr/local/tomcat/webapps/*</span><br><span class="line">COPY target/ROOT /usr/local/tomcat/webapps/ROOT</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker build -t image:tag .</span><br><span class="line">docker push &lt;镜像仓库地址&gt;/&lt;项目名&gt;/image:tag</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run -d image:tag</span><br></pre></td></tr></table></figure>
+<p>使用镜像仓库（私有仓库、公共仓库）：</p>
+<p>1、配置可信任（如果仓库是HTTPS访问不用配置）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># vi /etc/docker/daemon.json</span></span><br><span class="line">&#123;</span><br><span class="line">    insecure-registries<span class="string">&quot;: [&quot;</span>192.168.0.13<span class="string">&quot;]</span></span><br><span class="line"><span class="string">&#125;    </span></span><br></pre></td></tr></table></figure>
+<p>2、将镜像仓库认证凭据保存在K8s Secret中</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create secret docker-registry registry-auth --docker-username=admin --docker-password=Harbor12345 --docker-server=192.168.0.13</span><br></pre></td></tr></table></figure>
+<p>3、在yaml中使用这个认证凭据</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">imagePullSecrets:</span><br><span class="line">- name: registry-auth</span><br></pre></td></tr></table></figure>
+<p><img src="/images/06ED566FF1074B42A72AF5B779FE1C3Aclipboard.png" alt></p>
+<p>配置认证的的原因是部署的harbor是私有仓库，k8s的每个节点每次去拉取镜像都必须登录harbor仓库，比较麻烦，通过在yaml配置文件指定docker登录认证凭据，这样docker每次部署的时候就会自动去拉取镜像了。</p>
+<p>第二步：使用控制器部署镜像</p>
+<p><img src="/images/335EB09272114DD3BF1BC4A424A77A7Dclipboard.png" alt></p>
+<p><img src="/images/64A3856A336D42DFA7B90B914E97D60Dclipboard.png" alt></p>
+<p>注意：在pod中挂载configmap配置文件时，如果指定容器内挂载的目录不是空目录，那么会覆盖原来目录下的内容。</p>
+<p>部署configmap</p>
+<p>vim configmap.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  name: java-demo-config</span><br><span class="line">data:</span><br><span class="line">    application.yml: |</span><br><span class="line">        server:</span><br><span class="line">          port: 8080</span><br><span class="line">        spring:</span><br><span class="line">          datasource:</span><br><span class="line">            url: jdbc:mysql://java-demo-db:3306/k8s?characterEncoding=utf-8</span><br><span class="line">            username: azhe</span><br><span class="line">            password: 123456</span><br><span class="line">            driver-class-name: com.mysql.jdbc.Driver</span><br><span class="line">          freemarker:</span><br><span class="line">            allow-request-override: <span class="literal">false</span></span><br><span class="line">            cache: <span class="literal">true</span></span><br><span class="line">            check-template-location: <span class="literal">true</span></span><br><span class="line">            charset: UTF-8</span><br><span class="line">            content-type: text/html; charset=utf-8</span><br><span class="line">            expose-request-attributes: <span class="literal">false</span></span><br><span class="line">            expose-session-attributes: <span class="literal">false</span></span><br><span class="line">            expose-spring-macro-helpers: <span class="literal">false</span></span><br><span class="line">            suffix: .ftl</span><br><span class="line">            template-loader-path:</span><br><span class="line">              - classpath:/templates/</span><br><span class="line"> </span><br></pre></td></tr></table></figure>
+<p>部署deployment</p>
+<p>vim deployment.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web</span><br><span class="line">spec:</span><br><span class="line">  replicas: 3</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: java</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: java</span><br><span class="line">    spec:</span><br><span class="line">      imagePullSecrets:</span><br><span class="line">      - name: registry-auth</span><br><span class="line">      containers:</span><br><span class="line">      - image: 192.168.0.13/demo/java-demo:v1</span><br><span class="line">        name: java-demo</span><br><span class="line">        resources:</span><br><span class="line">          requests:</span><br><span class="line">            cpu: 0.5</span><br><span class="line">            memory: 500Mi</span><br><span class="line">          limits:</span><br><span class="line">            cpu: 1</span><br><span class="line">            memory: 1Gi</span><br><span class="line">        livenessProbe:</span><br><span class="line">          httpGet:</span><br><span class="line">            path: /</span><br><span class="line">            port: 8080</span><br><span class="line">          initialDelaySeconds: 40</span><br><span class="line">          periodSeconds: 10</span><br><span class="line">        readinessProbe:</span><br><span class="line">          httpGet:</span><br><span class="line">            path: /</span><br><span class="line">            port: 8080</span><br><span class="line">          initialDelaySeconds: 40</span><br><span class="line">          periodSeconds: 10</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - name: config</span><br><span class="line">          mountPath: <span class="string">&quot;/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/application.yml&quot;</span></span><br><span class="line">          subPath: <span class="string">&quot;application.yml&quot;</span></span><br><span class="line">      volumes:</span><br><span class="line">      - name: config</span><br><span class="line">        configMap:</span><br><span class="line">          name: java-demo-config</span><br><span class="line">          items:</span><br><span class="line">          - key: <span class="string">&quot;application.yml&quot;</span></span><br><span class="line">            path: <span class="string">&quot;application.yml&quot;</span> </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f configmap.yaml </span><br><span class="line">kubectl apply -f deployment.yaml </span><br></pre></td></tr></table></figure>
+<p>第三步：对外暴露应用</p>
+<p><img src="/images/CE03F82EDAB4453B93B6E5C1B62E92E4clipboard.png" alt></p>
+<p>部署service</p>
+<p>vim service.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: java-demo</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    app: java</span><br><span class="line">  ports:</span><br><span class="line">    - protocol: TCP</span><br><span class="line">      port: 80</span><br><span class="line">      targetPort: 8080</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>部署ingress（首先部署nginx-ingress-controller，监听端口是80和443)</p>
+<p>vim ingress.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: java-demo</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: java.ctnrs.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">        - path: /</span><br><span class="line">          pathType: Prefix</span><br><span class="line">          backend:</span><br><span class="line">            service:</span><br><span class="line">              name: java-demo</span><br><span class="line">              port:</span><br><span class="line">                number: 80</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>部署mysql数据库（1.部署NFS实现自动创建PV插件 2.导入表到k8s数据库）</p>
+<p><a href="/attachments/AD05901F881F482EAC2E9A51FE4E8E13nfs-client.zip">nfs-client.zip</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装nfs安装包（每个k8s节点都要安装）</span></span><br><span class="line">yum install nfs-utils</span><br><span class="line"><span class="comment">#创建nfs共享目录</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /nfs/kubernetes</span><br><span class="line"><span class="comment">#修改nfs配置文件</span></span><br><span class="line">vim /etc/exports</span><br><span class="line">/nfs/kubernetes *(rw,no_root_squash)</span><br><span class="line"><span class="comment">#启动nfs并加入开机自启</span></span><br><span class="line">systemctl start nfs</span><br><span class="line">systemctl <span class="built_in">enable</span> nfs</span><br><span class="line"></span><br><span class="line"><span class="comment">#部署NFS实现自动创建PV插件：</span></span><br><span class="line">git <span class="built_in">clone</span> https://github.com/kubernetes-incubator/external-storage </span><br><span class="line"><span class="built_in">cd</span> nfs-client/deploy </span><br><span class="line">kubectl apply -f rbac.yaml <span class="comment"># 授权访问apiserver </span></span><br><span class="line">kubectl apply -f deployment.yaml <span class="comment"># 部署插件，需修改里面NFS服务器地址与共享目录 </span></span><br><span class="line">kubectl apply -f class.yaml <span class="comment"># 创建存储类</span></span><br><span class="line">kubectl get sc  <span class="comment"># 查看存储类</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#导入表到k8s数据库</span></span><br><span class="line">kubectl get pod </span><br><span class="line">kubectl <span class="built_in">cp</span> tables_ly_tomcat.sql java-demo-db-6c775c4d4b-7xfgc:/</span><br><span class="line">kubectl <span class="built_in">exec</span> -it java-demo-db-6c775c4d4b-7xfgc -- bash</span><br><span class="line">mysql -u root -p<span class="variable">$MYSQL_ROOT_PASSWORD</span></span><br><span class="line">show databses;</span><br><span class="line">use k8s;</span><br><span class="line"><span class="built_in">source</span> /tables_ly_tomcat.sql;</span><br></pre></td></tr></table></figure>
+<p>vim mysql.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Secret</span><br><span class="line">metadata:</span><br><span class="line">  name: java-demo-db </span><br><span class="line">  namespace: default</span><br><span class="line"><span class="built_in">type</span>: Opaque</span><br><span class="line">data:</span><br><span class="line">  mysql-root-password: <span class="string">&quot;MTIzNDU2&quot;</span></span><br><span class="line">  mysql-password: <span class="string">&quot;MTIzNDU2&quot;</span></span><br><span class="line">---</span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: java-demo-db </span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      project: www</span><br><span class="line">      app: mysql</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        project: www</span><br><span class="line">        app: mysql</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: db</span><br><span class="line">        image: mysql:5.7.30</span><br><span class="line">        resources:</span><br><span class="line">          requests:</span><br><span class="line">            cpu: 500m</span><br><span class="line">            memory: 512Mi</span><br><span class="line">          limits: </span><br><span class="line">            cpu: 500m</span><br><span class="line">            memory: 512Mi</span><br><span class="line">        <span class="built_in">env</span>:</span><br><span class="line">        - name: MYSQL_ROOT_PASSWORD</span><br><span class="line">          valueFrom:</span><br><span class="line">            secretKeyRef:</span><br><span class="line">              name: java-demo-db</span><br><span class="line">              key: mysql-root-password</span><br><span class="line">        - name: MYSQL_PASSWORD</span><br><span class="line">          valueFrom:</span><br><span class="line">            secretKeyRef:</span><br><span class="line">              name: java-demo-db</span><br><span class="line">              key: mysql-password</span><br><span class="line">        - name: MYSQL_USER</span><br><span class="line">          value: <span class="string">&quot;azhe&quot;</span></span><br><span class="line">        - name: MYSQL_DATABASE</span><br><span class="line">          value: <span class="string">&quot;k8s&quot;</span></span><br><span class="line">        ports:</span><br><span class="line">        - name: mysql</span><br><span class="line">          containerPort: 3306</span><br><span class="line">        livenessProbe:</span><br><span class="line">          <span class="built_in">exec</span>:</span><br><span class="line">            <span class="built_in">command</span>:</span><br><span class="line">            - sh</span><br><span class="line">            - -c</span><br><span class="line">            - <span class="string">&quot;mysqladmin ping -u root -p<span class="variable">$&#123;MYSQL_ROOT_PASSWORD&#125;</span>&quot;</span></span><br><span class="line">          initialDelaySeconds: 30</span><br><span class="line">          periodSeconds: 10</span><br><span class="line">        readinessProbe:</span><br><span class="line">          <span class="built_in">exec</span>:</span><br><span class="line">            <span class="built_in">command</span>:</span><br><span class="line">            - sh</span><br><span class="line">            - -c</span><br><span class="line">            - <span class="string">&quot;mysqladmin ping -u root -p<span class="variable">$&#123;MYSQL_ROOT_PASSWORD&#125;</span>&quot;</span></span><br><span class="line">          initialDelaySeconds: 5</span><br><span class="line">          periodSeconds: 10</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - name: data</span><br><span class="line">          mountPath: /var/lib/mysql</span><br><span class="line">        </span><br><span class="line">      volumes:</span><br><span class="line">      - name: data</span><br><span class="line">        persistentVolumeClaim:</span><br><span class="line">          claimName: java-demo-db</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: PersistentVolumeClaim</span><br><span class="line">metadata:</span><br><span class="line">  name: java-demo-db </span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  storageClassName: <span class="string">&quot;managed-nfs-storage&quot;</span></span><br><span class="line">  accessModes:</span><br><span class="line">    - <span class="string">&quot;ReadWriteOnce&quot;</span></span><br><span class="line">  resources:</span><br><span class="line">    requests:</span><br><span class="line">      storage: <span class="string">&quot;8Gi&quot;</span></span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: java-demo-db</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP</span><br><span class="line">  ports:</span><br><span class="line">  - name: mysql</span><br><span class="line">    port: 3306</span><br><span class="line">    targetPort: mysql</span><br><span class="line">  selector:</span><br><span class="line">    project: www</span><br><span class="line">    app: mysql </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f service.yaml </span><br><span class="line">kubectl apply -f ingress.yaml </span><br><span class="line">kubectl apply -f mysql.yaml </span><br></pre></td></tr></table></figure>
+<p><a href="http://xn--java-pr9l020c.ctnrs.com">访问java.ctnrs.com</a>，添加用户验证数据库是否可用</p>
+<p>第四步：增加公网负载均衡器</p>
+<p><img src="/images/FF2962E0EEF647ECBE7499D744E04A67clipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">upstream java-demo &#123;</span><br><span class="line">      server 192.168.0.12:80;</span><br><span class="line">      server 192.168.0.13:80;</span><br><span class="line">    &#125;</span><br><span class="line">      server &#123;</span><br><span class="line">         listen 81;</span><br><span class="line">         server_name java.ctnrs.com;</span><br><span class="line">         location / &#123;</span><br><span class="line">            proxy_pass http://java-demo;</span><br><span class="line">            proxy_set_header Host <span class="variable">$Host</span>;</span><br><span class="line">         &#125;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><a href="http://xn--java-pr9l020c.ctnrs.com:81">访问java.ctnrs.com:81</a></p>
+<p>1、为指定用户授权访问不同命名空间权限</p>
+<p>2、使用Helm完成Java网站项目部署</p>
+<p>注：自由发挥，实现需求即可</p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
       </tags>
   </entry>
   <entry>
@@ -1040,6 +1605,191 @@
       </tags>
   </entry>
   <entry>
+    <title>数据卷与持久数据卷</title>
+    <url>/2022/07/12/%E6%95%B0%E6%8D%AE%E5%8D%B7%E4%B8%8E%E6%8C%81%E4%B9%85%E6%95%B0%E6%8D%AE%E5%8D%B7/</url>
+    <content><![CDATA[<h2 id="为什么需要存储卷">为什么需要存储卷</h2>
+<p>容器部署过程中一般有以下三种数据：</p>
+<ul>
+<li>
+<p>启动时需要的初始数据，例如配置文件</p>
+</li>
+<li>
+<p>启动过程中产生的临时数据，该临时数据需要多个容器间共享</p>
+</li>
+<li>
+<p>启动过程中产生的持久化数据，例如MySQL的data目录</p>
+</li>
+</ul>
+<p><img src="/images/FB8D2370347643C8B7E7A9D6D7009856clipboard.png" alt></p>
+<h2 id="数据卷概述">数据卷概述</h2>
+<ul>
+<li>
+<p>Kubernetes中的Volume提供了在容器中挂载外部存储的能力</p>
+</li>
+<li>
+<p>Pod需要设置卷来源（spec.volume）和挂载点（spec.containers.volumeMounts）两个信息后才可以使用相应的Volume</p>
+</li>
+</ul>
+<p>数据卷类型大致分类：</p>
+<ul>
+<li>
+<p>本地（hostPath，emptyDir等）</p>
+</li>
+<li>
+<p>网络（NFS，Ceph，GlusterFS等）</p>
+</li>
+<li>
+<p>公有云（AWS EBS等）</p>
+</li>
+<li>
+<p>K8S资源（configmap，secret等）</p>
+</li>
+</ul>
+<p>支持的数据劵类型：<a href="https://kubernetes.io/docs/concepts/storage/volumes/">https://kubernetes.io/docs/concepts/storage/volumes/</a></p>
+<h2 id="数据卷：emptyDir">数据卷：emptyDir</h2>
+<p>emptyDir卷：是一个临时存储卷，与Pod生命周期绑定一起，如果 Pod删除了卷也会被删除。</p>
+<p>应用场景：Pod中容器之间数据共享</p>
+<p>示例：Pod内容器之前共享数据</p>
+<p>vim emptyDir.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: emptydir-pod</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - name: write</span><br><span class="line">    image: centos</span><br><span class="line">    <span class="built_in">command</span>: [<span class="string">&quot;bash&quot;</span>,<span class="string">&quot;-c&quot;</span>,<span class="string">&quot;for i in &#123;1..100&#125;;do echo <span class="variable">$i</span> &gt;&gt; /data/hello;sleep 1;done&quot;</span>]</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: data</span><br><span class="line">      mountPath: /data</span><br><span class="line">  - name: <span class="built_in">read</span></span><br><span class="line">    image: centos</span><br><span class="line">    <span class="built_in">command</span>: [<span class="string">&quot;bash&quot;</span>,<span class="string">&quot;-c&quot;</span>,<span class="string">&quot;tail -f /data/hello&quot;</span>]</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: data</span><br><span class="line">      mountPath: /data</span><br><span class="line"></span><br><span class="line">  volumes:</span><br><span class="line">  - name: data</span><br><span class="line">    emptyDir: &#123;&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证查看</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f emptyDir.yaml </span><br><span class="line">kubectl get pod </span><br><span class="line">kubectl <span class="built_in">exec</span> -it emptydir-pod -c write -- bash   <span class="comment">#写容器</span></span><br><span class="line"><span class="comment"># ls /data/</span></span><br><span class="line">kubectl <span class="built_in">exec</span> -it emptydir-pod -c <span class="built_in">read</span> -- bash    <span class="comment">#读容器</span></span><br><span class="line"><span class="comment"># ls /data/</span></span><br><span class="line"><span class="comment"># tail -f /data/hello </span></span><br><span class="line"></span><br><span class="line"><span class="comment">#数据目录存放在本地的路径</span></span><br><span class="line">kubectl get pod -o wide  <span class="comment">#查看该pod在哪个节点，对应节点查看数据卷目录</span></span><br><span class="line"><span class="comment">#data的存放目录路径</span></span><br><span class="line">docker ps -l         <span class="comment">#查看最近创建的容器</span></span><br><span class="line">/var/lib/kubelet/pods/53d07406-364b-4d85-90b9-e3a6dca15427/volumes/kubernetes.io~empty-dir/data</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="数据卷：hostPath">数据卷：hostPath</h2>
+<p>hostPath卷：挂载Node文件系统（Pod所在节点）上文件或者目 录到Pod中的容器。</p>
+<p>应用场景：Pod中容器需要访问宿主机文件</p>
+<p>示例：将宿主机/tmp目录挂载到容器/data目录</p>
+<p>vim hostpath.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: hostpath-pod</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - name: busybox</span><br><span class="line">    image: busybox</span><br><span class="line">    args:</span><br><span class="line">    - /bin/sh</span><br><span class="line">    - -c</span><br><span class="line">    - <span class="built_in">sleep</span> 36000</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: data</span><br><span class="line">      mountPath: /data</span><br><span class="line"></span><br><span class="line">  volumes:</span><br><span class="line">  - name: data</span><br><span class="line">    hostPath:</span><br><span class="line">      path: /tmp</span><br><span class="line">      <span class="built_in">type</span>: Directory</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证查看</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f hostpath.yaml </span><br><span class="line">kubectl get pod -o wide     <span class="comment">#查看该pod所在节点</span></span><br><span class="line">kubectl <span class="built_in">exec</span> -it hostpath-pod -- sh</span><br><span class="line"><span class="comment"># ls /data/</span></span><br><span class="line"></span><br><span class="line">在pod所在节点的/tmp目录下创建文件，验证pod中/data目录下能否看见</span><br><span class="line"><span class="built_in">touch</span> /tmp/xiaozhe.txt </span><br></pre></td></tr></table></figure>
+<h2 id="数据卷：NFS">数据卷：NFS</h2>
+<p>NFS数据卷：提供对NFS挂载支持，可以自动将NFS共享 路径挂载到Pod中</p>
+<p>NFS：是一个主流的文件共享服务器。</p>
+<p><img src="/images/28A0DA7356A64912A77B538BF4AEAF76clipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装nfs安装包（每个k8s节点都要安装）</span></span><br><span class="line">yum install nfs-utils</span><br><span class="line"></span><br><span class="line"><span class="comment">#创建nfs共享目录</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /nfs/kubernetes</span><br><span class="line"></span><br><span class="line"><span class="comment">#修改nfs配置文件</span></span><br><span class="line">vim /etc/exports</span><br><span class="line">/nfs/kubernetes *(rw,no_root_squash)</span><br><span class="line"></span><br><span class="line"><span class="comment">#启动nfs并加入开机自启</span></span><br><span class="line">systemctl start nfs</span><br><span class="line">systemctl <span class="built_in">enable</span> nfs</span><br><span class="line"></span><br><span class="line"><span class="comment">#尝试在别的K8s节点挂载nfs共享目录</span></span><br><span class="line">mount -t nfs 192.168.0.13:/nfs/kubernetes /mnt/</span><br><span class="line"></span><br><span class="line"><span class="comment">#在/mnt下新建文件，验证在nfs服务器共享目录下能否看到该文件</span></span><br><span class="line"><span class="built_in">touch</span> /mnt/index.html</span><br><span class="line"><span class="built_in">ls</span> /nfs/kubernetes/</span><br></pre></td></tr></table></figure>
+<p>示例：将网站程序通过NFS数据卷共享，让所有Pod使用</p>
+<p>vim nfs.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: nfs-deployment</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: nfs-nginx</span><br><span class="line">  replicas: 3</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: nfs-nginx</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx</span><br><span class="line">        image: nginx</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - name: wwwroot</span><br><span class="line">          mountPath: /usr/share/nginx/html</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br><span class="line"></span><br><span class="line">      volumes:</span><br><span class="line">      - name: wwwroot</span><br><span class="line">        nfs:</span><br><span class="line">          server: 192.168.0.13</span><br><span class="line">          path: /nfs/kubernetes</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证查看</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f nfs.yaml </span><br><span class="line">kubectl get pod -o wide</span><br><span class="line"></span><br><span class="line"><span class="comment">#在nfs服务器上修改nfs的共享目录下index.html里面的内容</span></span><br><span class="line"><span class="built_in">echo</span> hello &gt; index.html</span><br><span class="line">curl 10.244.36.74     <span class="comment">#访问nfs的任意pod的IP，验证数据是否共享</span></span><br><span class="line">hello</span><br></pre></td></tr></table></figure>
+<h2 id="持久卷概述">持久卷概述</h2>
+<p>PersistentVolume（PV）：对存储资源创建和使用的抽象，使得存储作为集群中的资源管理 • PersistentVolumeClaim（PVC）：让用户不需要关心具体的Volume实现细节</p>
+<h2 id="PV与PVC使用流程">PV与PVC使用流程</h2>
+<p><img src="/images/FF65698AA4024189919794B4672DE56Bclipboard.png" alt></p>
+<p>支持持久卷的存储插件：<a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/">https://kubernetes.io/docs/concepts/storage/persistent-volumes/</a></p>
+<p>vim pv.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: PersistentVolume</span><br><span class="line">metadata:</span><br><span class="line">  name: my-pv</span><br><span class="line">spec:</span><br><span class="line">  capacity:</span><br><span class="line">    storage: 5Gi</span><br><span class="line">  accessModes:</span><br><span class="line">    - ReadWriteMany</span><br><span class="line">  nfs:</span><br><span class="line">    path: /nfs/kubernetes</span><br><span class="line">    server: 192.168.0.13</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>vim pvc-deployment.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: pvc-deployment</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: pvc-nginx</span><br><span class="line">  replicas: 3</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: pvc-nginx</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx</span><br><span class="line">        image: nginx</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - name: wwwroot</span><br><span class="line">          mountPath: /usr/share/nginx/html</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br><span class="line"></span><br><span class="line">      volumes:</span><br><span class="line">      - name: wwwroot</span><br><span class="line">        persistentVolumeClaim:</span><br><span class="line">          claimName: my-pvc</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: PersistentVolumeClaim</span><br><span class="line">metadata:</span><br><span class="line">  name: my-pvc</span><br><span class="line">spec:</span><br><span class="line">  accessModes:</span><br><span class="line">    - ReadWriteMany</span><br><span class="line">  resources:</span><br><span class="line">    requests:</span><br><span class="line">      storage: 5Gi</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证访问</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f pv.yaml </span><br><span class="line">kubectl apply -f pvc-deployment.yaml </span><br><span class="line">kubectl get pv,pvc</span><br><span class="line">kubectl get pod -o wide     </span><br><span class="line">curl 10.244.169.139         <span class="comment">#访问该pod对应的IP</span></span><br><span class="line">hello</span><br></pre></td></tr></table></figure>
+<p><img src="/images/ED2ECD142CBB4EAAB83BC7E2AB52D234clipboard.png" alt></p>
+<h2 id="PV-生命周期">PV 生命周期</h2>
+<p>ACCESS MODES（访问模式）：</p>
+<p>AccessModes 是用来对 PV 进行访问模式的设置，用于描述用户应用对存储资源的访问权限，访问权限包括下面几种方式：</p>
+<ul>
+<li>
+<p>ReadWriteOnce（RWO）：读写权限，但是只能被单个节点挂载</p>
+</li>
+<li>
+<p>ReadOnlyMany（ROX）：只读权限，可以被多个节点挂载</p>
+</li>
+<li>
+<p>ReadWriteMany（RWX）：读写权限，可以被多个节点挂载</p>
+</li>
+</ul>
+<p>RECLAIM POLICY（回收策略）：</p>
+<p>目前 PV 支持的策略有三种：</p>
+<ul>
+<li>
+<p>Retain（保留）： 保留数据，需要管理员手工清理数据</p>
+</li>
+<li>
+<p>Recycle（回收）：清除 PV 中的数据，效果相当于执行 rm -rf /ifs/kuberneres/*</p>
+</li>
+<li>
+<p>Delete（删除）：与 PV 相连的后端存储同时删除</p>
+</li>
+</ul>
+<p>STATUS（状态）：</p>
+<p>一个 PV 的生命周期中，可能会处于4中不同的阶段：</p>
+<ul>
+<li>
+<p>Available（可用）：表示可用状态，还未被任何 PVC 绑定</p>
+</li>
+<li>
+<p>Bound（已绑定）：表示 PV 已经被 PVC 绑定</p>
+</li>
+<li>
+<p>Released（已释放）：PVC 被删除，但是资源还未被集群重新声明</p>
+</li>
+<li>
+<p>Failed（失败）： 表示该 PV 的自动回收失败</p>
+</li>
+</ul>
+<p>现在PV使用方式称为静态供给，需要K8s运维工程师提前创 建一堆PV，供开发者使用。</p>
+<p><img src="/images/7F6C904DF2F547EFA22234DA45AC0D74clipboard.png" alt></p>
+<p>在nfs服务器共享目录下创建多个目录，供下面引用不同的pv匹配不同的pv目录</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> /nfs/kubernetes/</span><br><span class="line"><span class="built_in">mkdir</span> pv&#123;2,3,4&#125;</span><br><span class="line"><span class="built_in">cd</span> pv2/</span><br><span class="line"><span class="built_in">echo</span> 222 &gt;index.html</span><br><span class="line"><span class="built_in">cd</span> ../pv4/</span><br><span class="line"><span class="built_in">echo</span> 444 &gt;index.html    </span><br></pre></td></tr></table></figure>
+<p>vim pv234.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: PersistentVolume</span><br><span class="line">metadata:</span><br><span class="line">  name: pv2</span><br><span class="line">spec:</span><br><span class="line">  capacity:</span><br><span class="line">    storage: 3Gi</span><br><span class="line">  accessModes:</span><br><span class="line">    - ReadWriteMany</span><br><span class="line">  nfs:</span><br><span class="line">    path: /nfs/kubernetes/pv2</span><br><span class="line">    server: 192.168.0.13</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: PersistentVolume</span><br><span class="line">metadata:</span><br><span class="line">  name: pv3</span><br><span class="line">spec:</span><br><span class="line">  capacity:</span><br><span class="line">    storage: 5Gi</span><br><span class="line">  accessModes:</span><br><span class="line">    - ReadWriteMany</span><br><span class="line">  nfs:</span><br><span class="line">    path: /nfs/kubernetes/pv3</span><br><span class="line">    server: 192.168.0.13</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: PersistentVolume</span><br><span class="line">metadata:</span><br><span class="line">  name: pv4</span><br><span class="line">spec:</span><br><span class="line">  capacity:</span><br><span class="line">    storage: 10Gi</span><br><span class="line">  accessModes:</span><br><span class="line">    - ReadWriteMany</span><br><span class="line">  nfs:</span><br><span class="line">    path: /nfs/kubernetes/pv4</span><br><span class="line">    server: 192.168.0.13</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>vim pvc234-deployment.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: pvc234-deployment</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: pvc234-nginx</span><br><span class="line">  replicas: 3</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: pvc234-nginx</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx</span><br><span class="line">        image: nginx</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - name: wwwroot</span><br><span class="line">          mountPath: /usr/share/nginx/html</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br><span class="line"></span><br><span class="line">      volumes:</span><br><span class="line">      - name: wwwroot</span><br><span class="line">        persistentVolumeClaim:</span><br><span class="line">          claimName: pv2</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: PersistentVolumeClaim</span><br><span class="line">metadata:</span><br><span class="line">  name: pv2</span><br><span class="line">spec:</span><br><span class="line">  accessModes:</span><br><span class="line">    - ReadWriteMany</span><br><span class="line">  resources:</span><br><span class="line">    requests:</span><br><span class="line">      storage: 8Gi</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证查看</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f pv234.yaml </span><br><span class="line">kubectl apply -f pvc234-deployment.yaml </span><br><span class="line">kubectl get pv,pvc</span><br></pre></td></tr></table></figure>
+<p><img src="/images/4E8E666509E344BB9880A3EE7743CDBCclipboard.png" alt></p>
+<p>从上面pvc234-deployment.yaml 文件配置可以看到，配置文件指定的pvc是pv2，使用最大容量是8Gi，但是pv2的容量可以看到是3Gi，并不满足你要使用的容量，但是为了尽可能的分配给你，所以它将pv4指定了给你使用，pv4的容量是10Gi。</p>
+<p>访问</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get pod -o wide    <span class="comment">#查看该pod对应的IP</span></span><br><span class="line">curl 10.244.36.76        <span class="comment">#可以看到结果是pv4目录下的内容</span></span><br><span class="line">444                      </span><br></pre></td></tr></table></figure>
+<h2 id="PV-动态供给（StorageClass）">PV 动态供给（StorageClass）</h2>
+<p>PV静态供给明显的缺点是维护成本太高了！</p>
+<p>因此，K8s开始支持PV动态供给，使用StorageClass对象实现。</p>
+<p><img src="/images/F0D3C44DEBDE478DB81FA77DACA6BD67clipboard.png" alt></p>
+<p>支持动态供给的存储插件：<a href="https://kubernetes.io/docs/concepts/storage/storage-classes/">https://kubernetes.io/docs/concepts/storage/storage-classes/</a></p>
+<p><img src="/images/4B20627845894BA38107F554AE2F816Eclipboard.png" alt></p>
+<p>部署NFS实现自动创建PV插件：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/kubernetes-incubator/external-storage </span><br><span class="line"><span class="built_in">cd</span> nfs-client/deploy </span><br><span class="line">kubectl apply -f rbac.yaml <span class="comment"># 授权访问apiserver </span></span><br><span class="line">kubectl apply -f deployment.yaml <span class="comment"># 部署插件，需修改里面NFS服务器地址与共享目录 </span></span><br><span class="line">kubectl apply -f class.yaml <span class="comment"># 创建存储类</span></span><br><span class="line"></span><br><span class="line">kubectl get sc  <span class="comment"># 查看存储类</span></span><br></pre></td></tr></table></figure>
+<p><a href="/attachments/9CF482103C694E018A1FEDFC08B95305nfs-client.zip">nfs-client.zip</a></p>
+<p>#修改deployment.yaml 修改里面NFS服务器地址与共享目录</p>
+<p><img src="/images/36841FF64E8B43B6BA77621F00E1EAFFclipboard.png" alt></p>
+<p>vim sc-deployment.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: sc-deployment</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: sc-nginx</span><br><span class="line">  replicas: 3</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: sc-nginx</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx</span><br><span class="line">        image: nginx</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - name: wwwroot</span><br><span class="line">          mountPath: /usr/share/nginx/html</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br><span class="line"></span><br><span class="line">      volumes:</span><br><span class="line">      - name: wwwroot</span><br><span class="line">        persistentVolumeClaim:</span><br><span class="line">          claimName: nfs-pvc</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: PersistentVolumeClaim</span><br><span class="line">metadata:</span><br><span class="line">  name: nfs-pvc</span><br><span class="line">spec:</span><br><span class="line">  storageClassName: <span class="string">&quot;managed-nfs-storage&quot;</span>  <span class="comment">#在创建pvc时指定存储类名称</span></span><br><span class="line">  accessModes:</span><br><span class="line">    - ReadWriteMany</span><br><span class="line">  resources:</span><br><span class="line">    requests:</span><br><span class="line">      storage: 12Gi</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f sc-deployment.yaml </span><br><span class="line">kubectl get pv,pvc</span><br></pre></td></tr></table></figure>
+<p><img src="/images/B5135FE1E30A49D09D5705CF74E0127Dclipboard.png" alt></p>
+<p>从上图可以看出当我们使用kubectl创建一个deployment时，它会请求managed-nfs-storage（nfs存储类），然后managed-nfs-storage调用nfs-client-provisioner插件(pod)，帮我们自动创建pv。</p>
+<p>访问</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#在nfs服务器共享目录下新建文件</span></span><br><span class="line"><span class="built_in">cd</span> /nfs/kubernetes/default-nfs-pvc-pvc-2a62f7d8-b356-45d0-87cb-018c10447595</span><br><span class="line"><span class="built_in">echo</span> sc &gt; index.html</span><br><span class="line">kubectl get pod -o wide</span><br><span class="line">curl 10.244.169.142      <span class="comment">#验证数据是否是新建的内容</span></span><br><span class="line">sc</span><br></pre></td></tr></table></figure>
+<p>删除deployment</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl delete -f sc-deployment.yaml</span><br></pre></td></tr></table></figure>
+<p>在nfs服务器上的共享目录查看</p>
+<p><img src="/images/B45261F8AE7B4F79815693DABBBC1544clipboard.png" alt></p>
+<p><img src="/images/EF34312BE1134B1CA0B0D557B9299951clipboard.png" alt></p>
+<p><img src="/images/F8A5A52C50774ACE84922233ED73CF99clipboard.png" alt></p>
+<p>从上面可以看出，nfs的回收策略是deployment删除后端的存储也同时删除，但是当我们把deployment删除之后，数据共享目录还在，并没有删除，它只是帮我们把数据共享目录归档了，如果要删除需要修改class.yaml 配置文件中的archiveOnDelete为false，这时就会帮我们删除后端数据共享目录。</p>
+<p><img src="/images/CEA08EB09CA34E518ABCAD947DE16DA3clipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f class.yaml  <span class="comment">#更新配置</span></span><br><span class="line">kubectl delete -f sc-deployment.yaml   </span><br><span class="line">kubectl apply -f sc-deployment.yaml    <span class="comment">#删除再创建</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#再次在nfs服务器共享目录下新建文件</span></span><br><span class="line"><span class="built_in">cd</span> /nfs/kubernetes/default-nfs-pvc-pvc-d5ca3b6e-7045-4868-8fdf-17063bc19e13</span><br><span class="line"><span class="built_in">echo</span> 123456 &gt; index.html</span><br><span class="line">kubectl get pod -o wide</span><br><span class="line">curl 10.244.169.142      <span class="comment">#验证数据是否是新建的内容</span></span><br><span class="line">123456</span><br><span class="line"></span><br><span class="line"><span class="comment">#删除deployment后，验证在nfs服务器上查看是否删除了数据共享目录下的pv目录</span></span><br><span class="line">kubectl delete -f sc-deployment.yaml  </span><br></pre></td></tr></table></figure>
+<p>Q：PV与PVC什么关系？</p>
+<p>A：一对一</p>
+<p>Q：PVC与PV怎么匹配的？</p>
+<p>A：访问模式和存储容量</p>
+<p>Q：容量匹配策略</p>
+<p>A：匹配就近的符合的容量（向上）</p>
+<p>Q：存储容量是真的用于限制吗？</p>
+<p>A：存储容量取决于后端存储，容量字段主要还是用于匹配</p>
+<p>1、使用Ingress暴露应用对外访问</p>
+<p>2、创建一个configmap，使用环境变量和数据卷方式引用</p>
+<p>3、创建一个pv，再创建一个pod使用该pv</p>
+<p>4、配置PV自动供给，再创建一个pod使用该pv</p>
+<p>注：自由发挥，实现需求即可</p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>深入理解Pod对象：基本管理</title>
     <url>/2022/06/14/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3pod%E5%AF%B9%E8%B1%A1%E5%9F%BA%E6%9C%AC%E7%AE%A1%E7%90%86/</url>
     <content><![CDATA[<h2 id="Pod基本概念">Pod基本概念</h2>
@@ -1387,6 +2137,83 @@
 <p>验证：</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f pod5.yaml </span><br><span class="line">kubectl get pod   <span class="comment">#可以看到pod成功运行，因为它不经过调度器</span></span><br></pre></td></tr></table></figure>
 <p>适用于调度器故障的时候，可以手动指定分配pod到某个节点上，很少使用。</p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>管理应用程序配置</title>
+    <url>/2022/07/11/%E7%AE%A1%E7%90%86%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E9%85%8D%E7%BD%AE/</url>
+    <content><![CDATA[<h2 id="ConfigMap">ConfigMap</h2>
+<p>创建ConfigMap后，数据实际会存储在K8s中Etcd，然后通过创建Pod时引用该数据。</p>
+<p>应用场景：应用程序配置</p>
+<p>Pod使用configmap数据有两种方式：</p>
+<ul>
+<li>
+<p>变量注入</p>
+</li>
+<li>
+<p>数据卷挂载</p>
+</li>
+</ul>
+<p>两种数据类型：</p>
+<ul>
+<li>
+<p>键值</p>
+</li>
+<li>
+<p>多行数据</p>
+</li>
+</ul>
+<p>#解释</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  <span class="comment">#pod的名字</span></span><br><span class="line">  name: configmap-demo-pod   </span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">    - name: demo</span><br><span class="line">      image: alpine</span><br><span class="line">      <span class="comment">#用进程夯筑容器不让它退出</span></span><br><span class="line">      <span class="built_in">command</span>: [<span class="string">&quot;sleep&quot;</span>, <span class="string">&quot;3600&quot;</span>]   </span><br><span class="line">      <span class="built_in">env</span>:</span><br><span class="line">        <span class="comment"># 定义环境变量</span></span><br><span class="line">        <span class="comment"># 请注意这里和 ConfigMap中的键名是不一样的（自定义键的名字）</span></span><br><span class="line">        - name: ABC </span><br><span class="line">          valueFrom:</span><br><span class="line">            configMapKeyRef:</span><br><span class="line">              <span class="comment"># 这个值来自 ConfigMa(comfigmap的名字)</span></span><br><span class="line">              name: configmap-demo     </span><br><span class="line">              <span class="comment"># 需要取值的键          </span></span><br><span class="line">              key: abc                       </span><br><span class="line">        - name: CDE</span><br><span class="line">          valueFrom:</span><br><span class="line">            configMapKeyRef:</span><br><span class="line">              name: configmap-demo</span><br><span class="line">              key: cde</span><br><span class="line">      volumeMounts:</span><br><span class="line">      <span class="comment">#引用下面数据卷的名字</span></span><br><span class="line">      - name: config     </span><br><span class="line">        <span class="comment">#挂载到容器中哪个目录下（一般是指你的应用程序配置文件存放目录）</span></span><br><span class="line">        mountPath: <span class="string">&quot;/config&quot;</span>            </span><br><span class="line">        readOnly: <span class="literal">true</span></span><br><span class="line">  volumes:</span><br><span class="line">    <span class="comment"># 你可以在 Pod 级别设置卷，然后将其挂载到 Pod 内的容器中</span></span><br><span class="line">    - name: config     <span class="comment">#数据卷的名字</span></span><br><span class="line">      configMap:</span><br><span class="line">        <span class="comment"># 提供你想要挂载的 ConfigMap 的名字</span></span><br><span class="line">        name: configmap-demo</span><br><span class="line">        <span class="comment"># 来自 ConfigMap 的一组键，将被创建为文件</span></span><br><span class="line">        items:</span><br><span class="line">        - key: <span class="string">&quot;redis.properties&quot;</span>     </span><br><span class="line">          path: <span class="string">&quot;redis.properties&quot;</span>   <span class="comment">#挂载到/config目录下的文件名</span></span><br></pre></td></tr></table></figure>
+<p>vim configmap.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  name: configmap-demo</span><br><span class="line">data:</span><br><span class="line">  abc: <span class="string">&quot;123&quot;</span></span><br><span class="line">  cde: <span class="string">&quot;456&quot;</span></span><br><span class="line"></span><br><span class="line">  redis.properties: |</span><br><span class="line">    port: 6379</span><br><span class="line">    host: 192.168.0.11</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>vim configmap-demo-pod.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: configmap-demo-pod</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">    - name: demo</span><br><span class="line">      image: nginx</span><br><span class="line">      <span class="built_in">env</span>:</span><br><span class="line">        - name: ABC</span><br><span class="line">          valueFrom:</span><br><span class="line">            configMapKeyRef:</span><br><span class="line">              name: configmap-demo</span><br><span class="line">              key: abc</span><br><span class="line">        - name: CDE</span><br><span class="line">          valueFrom:</span><br><span class="line">            configMapKeyRef:</span><br><span class="line">              name: configmap-demo</span><br><span class="line">              key: cde</span><br><span class="line">      volumeMounts:</span><br><span class="line">      - name: config</span><br><span class="line">        mountPath: <span class="string">&quot;/config&quot;</span></span><br><span class="line">        readOnly: <span class="literal">true</span></span><br><span class="line">  volumes:</span><br><span class="line">    - name: config</span><br><span class="line">      configMap:</span><br><span class="line">        name: configmap-demo</span><br><span class="line">        items:</span><br><span class="line">        - key: <span class="string">&quot;redis.properties&quot;</span></span><br><span class="line">          path: <span class="string">&quot;redis.properties&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证查看</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f configmap.yaml</span><br><span class="line">kubectl apply -f configmap-demo-pod.yaml </span><br><span class="line">kubectl get configmaps </span><br><span class="line">kubectl <span class="built_in">exec</span> -it configmap-demo-pod -- bash   <span class="comment">#进入pod中测试是否注入变量和挂载</span></span><br><span class="line"><span class="comment">#echo $ABC</span></span><br><span class="line"><span class="comment">#echo $CDE</span></span><br><span class="line"><span class="comment">#ls /config/   </span></span><br></pre></td></tr></table></figure>
+<p>参考链接：<a href="https://kubernetes.io/zh/docs/concepts/configuration/configmap/">https://kubernetes.io/zh/docs/concepts/configuration/configmap/</a></p>
+<h2 id="Secret">Secret</h2>
+<p>与ConfigMap类似，区别在于Secret主要存储敏感数据，所有的数据要经过base64编码。</p>
+<p>应用场景：凭据</p>
+<p>kubectl create secret 支持三种数据类型：</p>
+<ul>
+<li>
+<p>docker-registry（<a href="http://kubernetes.io/dockerconfigjson%EF%BC%89%EF%BC%9A%E5%AD%98%E5%82%A8%E9%95%9C%E5%83%8F%E4%BB%93%E5%BA%93%E8%AE%A4%E8%AF%81%E4%BF%A1%E6%81%AF">kubernetes.io/dockerconfigjson）：存储镜像仓库认证信息</a></p>
+</li>
+<li>
+<p>generic（Opaque）：存储密码、密钥等</p>
+</li>
+<li>
+<p>tls（<a href="http://kubernetes.io/tls%EF%BC%89%EF%BC%9A%E5%AD%98%E5%82%A8TLS%E8%AF%81%E4%B9%A6">kubernetes.io/tls）：存储TLS证书</a></p>
+</li>
+</ul>
+<p>Pod使用Secret数据与ConfigMap方式一样。</p>
+<p>第一步：将用户名密码进行编码</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">[root@k8s-node1 ~]<span class="comment"># echo -n &#x27;admin&#x27; |base64 </span></span><br><span class="line">YWRtaW4=</span><br><span class="line">[root@k8s-node1 ~]<span class="comment"># echo -n &#x27;123.com&#x27; |base64 </span></span><br><span class="line">MTIzLmNvbQ==</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>第二步：将编码后值放到Secret</p>
+<p>vim secret.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Secret</span><br><span class="line">metadata:</span><br><span class="line">  name: db-user-pass</span><br><span class="line"><span class="built_in">type</span>: Opaque</span><br><span class="line">data:</span><br><span class="line">  username: YWRtaW4=</span><br><span class="line">  password: MTIzLmNvbQ==</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>vim secret-demo-pod.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: secret-demo-pod</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - name: demo</span><br><span class="line">    image: nginx</span><br><span class="line">    <span class="built_in">env</span>:</span><br><span class="line">    - name: USER</span><br><span class="line">      valueFrom:</span><br><span class="line">        secretKeyRef:</span><br><span class="line">          name: db-user-pass</span><br><span class="line">          key: username</span><br><span class="line">    - name: PASS</span><br><span class="line">      valueFrom:</span><br><span class="line">        secretKeyRef:</span><br><span class="line">          name: db-user-pass</span><br><span class="line">          key: password</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: config</span><br><span class="line">      mountPath: <span class="string">&quot;/config&quot;</span></span><br><span class="line">      readOnly: <span class="literal">true</span></span><br><span class="line">  volumes:</span><br><span class="line">  - name: config</span><br><span class="line">    secret:</span><br><span class="line">      secretName: db-user-pass</span><br><span class="line">      items:</span><br><span class="line">      - key: username</span><br><span class="line">        path: my-username</span><br><span class="line">      - key: password</span><br><span class="line">        path: my-password</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证查看</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f secret.yaml </span><br><span class="line">kubectl apply -f secret-demo-pod.yaml </span><br><span class="line">kubectl get secrets </span><br><span class="line">kubectl <span class="built_in">exec</span> -it secret-demo-pod -- bash     <span class="comment">#进入pod中测试是否注入变量和挂载</span></span><br><span class="line"><span class="comment">#echo $USER</span></span><br><span class="line"><span class="comment">#echo $PASS </span></span><br><span class="line"><span class="comment">#ls /config/</span></span><br></pre></td></tr></table></figure>
+<p>参考链接：<a href="https://kubernetes.io/zh/docs/concepts/configuration/secret/">https://kubernetes.io/zh/docs/concepts/configuration/secret/</a></p>
+<h2 id="应用程序如何动态更新配置">应用程序如何动态更新配置</h2>
+<p>应用程序动态更新配置方案：</p>
+<ul>
+<li>
+<p>当ConfigMap发生变更时，应用程序自动感知动态加载（需要程序自身支持）</p>
+</li>
+<li>
+<p>触发滚动更新，即重启服务</p>
+</li>
+</ul>
 ]]></content>
       <categories>
         <category>K8S</category>

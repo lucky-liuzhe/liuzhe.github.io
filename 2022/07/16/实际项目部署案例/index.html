@@ -1,0 +1,216 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>实际项目部署案例 | 阿哲技术之路</title><meta name="author" content="阿哲"><meta name="copyright" content="阿哲"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="部署项目前的梳理： 1.项目的代码构成，什么语言开发的 2.项目的依赖环境 3.项目的配置文件在哪里 4.项目的端口清单 5.项目有没有做数据的持久化 容器交付流程  在K8s平台部署项目流程  在K8s平台部署Java网站项目 阿里云maven源地址： https:&#x2F;&#x2F;maven.aliyun.com&#x2F;mvn&#x2F;guide 第一步：制作镜像  yum install java-1.8.0-open">
+<meta property="og:type" content="article">
+<meta property="og:title" content="实际项目部署案例">
+<meta property="og:url" content="http://liuzhemax.github.io/2022/07/16/%E5%AE%9E%E9%99%85%E9%A1%B9%E7%9B%AE%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B/index.html">
+<meta property="og:site_name" content="阿哲技术之路">
+<meta property="og:description" content="部署项目前的梳理： 1.项目的代码构成，什么语言开发的 2.项目的依赖环境 3.项目的配置文件在哪里 4.项目的端口清单 5.项目有没有做数据的持久化 容器交付流程  在K8s平台部署项目流程  在K8s平台部署Java网站项目 阿里云maven源地址： https:&#x2F;&#x2F;maven.aliyun.com&#x2F;mvn&#x2F;guide 第一步：制作镜像  yum install java-1.8.0-open">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg">
+<meta property="article:published_time" content="2022-07-16T13:45:32.000Z">
+<meta property="article:modified_time" content="2024-05-24T23:21:42.722Z">
+<meta property="article:author" content="阿哲">
+<meta property="article:tag" content="K8S">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="shortcut icon" href="/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="canonical" href="http://liuzhemax.github.io/2022/07/16/%E5%AE%9E%E9%99%85%E9%A1%B9%E7%9B%AE%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '实际项目部署案例',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-05-25 07:21:42'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">21</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="阿哲技术之路"><img class="site-icon" src="/medias/%E6%90%AC%E7%A0%96.jpg"/><span class="site-name">阿哲技术之路</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">实际项目部署案例</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-07-16T13:45:32.000Z" title="发表于 2022-07-16 21:45:32">2022-07-16</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-05-24T23:21:42.722Z" title="更新于 2024-05-25 07:21:42">2024-05-25</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/K8S/">K8S</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="实际项目部署案例"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><p>部署项目前的梳理：</p>
+<p>1.项目的代码构成，什么语言开发的</p>
+<p>2.项目的依赖环境</p>
+<p>3.项目的配置文件在哪里</p>
+<p>4.项目的端口清单</p>
+<p>5.项目有没有做数据的持久化</p>
+<h2 id="容器交付流程">容器交付流程</h2>
+<p><img src="/images/7327EAB29F8F4C73A7B379DF9D660DDEclipboard.png" alt></p>
+<h2 id="在K8s平台部署项目流程">在K8s平台部署项目流程</h2>
+<p><img src="/images/0749CCA49C9444DA9A410901C5F3C4B8clipboard.png" alt></p>
+<h2 id="在K8s平台部署Java网站项目">在K8s平台部署Java网站项目</h2>
+<p>阿里云maven源地址： <a target="_blank" rel="noopener" href="https://maven.aliyun.com/mvn/guide">https://maven.aliyun.com/mvn/guide</a></p>
+<p>第一步：制作镜像</p>
+<p><img src="/images/1506058D05CA4D20B52B277B065B60ABclipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install java-1.8.0-openjdk maven git -y</span><br><span class="line">git <span class="built_in">clone</span> https://github.com/lizhenliang/tomcat-java-demo</span><br><span class="line">mvn clean package -Dmaven.test.skip=<span class="literal">true</span> <span class="comment"># 代码编译构建</span></span><br><span class="line">unzip target/*.war -d target/ROOT <span class="comment"># 解压构建文件</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">FROM lizhenliang/tomcat </span><br><span class="line">LABEL maintainer www.ctnrs.com</span><br><span class="line">RUN <span class="built_in">rm</span> -rf /usr/local/tomcat/webapps/*</span><br><span class="line">COPY target/ROOT /usr/local/tomcat/webapps/ROOT</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker build -t image:tag .</span><br><span class="line">docker push &lt;镜像仓库地址&gt;/&lt;项目名&gt;/image:tag</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run -d image:tag</span><br></pre></td></tr></table></figure>
+<p>使用镜像仓库（私有仓库、公共仓库）：</p>
+<p>1、配置可信任（如果仓库是HTTPS访问不用配置）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># vi /etc/docker/daemon.json</span></span><br><span class="line">&#123;</span><br><span class="line">    insecure-registries<span class="string">&quot;: [&quot;</span>192.168.0.13<span class="string">&quot;]</span></span><br><span class="line"><span class="string">&#125;    </span></span><br></pre></td></tr></table></figure>
+<p>2、将镜像仓库认证凭据保存在K8s Secret中</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create secret docker-registry registry-auth --docker-username=admin --docker-password=Harbor12345 --docker-server=192.168.0.13</span><br></pre></td></tr></table></figure>
+<p>3、在yaml中使用这个认证凭据</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">imagePullSecrets:</span><br><span class="line">- name: registry-auth</span><br></pre></td></tr></table></figure>
+<p><img src="/images/06ED566FF1074B42A72AF5B779FE1C3Aclipboard.png" alt></p>
+<p>配置认证的的原因是部署的harbor是私有仓库，k8s的每个节点每次去拉取镜像都必须登录harbor仓库，比较麻烦，通过在yaml配置文件指定docker登录认证凭据，这样docker每次部署的时候就会自动去拉取镜像了。</p>
+<p>第二步：使用控制器部署镜像</p>
+<p><img src="/images/335EB09272114DD3BF1BC4A424A77A7Dclipboard.png" alt></p>
+<p><img src="/images/64A3856A336D42DFA7B90B914E97D60Dclipboard.png" alt></p>
+<p>注意：在pod中挂载configmap配置文件时，如果指定容器内挂载的目录不是空目录，那么会覆盖原来目录下的内容。</p>
+<p>部署configmap</p>
+<p>vim configmap.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  name: java-demo-config</span><br><span class="line">data:</span><br><span class="line">    application.yml: |</span><br><span class="line">        server:</span><br><span class="line">          port: 8080</span><br><span class="line">        spring:</span><br><span class="line">          datasource:</span><br><span class="line">            url: jdbc:mysql://java-demo-db:3306/k8s?characterEncoding=utf-8</span><br><span class="line">            username: azhe</span><br><span class="line">            password: 123456</span><br><span class="line">            driver-class-name: com.mysql.jdbc.Driver</span><br><span class="line">          freemarker:</span><br><span class="line">            allow-request-override: <span class="literal">false</span></span><br><span class="line">            cache: <span class="literal">true</span></span><br><span class="line">            check-template-location: <span class="literal">true</span></span><br><span class="line">            charset: UTF-8</span><br><span class="line">            content-type: text/html; charset=utf-8</span><br><span class="line">            expose-request-attributes: <span class="literal">false</span></span><br><span class="line">            expose-session-attributes: <span class="literal">false</span></span><br><span class="line">            expose-spring-macro-helpers: <span class="literal">false</span></span><br><span class="line">            suffix: .ftl</span><br><span class="line">            template-loader-path:</span><br><span class="line">              - classpath:/templates/</span><br><span class="line"> </span><br></pre></td></tr></table></figure>
+<p>部署deployment</p>
+<p>vim deployment.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web</span><br><span class="line">spec:</span><br><span class="line">  replicas: 3</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: java</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: java</span><br><span class="line">    spec:</span><br><span class="line">      imagePullSecrets:</span><br><span class="line">      - name: registry-auth</span><br><span class="line">      containers:</span><br><span class="line">      - image: 192.168.0.13/demo/java-demo:v1</span><br><span class="line">        name: java-demo</span><br><span class="line">        resources:</span><br><span class="line">          requests:</span><br><span class="line">            cpu: 0.5</span><br><span class="line">            memory: 500Mi</span><br><span class="line">          limits:</span><br><span class="line">            cpu: 1</span><br><span class="line">            memory: 1Gi</span><br><span class="line">        livenessProbe:</span><br><span class="line">          httpGet:</span><br><span class="line">            path: /</span><br><span class="line">            port: 8080</span><br><span class="line">          initialDelaySeconds: 40</span><br><span class="line">          periodSeconds: 10</span><br><span class="line">        readinessProbe:</span><br><span class="line">          httpGet:</span><br><span class="line">            path: /</span><br><span class="line">            port: 8080</span><br><span class="line">          initialDelaySeconds: 40</span><br><span class="line">          periodSeconds: 10</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - name: config</span><br><span class="line">          mountPath: <span class="string">&quot;/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/application.yml&quot;</span></span><br><span class="line">          subPath: <span class="string">&quot;application.yml&quot;</span></span><br><span class="line">      volumes:</span><br><span class="line">      - name: config</span><br><span class="line">        configMap:</span><br><span class="line">          name: java-demo-config</span><br><span class="line">          items:</span><br><span class="line">          - key: <span class="string">&quot;application.yml&quot;</span></span><br><span class="line">            path: <span class="string">&quot;application.yml&quot;</span> </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f configmap.yaml </span><br><span class="line">kubectl apply -f deployment.yaml </span><br></pre></td></tr></table></figure>
+<p>第三步：对外暴露应用</p>
+<p><img src="/images/CE03F82EDAB4453B93B6E5C1B62E92E4clipboard.png" alt></p>
+<p>部署service</p>
+<p>vim service.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: java-demo</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    app: java</span><br><span class="line">  ports:</span><br><span class="line">    - protocol: TCP</span><br><span class="line">      port: 80</span><br><span class="line">      targetPort: 8080</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>部署ingress（首先部署nginx-ingress-controller，监听端口是80和443)</p>
+<p>vim ingress.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: java-demo</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: java.ctnrs.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">        - path: /</span><br><span class="line">          pathType: Prefix</span><br><span class="line">          backend:</span><br><span class="line">            service:</span><br><span class="line">              name: java-demo</span><br><span class="line">              port:</span><br><span class="line">                number: 80</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>部署mysql数据库（1.部署NFS实现自动创建PV插件 2.导入表到k8s数据库）</p>
+<p><a href="/attachments/AD05901F881F482EAC2E9A51FE4E8E13nfs-client.zip">nfs-client.zip</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装nfs安装包（每个k8s节点都要安装）</span></span><br><span class="line">yum install nfs-utils</span><br><span class="line"><span class="comment">#创建nfs共享目录</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /nfs/kubernetes</span><br><span class="line"><span class="comment">#修改nfs配置文件</span></span><br><span class="line">vim /etc/exports</span><br><span class="line">/nfs/kubernetes *(rw,no_root_squash)</span><br><span class="line"><span class="comment">#启动nfs并加入开机自启</span></span><br><span class="line">systemctl start nfs</span><br><span class="line">systemctl <span class="built_in">enable</span> nfs</span><br><span class="line"></span><br><span class="line"><span class="comment">#部署NFS实现自动创建PV插件：</span></span><br><span class="line">git <span class="built_in">clone</span> https://github.com/kubernetes-incubator/external-storage </span><br><span class="line"><span class="built_in">cd</span> nfs-client/deploy </span><br><span class="line">kubectl apply -f rbac.yaml <span class="comment"># 授权访问apiserver </span></span><br><span class="line">kubectl apply -f deployment.yaml <span class="comment"># 部署插件，需修改里面NFS服务器地址与共享目录 </span></span><br><span class="line">kubectl apply -f class.yaml <span class="comment"># 创建存储类</span></span><br><span class="line">kubectl get sc  <span class="comment"># 查看存储类</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#导入表到k8s数据库</span></span><br><span class="line">kubectl get pod </span><br><span class="line">kubectl <span class="built_in">cp</span> tables_ly_tomcat.sql java-demo-db-6c775c4d4b-7xfgc:/</span><br><span class="line">kubectl <span class="built_in">exec</span> -it java-demo-db-6c775c4d4b-7xfgc -- bash</span><br><span class="line">mysql -u root -p<span class="variable">$MYSQL_ROOT_PASSWORD</span></span><br><span class="line">show databses;</span><br><span class="line">use k8s;</span><br><span class="line"><span class="built_in">source</span> /tables_ly_tomcat.sql;</span><br></pre></td></tr></table></figure>
+<p>vim mysql.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Secret</span><br><span class="line">metadata:</span><br><span class="line">  name: java-demo-db </span><br><span class="line">  namespace: default</span><br><span class="line"><span class="built_in">type</span>: Opaque</span><br><span class="line">data:</span><br><span class="line">  mysql-root-password: <span class="string">&quot;MTIzNDU2&quot;</span></span><br><span class="line">  mysql-password: <span class="string">&quot;MTIzNDU2&quot;</span></span><br><span class="line">---</span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: java-demo-db </span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      project: www</span><br><span class="line">      app: mysql</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        project: www</span><br><span class="line">        app: mysql</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: db</span><br><span class="line">        image: mysql:5.7.30</span><br><span class="line">        resources:</span><br><span class="line">          requests:</span><br><span class="line">            cpu: 500m</span><br><span class="line">            memory: 512Mi</span><br><span class="line">          limits: </span><br><span class="line">            cpu: 500m</span><br><span class="line">            memory: 512Mi</span><br><span class="line">        <span class="built_in">env</span>:</span><br><span class="line">        - name: MYSQL_ROOT_PASSWORD</span><br><span class="line">          valueFrom:</span><br><span class="line">            secretKeyRef:</span><br><span class="line">              name: java-demo-db</span><br><span class="line">              key: mysql-root-password</span><br><span class="line">        - name: MYSQL_PASSWORD</span><br><span class="line">          valueFrom:</span><br><span class="line">            secretKeyRef:</span><br><span class="line">              name: java-demo-db</span><br><span class="line">              key: mysql-password</span><br><span class="line">        - name: MYSQL_USER</span><br><span class="line">          value: <span class="string">&quot;azhe&quot;</span></span><br><span class="line">        - name: MYSQL_DATABASE</span><br><span class="line">          value: <span class="string">&quot;k8s&quot;</span></span><br><span class="line">        ports:</span><br><span class="line">        - name: mysql</span><br><span class="line">          containerPort: 3306</span><br><span class="line">        livenessProbe:</span><br><span class="line">          <span class="built_in">exec</span>:</span><br><span class="line">            <span class="built_in">command</span>:</span><br><span class="line">            - sh</span><br><span class="line">            - -c</span><br><span class="line">            - <span class="string">&quot;mysqladmin ping -u root -p<span class="variable">$&#123;MYSQL_ROOT_PASSWORD&#125;</span>&quot;</span></span><br><span class="line">          initialDelaySeconds: 30</span><br><span class="line">          periodSeconds: 10</span><br><span class="line">        readinessProbe:</span><br><span class="line">          <span class="built_in">exec</span>:</span><br><span class="line">            <span class="built_in">command</span>:</span><br><span class="line">            - sh</span><br><span class="line">            - -c</span><br><span class="line">            - <span class="string">&quot;mysqladmin ping -u root -p<span class="variable">$&#123;MYSQL_ROOT_PASSWORD&#125;</span>&quot;</span></span><br><span class="line">          initialDelaySeconds: 5</span><br><span class="line">          periodSeconds: 10</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - name: data</span><br><span class="line">          mountPath: /var/lib/mysql</span><br><span class="line">        </span><br><span class="line">      volumes:</span><br><span class="line">      - name: data</span><br><span class="line">        persistentVolumeClaim:</span><br><span class="line">          claimName: java-demo-db</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: PersistentVolumeClaim</span><br><span class="line">metadata:</span><br><span class="line">  name: java-demo-db </span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  storageClassName: <span class="string">&quot;managed-nfs-storage&quot;</span></span><br><span class="line">  accessModes:</span><br><span class="line">    - <span class="string">&quot;ReadWriteOnce&quot;</span></span><br><span class="line">  resources:</span><br><span class="line">    requests:</span><br><span class="line">      storage: <span class="string">&quot;8Gi&quot;</span></span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: java-demo-db</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP</span><br><span class="line">  ports:</span><br><span class="line">  - name: mysql</span><br><span class="line">    port: 3306</span><br><span class="line">    targetPort: mysql</span><br><span class="line">  selector:</span><br><span class="line">    project: www</span><br><span class="line">    app: mysql </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f service.yaml </span><br><span class="line">kubectl apply -f ingress.yaml </span><br><span class="line">kubectl apply -f mysql.yaml </span><br></pre></td></tr></table></figure>
+<p><a target="_blank" rel="noopener" href="http://xn--java-pr9l020c.ctnrs.com">访问java.ctnrs.com</a>，添加用户验证数据库是否可用</p>
+<p>第四步：增加公网负载均衡器</p>
+<p><img src="/images/FF2962E0EEF647ECBE7499D744E04A67clipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">upstream java-demo &#123;</span><br><span class="line">      server 192.168.0.12:80;</span><br><span class="line">      server 192.168.0.13:80;</span><br><span class="line">    &#125;</span><br><span class="line">      server &#123;</span><br><span class="line">         listen 81;</span><br><span class="line">         server_name java.ctnrs.com;</span><br><span class="line">         location / &#123;</span><br><span class="line">            proxy_pass http://java-demo;</span><br><span class="line">            proxy_set_header Host <span class="variable">$Host</span>;</span><br><span class="line">         &#125;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><a target="_blank" rel="noopener" href="http://xn--java-pr9l020c.ctnrs.com:81">访问java.ctnrs.com:81</a></p>
+<p>1、为指定用户授权访问不同命名空间权限</p>
+<p>2、使用Helm完成Java网站项目部署</p>
+<p>注：自由发挥，实现需求即可</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io">阿哲</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io/2022/07/16/%E5%AE%9E%E9%99%85%E9%A1%B9%E7%9B%AE%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B/">http://liuzhemax.github.io/2022/07/16/%E5%AE%9E%E9%99%85%E9%A1%B9%E7%9B%AE%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://liuzhemax.github.io" target="_blank">阿哲技术之路</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/K8S/">K8S</a></div><div class="post_share"><div class="social-share" data-image="/medias/%E6%90%AC%E7%A0%96.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-full"><a href="/2022/07/15/k8s%E5%BA%94%E7%94%A8%E5%8C%85%E7%AE%A1%E7%90%86%E5%99%A8helm%E5%88%9D%E6%8E%A2/" title="K8s应用包管理器Helm初探"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">K8s应用包管理器Helm初探</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2022/07/10/ingress%E6%9C%80%E4%BD%B3%E6%96%B9%E5%BC%8F%E5%AF%B9%E5%A4%96%E6%9A%B4%E9%9C%B2%E5%BA%94%E7%94%A8/" title="Ingress最佳方式对外暴露应用"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-07-10</div><div class="title">Ingress最佳方式对外暴露应用</div></div></a></div><div><a href="/2022/07/14/k8s%E5%AE%89%E5%85%A8%E6%8E%A7%E5%88%B6/" title="K8s安全控制"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-07-14</div><div class="title">K8s安全控制</div></div></a></div><div><a href="/2022/07/15/k8s%E5%BA%94%E7%94%A8%E5%8C%85%E7%AE%A1%E7%90%86%E5%99%A8helm%E5%88%9D%E6%8E%A2/" title="K8s应用包管理器Helm初探"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-07-15</div><div class="title">K8s应用包管理器Helm初探</div></div></a></div><div><a href="/2022/06/12/kubectl%E5%91%BD%E4%BB%A4%E8%A1%8C%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/" title="kubectl命令行管理工具"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-06-12</div><div class="title">kubectl命令行管理工具</div></div></a></div><div><a href="/2022/06/10/kubernetes%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/" title="Kubernetes核心概念"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-06-10</div><div class="title">Kubernetes核心概念</div></div></a></div><div><a href="/2022/06/17/service%E5%AF%B9%E5%A4%96%E6%9A%B4%E9%9C%B2%E4%BD%A0%E7%9A%84%E5%BA%94%E7%94%A8/" title="Service(对外暴露你的应用）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-06-17</div><div class="title">Service(对外暴露你的应用）</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">阿哲</div><div class="author-info__description">强大自己是解决问题的唯一办法</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">21</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1437626743@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">分享个人经验总结</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%B9%E5%99%A8%E4%BA%A4%E4%BB%98%E6%B5%81%E7%A8%8B"><span class="toc-number">1.</span> <span class="toc-text">容器交付流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9C%A8K8s%E5%B9%B3%E5%8F%B0%E9%83%A8%E7%BD%B2%E9%A1%B9%E7%9B%AE%E6%B5%81%E7%A8%8B"><span class="toc-number">2.</span> <span class="toc-text">在K8s平台部署项目流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9C%A8K8s%E5%B9%B3%E5%8F%B0%E9%83%A8%E7%BD%B2Java%E7%BD%91%E7%AB%99%E9%A1%B9%E7%9B%AE"><span class="toc-number">3.</span> <span class="toc-text">在K8s平台部署Java网站项目</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/07/16/%E5%AE%9E%E9%99%85%E9%A1%B9%E7%9B%AE%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B/" title="实际项目部署案例">实际项目部署案例</a><time datetime="2022-07-16T13:45:32.000Z" title="发表于 2022-07-16 21:45:32">2022-07-16</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/07/15/k8s%E5%BA%94%E7%94%A8%E5%8C%85%E7%AE%A1%E7%90%86%E5%99%A8helm%E5%88%9D%E6%8E%A2/" title="K8s应用包管理器Helm初探">K8s应用包管理器Helm初探</a><time datetime="2022-07-15T13:45:32.000Z" title="发表于 2022-07-15 21:45:32">2022-07-15</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/07/14/k8s%E5%AE%89%E5%85%A8%E6%8E%A7%E5%88%B6/" title="K8s安全控制">K8s安全控制</a><time datetime="2022-07-14T13:45:32.000Z" title="发表于 2022-07-14 21:45:32">2022-07-14</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/07/13/%E5%86%8D%E8%B0%88%E6%9C%89%E7%8A%B6%E6%80%81%E5%BA%94%E7%94%A8%E9%83%A8%E7%BD%B2statefulset%E6%8E%A7%E5%88%B6%E5%99%A8/" title="再谈有状态应用部署：StatefulSet控制器">再谈有状态应用部署：StatefulSet控制器</a><time datetime="2022-07-13T13:45:32.000Z" title="发表于 2022-07-13 21:45:32">2022-07-13</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/07/12/%E6%95%B0%E6%8D%AE%E5%8D%B7%E4%B8%8E%E6%8C%81%E4%B9%85%E6%95%B0%E6%8D%AE%E5%8D%B7/" title="数据卷与持久数据卷">数据卷与持久数据卷</a><time datetime="2022-07-12T13:45:32.000Z" title="发表于 2022-07-12 21:45:32">2022-07-12</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="footer_custom_text">阿哲技术之路</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.13.0"></script></div></div></body></html>
