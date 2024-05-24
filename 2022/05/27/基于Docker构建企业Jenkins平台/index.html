@@ -1,0 +1,286 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>基于Docker构建企业Jenkins平台 | 阿哲技术之路</title><meta name="author" content="阿哲"><meta name="copyright" content="阿哲"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="CI&#x2F;CD概述 持续集成（Continuous Integration，CI）：代码合并、构建、部署、测试都在一起，不断地执行这个过程，并对结果反馈。 持续部署（Continuous Deployment，CD）：部署到测试环境、预生产环境、生产环境。 持续交付（Continuous Delivery，CD）：将最终产品发布到生产环境，给用户使用。  CI工作流程设计  开发者提交代码到gitla">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于Docker构建企业Jenkins平台">
+<meta property="og:url" content="http://liuzhemax.github.io/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/index.html">
+<meta property="og:site_name" content="阿哲技术之路">
+<meta property="og:description" content="CI&#x2F;CD概述 持续集成（Continuous Integration，CI）：代码合并、构建、部署、测试都在一起，不断地执行这个过程，并对结果反馈。 持续部署（Continuous Deployment，CD）：部署到测试环境、预生产环境、生产环境。 持续交付（Continuous Delivery，CD）：将最终产品发布到生产环境，给用户使用。  CI工作流程设计  开发者提交代码到gitla">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg">
+<meta property="article:published_time" content="2022-05-27T13:45:32.000Z">
+<meta property="article:modified_time" content="2024-05-24T07:23:52.603Z">
+<meta property="article:author" content="阿哲">
+<meta property="article:tag" content="Docker">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="shortcut icon" href="/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="canonical" href="http://liuzhemax.github.io/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '基于Docker构建企业Jenkins平台',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: false,
+  postUpdate: '2024-05-24 15:23:52'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">7</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="阿哲技术之路"><img class="site-icon" src="/medias/%E6%90%AC%E7%A0%96.jpg"/><span class="site-name">阿哲技术之路</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">基于Docker构建企业Jenkins平台</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-05-27T13:45:32.000Z" title="发表于 2022-05-27 21:45:32">2022-05-27</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-05-24T07:23:52.603Z" title="更新于 2024-05-24 15:23:52">2024-05-24</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Docker/">Docker</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="基于Docker构建企业Jenkins平台"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><p>CI/CD概述</p>
+<p>持续集成（Continuous Integration，CI）：代码合并、构建、部署、测试都在一起，不断地执行这个过程，并对结果反馈。</p>
+<p>持续部署（Continuous Deployment，CD）：部署到测试环境、预生产环境、生产环境。</p>
+<p>持续交付（Continuous Delivery，CD）：将最终产品发布到生产环境，给用户使用。</p>
+<p><img src="/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/D06234A999FE473FBA13400A79F2390Aclipboard.png" alt></p>
+<p>CI工作流程设计</p>
+<p><img src="/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/3C3FFAC3EFE24641B2E3746166FFDD5Eclipboard.png" alt></p>
+<p>开发者提交代码到gitlab仓库，gitlab随后触发jenkins代码编译，构建镜像以及推送镜像到harbor仓库，紧接着Jenkins部署到docker主机（从harbor仓库拉取镜像到本地部署启动）。</p>
+<table>
+<thead>
+<tr>
+<th>gitlab主机</th>
+<th>jenkins主机</th>
+<th>harbor主机</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>192.168.0.11/24</td>
+<td>192.168.0.13/24</td>
+<td>192.168.0.12/24</td>
+</tr>
+</tbody>
+</table>
+<pre><code>                                                       项目环境表
+</code></pre>
+<p>1、部署Gitlab</p>
+<p>1.1 部署Gitlab</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">mkdir gitlab</span><br><span class="line">cd gitlab</span><br><span class="line">docker run -d \</span><br><span class="line">  --name gitlab \</span><br><span class="line">  -p <span class="number">8443</span>:<span class="number">443</span> \</span><br><span class="line">  -p <span class="number">9999</span>:<span class="number">80</span> \</span><br><span class="line">  -p <span class="number">9998</span>:<span class="number">22</span> \</span><br><span class="line">  -v $PWD/<span class="attr">config</span>:<span class="regexp">/etc/gi</span>tlab \</span><br><span class="line">  -v $PWD/<span class="attr">logs</span>:<span class="regexp">/var/</span>log/gitlab \</span><br><span class="line">  -v $PWD/<span class="attr">data</span>:<span class="regexp">/var/</span>opt/gitlab \</span><br><span class="line">  -v /etc/<span class="attr">localtime</span>:<span class="regexp">/etc/</span>localtime \</span><br><span class="line">  --restart=always \</span><br><span class="line">  lizhenliang/gitlab-ce-<span class="attr">zh</span>:latest</span><br></pre></td></tr></table></figure>
+<p>访问地址：<a target="_blank" rel="noopener" href="http://IP:9999">http://IP:9999</a></p>
+<p>初次会先设置管理员密码 ，然后登陆，默认管理员用户名root，密码就是刚设置的。</p>
+<p>1.2 创建项目，提交测试代码</p>
+<p>进入后先创建项目，提交代码，以便后面测试。</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">unzip tomcat-java-demo-master.<span class="property">zip</span></span><br><span class="line">cd tomcat-java-demo-master</span><br><span class="line">git init</span><br><span class="line">git remote add origin <span class="attr">http</span>:<span class="comment">//192.168.0.11:9999/root/java-demo.git</span></span><br><span class="line">git add .</span><br><span class="line">git config --<span class="variable language_">global</span> user.<span class="property">email</span> <span class="string">&quot;you@example.com&quot;</span></span><br><span class="line">git config --<span class="variable language_">global</span> user.<span class="property">name</span> <span class="string">&quot;Your Name&quot;</span></span><br><span class="line">git commit -m <span class="string">&#x27;all&#x27;</span></span><br><span class="line">git push origin master</span><br></pre></td></tr></table></figure>
+<p>2、部署Harbor镜像仓库</p>
+<p>2.1 安装docker与docker-compose</p>
+<p>2.2 解压离线包部署</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"># tar zxvf harbor-offline-installer-v2<span class="number">.0</span><span class="number">.0</span>.<span class="property">tgz</span></span><br><span class="line"># cd harbor</span><br><span class="line"># cp harbor.<span class="property">yml</span>.<span class="property">tmpl</span> harbor.<span class="property">yml</span></span><br><span class="line"># vi harbor.<span class="property">yml</span></span><br><span class="line"><span class="attr">hostname</span>: reg.<span class="property">ctnrs</span>.<span class="property">com</span></span><br><span class="line"><span class="attr">https</span>:   # 先注释https相关配置</span><br><span class="line"><span class="attr">harbor_admin_password</span>: <span class="title class_">Harbor12345</span></span><br><span class="line"># ./prepare</span><br><span class="line"># ./install.<span class="property">sh</span></span><br></pre></td></tr></table></figure>
+<p>2.3 在Jenkins主机配置Docker可信任，如果是HTTPS需要拷贝证书</p>
+<p>由于habor未配置https，还需要在docker配置可信任。</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"># cat /etc/docker/daemon.<span class="property">json</span> </span><br><span class="line">&#123;<span class="string">&quot;registry-mirrors&quot;</span>: [<span class="string">&quot;https://b9pmyelo.mirror.aliyuncs.com&quot;</span>],</span><br><span class="line">  <span class="string">&quot;insecure-registries&quot;</span>: [<span class="string">&quot;192.168.0.12&quot;</span>]</span><br><span class="line">&#125;</span><br><span class="line"># systemctl restart docker</span><br></pre></td></tr></table></figure>
+<p>2.4 构建tomcat镜像并上传到harbor仓库上（供jenkinsfile脚本调用）</p>
+<p>#准备的安装包（apache-tomcat-8.5.43.tar.gz）和Dockerfile</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="variable constant_">FROM</span> <span class="attr">centos</span>:<span class="number">7</span></span><br><span class="line"><span class="variable constant_">MAINTAINER</span> www.<span class="property">ctnrs</span>.<span class="property">com</span></span><br><span class="line"></span><br><span class="line"><span class="variable constant_">ENV</span> <span class="variable constant_">VERSION</span>=<span class="number">8.5</span><span class="number">.43</span></span><br><span class="line"></span><br><span class="line"><span class="variable constant_">RUN</span> yum install java-<span class="number">1.8</span><span class="number">.0</span>-openjdk wget curl unzip iproute net-tools -y &amp;&amp; \</span><br><span class="line">    yum clean all &amp;&amp; \</span><br><span class="line">    rm -rf /<span class="keyword">var</span>/cache/yum<span class="comment">/*</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">ADD apache-tomcat-$&#123;VERSION&#125;.tar.gz /usr/local/</span></span><br><span class="line"><span class="comment">RUN mv /usr/local/apache-tomcat-$&#123;VERSION&#125; /usr/local/tomcat &amp;&amp; \</span></span><br><span class="line"><span class="comment">    sed -i &#x27;1a JAVA_OPTS=&quot;-Djava.security.egd=file:/dev/./urandom&quot;&#x27; /usr/local/tomcat/bin/catalina.sh &amp;&amp; \</span></span><br><span class="line"><span class="comment">    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">ENV PATH $PATH:/usr/local/tomcat/bin</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">WORKDIR /usr/local/tomcat</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">EXPOSE 8080</span></span><br><span class="line"><span class="comment">CMD [&quot;catalina.sh&quot;, &quot;run&quot;]</span></span><br><span class="line"><span class="comment"></span></span><br></pre></td></tr></table></figure>
+<p>构建并上传到harbor</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">docker build -t <span class="number">192.168</span><span class="number">.0</span><span class="number">.12</span>/library/<span class="attr">tomcat</span>:v1 .</span><br><span class="line">docker login <span class="number">192.168</span><span class="number">.0</span><span class="number">.12</span></span><br><span class="line">docker images</span><br><span class="line">docker push <span class="number">192.168</span><span class="number">.0</span><span class="number">.12</span>/library/<span class="attr">tomcat</span>:v1</span><br></pre></td></tr></table></figure>
+<p><img src="/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/725360157F1C4DF0B88A2EDA4C641CA8clipboard.png" alt></p>
+<p>3、部署Jenkins</p>
+<p>3.1 准备JDK和Maven环境</p>
+<p>将二进制包上传到服务器并解压到工作目录，用于让Jenkins容器挂载使用。</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"># tar zxvf jdk-8u45-linux-x64.<span class="property">tar</span>.<span class="property">gz</span></span><br><span class="line"># mv jdk1<span class="number">.8</span><span class="number">.0_45</span> /usr/local/jdk</span><br><span class="line"># tar zxf apache-maven-<span class="number">3.5</span><span class="number">.0</span>-bin.<span class="property">tar</span>.<span class="property">gz</span></span><br><span class="line"># mv apache-maven-<span class="number">3.5</span><span class="number">.0</span> /usr/local/maven</span><br></pre></td></tr></table></figure>
+<p>修改Maven源：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">vi /usr/local/maven/conf/setting.<span class="property">xml</span></span><br><span class="line"></span><br><span class="line">&lt;mirrors&gt;</span><br><span class="line"></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">mirror</span>&gt;</span>     </span></span><br><span class="line"><span class="language-xml">  <span class="tag">&lt;<span class="name">id</span>&gt;</span>central<span class="tag">&lt;/<span class="name">id</span>&gt;</span>     </span></span><br><span class="line"><span class="language-xml">  <span class="tag">&lt;<span class="name">mirrorOf</span>&gt;</span>central<span class="tag">&lt;/<span class="name">mirrorOf</span>&gt;</span>     </span></span><br><span class="line"><span class="language-xml">  <span class="tag">&lt;<span class="name">name</span>&gt;</span>aliyun maven<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">  <span class="tag">&lt;<span class="name">url</span>&gt;</span>https://maven.aliyun.com/repository/public<span class="tag">&lt;/<span class="name">url</span>&gt;</span>     </span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;/<span class="name">mirror</span>&gt;</span></span></span><br><span class="line"></span><br><span class="line">&lt;/mirrors&gt;</span><br></pre></td></tr></table></figure>
+<p>部署jenkins</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">docker run -d --name jenkins -p <span class="number">80</span>:<span class="number">8080</span> -p <span class="number">50000</span>:<span class="number">50000</span> -u root  \</span><br><span class="line">   -v /opt/<span class="attr">jenkins_home</span>:<span class="regexp">/var/</span>jenkins_home \</span><br><span class="line">   -v /<span class="keyword">var</span>/run/docker.<span class="property">sock</span>:<span class="regexp">/var/</span>run/docker.<span class="property">sock</span>   \</span><br><span class="line">   -v /usr/bin/<span class="attr">docker</span>:<span class="regexp">/usr/</span>bin/docker \</span><br><span class="line">   -v /usr/local/<span class="attr">maven</span>:<span class="regexp">/usr/</span>local/maven \</span><br><span class="line">   -v /usr/local/<span class="attr">jdk</span>:<span class="regexp">/usr/</span>local/jdk \</span><br><span class="line">   -v /etc/<span class="attr">localtime</span>:<span class="regexp">/etc/</span>localtime \</span><br><span class="line">   --restart=always \</span><br><span class="line">   --name jenkins jenkins/jenkins</span><br></pre></td></tr></table></figure>
+<p>访问地址：<a target="_blank" rel="noopener" href="http://IP">http://IP</a></p>
+<p>3.2 安装插件</p>
+<p>管理Jenkins-&gt;系统配置–&gt;管理插件**–&gt;搜索git/pipeline，选中点击安装。</p>
+<p>默认从国外网络下载插件，会比较慢，建议修改国内源：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">cd /opt/jenkins_home/updates</span><br><span class="line">sed -i <span class="string">&#x27;s/http:\/\/updates.jenkins-ci.org\/download/https:\/\/mirrors.tuna.tsinghua.edu.cn\/jenkins/g&#x27;</span> <span class="keyword">default</span>.<span class="property">json</span> &amp;&amp; \</span><br><span class="line">sed -i <span class="string">&#x27;s/http:\/\/www.google.com/https:\/\/www.baidu.com/g&#x27;</span> <span class="keyword">default</span>.<span class="property">json</span></span><br><span class="line"></span><br><span class="line">docker restart jenkins</span><br></pre></td></tr></table></figure>
+<p>3.3 Jenkins Pipeline介绍</p>
+<p>Jenkins Pipeline是一套插件，支持在Jenkins中实现集成和持续交付管道；</p>
+<p>Pipeline通过特定语法对简单到复杂的传输管道进行建模；</p>
+<p>声明式：遵循与Groovy相同语法。pipeline { }</p>
+<p>脚本式：支持Groovy大部分功能，也是非常表达和灵活的工具。node { }</p>
+<p>Jenkins Pipeline的定	义被写入一个文本文件，称为Jenkinsfile。</p>
+<p><img src="/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/A721BDDA11234FEFBB2D6AFBA3C673CAclipboard.png" alt></p>
+<p><img src="/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/3EAC878934A84E509B25BFCF9A463E62clipboard.png" alt></p>
+<p><img src="/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/A3A3BF02751C4D79B7ACEC54F86C0CDFclipboard.png" alt></p>
+<p>注意： 发布之前可以在jenkins主机上测试一下是否能登录harbor仓库</p>
+<p>如果不能登录报错为连接443拒绝，那么请使用以下方式解决：</p>
+<p>修改Docker启动文件添加“–insecure-registry 192.168.0.12”</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">vim /usr/lib/systemd/system/docker.<span class="property">service</span> </span><br><span class="line"><span class="title class_">ExecStart</span>=<span class="regexp">/usr/</span>bin/dockerd -H <span class="attr">fd</span>:<span class="comment">// --containerd=/run/containerd/containerd.sock --insecure-registry 192.168.0.12</span></span><br><span class="line"></span><br><span class="line">systemctl restart docker</span><br></pre></td></tr></table></figure>
+<p>4、发布测试</p>
+<p>4.1添加连接git仓库凭据和harbor仓库凭据</p>
+<p>管理Jenkins-&gt;安全–&gt;管理凭据-&gt;Jnekins-&gt;添加凭据-&gt;Username with password</p>
+<ul>
+<li>
+<p>Username：用户名</p>
+</li>
+<li>
+<p>Password：密码</p>
+</li>
+<li>
+<p>ID：留空</p>
+</li>
+<li>
+<p>Description：描述</p>
+</li>
+</ul>
+<p>分别添加连接git和harbor凭据，并修改脚本为实际凭据ID。</p>
+<p><img src="/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/028FE8C5C63C44E19CBEECC88334DC65clipboard.png" alt></p>
+<p>4.2 创建项目并配置</p>
+<p>New Item -&gt; Pipeline -&gt; This project is parameterized -&gt; String Parameter</p>
+<ul>
+<li>
+<p>Name：Branch    # 变量名，下面脚本中调用</p>
+</li>
+<li>
+<p>Default Value：master   # 默认分支</p>
+</li>
+<li>
+<p>Description：发布的代码分支  # 描述</p>
+</li>
+</ul>
+<p><img src="/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/7A9EA62F8A9F4D97991A4AB427F6EDC5clipboard.png" alt></p>
+<p>4.3 Pipeline脚本（在Jenkins本地机器上部署并启动容器）</p>
+<p>一. 添加注释方便查看使用说明（添加注释到jenkins执行会报错，请使用第二个构建）</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">#!<span class="regexp">/usr/</span>bin/env groovy</span><br><span class="line"></span><br><span class="line">def registry = <span class="string">&quot;192.168.0.12&quot;</span>      #harbor仓库地址</span><br><span class="line">def project = <span class="string">&quot;dev&quot;</span>                #harbor仓库项目名</span><br><span class="line">def app_name = <span class="string">&quot;java-demo&quot;</span>         #镜像的应用名</span><br><span class="line">def image_name = <span class="string">&quot;$&#123;registry&#125;/$&#123;project&#125;/$&#123;app_name&#125;:$&#123;Branch&#125;-$&#123;BUILD_NUMBER&#125;&quot;</span>  #<span class="title class_">Branch</span>代表引用的分支名</span><br><span class="line">                                                                                 #<span class="variable constant_">BUILD_NUMBER</span>代表构建编号</span><br><span class="line">def git_address = <span class="string">&quot;http://192.168.0.11:9999/root/java-demo.git&quot;</span>        #git仓库连接地址</span><br><span class="line">def docker_registry_auth = <span class="string">&quot;30fae7e1-22c4-4083-848f-a5e90eff9e1f&quot;</span>      #harbor仓库认证（用户名和密码）</span><br><span class="line">def git_auth = <span class="string">&quot;05750892-5303-49ab-a6d0-33a78ef6c839&quot;</span>                  #git仓库认证（用户名和密码）</span><br><span class="line"></span><br><span class="line">pipeline &#123;</span><br><span class="line">    agent any</span><br><span class="line">    stages &#123;</span><br><span class="line">        <span class="title function_">stage</span>(<span class="params"><span class="string">&#x27;拉取代码&#x27;</span></span>)&#123;</span><br><span class="line">            steps &#123;</span><br><span class="line">              <span class="title function_">checkout</span>([<span class="attr">$class</span>: <span class="string">&#x27;GitSCM&#x27;</span>, <span class="attr">branches</span>: [[<span class="attr">name</span>: <span class="string">&#x27;$&#123;Branch&#125;&#x27;</span>]], <span class="attr">userRemoteConfigs</span>: [[<span class="attr">credentialsId</span>: <span class="string">&quot;$&#123;git_auth&#125;&quot;</span>, <span class="attr">url</span>: <span class="string">&quot;$&#123;git_address&#125;&quot;</span>]]])</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="title function_">stage</span>(<span class="params"><span class="string">&#x27;代码编译&#x27;</span></span>)&#123;</span><br><span class="line">           steps &#123;</span><br><span class="line">             sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">                pwd</span></span><br><span class="line"><span class="string">                ls</span></span><br><span class="line"><span class="string">                JAVA_HOME=/usr/local/jdk</span></span><br><span class="line"><span class="string">                PATH=$JAVA_HOME/bin:/usr/local/maven/bin:$PATH</span></span><br><span class="line"><span class="string">                mvn clean package -Dmaven.test.skip=true</span></span><br><span class="line"><span class="string">                &quot;</span><span class="string">&quot;&quot;</span> </span><br><span class="line">           &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="title function_">stage</span>(<span class="params"><span class="string">&#x27;构建镜像&#x27;</span></span>)&#123;</span><br><span class="line">           steps &#123;</span><br><span class="line">                <span class="title function_">withCredentials</span>(<span class="params">[usernamePassword(credentialsId: <span class="string">&quot;$&#123;docker_registry_auth&#125;&quot;</span>, passwordVariable: <span class="string">&#x27;password&#x27;</span>, usernameVariable: <span class="string">&#x27;username&#x27;</span>)]</span>) &#123;</span><br><span class="line">                sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">                  echo &#x27;</span></span><br><span class="line"><span class="string">                    FROM $&#123;registry&#125;/library/tomcat:v1</span></span><br><span class="line"><span class="string">                    LABEL maitainer liuzhe</span></span><br><span class="line"><span class="string">                    RUN rm -rf /usr/local/tomcat/webapps/*</span></span><br><span class="line"><span class="string">                    ADD target/*.war /usr/local/tomcat/webapps/ROOT.war</span></span><br><span class="line"><span class="string">                  &#x27; &gt; Dockerfile</span></span><br><span class="line"><span class="string">                  docker build -t $&#123;image_name&#125; .</span></span><br><span class="line"><span class="string">                  docker login -u $&#123;username&#125; -p &#x27;$&#123;password&#125;&#x27; $&#123;registry&#125;</span></span><br><span class="line"><span class="string">                  docker push $&#123;image_name&#125;</span></span><br><span class="line"><span class="string">                &quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">                &#125;</span><br><span class="line">           &#125; </span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="title function_">stage</span>(<span class="params"><span class="string">&#x27;部署到Docker&#x27;</span></span>)&#123;</span><br><span class="line">           steps &#123;</span><br><span class="line">              sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">              docker rm -f tomcat-java-demo |true</span></span><br><span class="line"><span class="string">              docker container run -d --name tomcat-java-demo -p 88:8080 $&#123;image_name&#125;</span></span><br><span class="line"><span class="string">              &quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>二.请使用这个pipeline脚本构建</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">#!<span class="regexp">/usr/</span>bin/env groovy</span><br><span class="line"></span><br><span class="line">def registry = <span class="string">&quot;192.168.0.12&quot;</span>      </span><br><span class="line">def project = <span class="string">&quot;dev&quot;</span>                </span><br><span class="line">def app_name = <span class="string">&quot;java-demo&quot;</span>        </span><br><span class="line">def image_name = <span class="string">&quot;$&#123;registry&#125;/$&#123;project&#125;/$&#123;app_name&#125;:$&#123;Branch&#125;-$&#123;BUILD_NUMBER&#125;&quot;</span>                                                                                </span><br><span class="line">def git_address = <span class="string">&quot;http://192.168.0.11:9999/root/java-demo.git&quot;</span>      </span><br><span class="line">def docker_registry_auth = <span class="string">&quot;30fae7e1-22c4-4083-848f-a5e90eff9e1f&quot;</span>     </span><br><span class="line">def git_auth = <span class="string">&quot;05750892-5303-49ab-a6d0-33a78ef6c839&quot;</span>                  </span><br><span class="line"></span><br><span class="line">pipeline &#123;</span><br><span class="line">    agent any</span><br><span class="line">    stages &#123;</span><br><span class="line">        <span class="title function_">stage</span>(<span class="params"><span class="string">&#x27;拉取代码&#x27;</span></span>)&#123;</span><br><span class="line">            steps &#123;</span><br><span class="line">              <span class="title function_">checkout</span>([<span class="attr">$class</span>: <span class="string">&#x27;GitSCM&#x27;</span>, <span class="attr">branches</span>: [[<span class="attr">name</span>: <span class="string">&#x27;$&#123;Branch&#125;&#x27;</span>]], <span class="attr">userRemoteConfigs</span>: [[<span class="attr">credentialsId</span>: <span class="string">&quot;$&#123;git_auth&#125;&quot;</span>, <span class="attr">url</span>: <span class="string">&quot;$&#123;git_address&#125;&quot;</span>]]])</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="title function_">stage</span>(<span class="params"><span class="string">&#x27;代码编译&#x27;</span></span>)&#123;</span><br><span class="line">           steps &#123;</span><br><span class="line">             sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">                pwd</span></span><br><span class="line"><span class="string">                ls</span></span><br><span class="line"><span class="string">                JAVA_HOME=/usr/local/jdk</span></span><br><span class="line"><span class="string">                PATH=$JAVA_HOME/bin:/usr/local/maven/bin:$PATH</span></span><br><span class="line"><span class="string">                mvn clean package -Dmaven.test.skip=true</span></span><br><span class="line"><span class="string">                &quot;</span><span class="string">&quot;&quot;</span> </span><br><span class="line">           &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="title function_">stage</span>(<span class="params"><span class="string">&#x27;构建镜像&#x27;</span></span>)&#123;</span><br><span class="line">           steps &#123;</span><br><span class="line">                <span class="title function_">withCredentials</span>(<span class="params">[usernamePassword(credentialsId: <span class="string">&quot;$&#123;docker_registry_auth&#125;&quot;</span>, passwordVariable: <span class="string">&#x27;password&#x27;</span>, usernameVariable: <span class="string">&#x27;username&#x27;</span>)]</span>) &#123;</span><br><span class="line">                sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">                  echo &#x27;</span></span><br><span class="line"><span class="string">                    FROM $&#123;registry&#125;/library/tomcat:v1</span></span><br><span class="line"><span class="string">                    LABEL maitainer liuzhe</span></span><br><span class="line"><span class="string">                    RUN rm -rf /usr/local/tomcat/webapps/*</span></span><br><span class="line"><span class="string">                    ADD target/*.war /usr/local/tomcat/webapps/ROOT.war</span></span><br><span class="line"><span class="string">                  &#x27; &gt; Dockerfile</span></span><br><span class="line"><span class="string">                  docker build -t $&#123;image_name&#125; .</span></span><br><span class="line"><span class="string">                  docker login -u $&#123;username&#125; -p &#x27;$&#123;password&#125;&#x27; $&#123;registry&#125;</span></span><br><span class="line"><span class="string">                  docker push $&#123;image_name&#125;</span></span><br><span class="line"><span class="string">                &quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">                &#125;</span><br><span class="line">           &#125; </span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="title function_">stage</span>(<span class="params"><span class="string">&#x27;部署到Docker&#x27;</span></span>)&#123;</span><br><span class="line">           steps &#123;</span><br><span class="line">              sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">              docker rm -f tomcat-java-demo |true</span></span><br><span class="line"><span class="string">              docker container run -d --name tomcat-java-demo -p 88:8080 $&#123;image_name&#125;</span></span><br><span class="line"><span class="string">              &quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上述脚本中，docker_registry_auth 和git_auth变量的值为Jenkins凭据ID，添加凭据后修改。</p>
+<p>4.4 Pipeline脚本（ 在其他的Docker主机上部署并启动容器）</p>
+<p>安装jenkins插件</p>
+<p>插件名称： SSH Pipeline Steps</p>
+<p>使用说明: <a target="_blank" rel="noopener" href="https://github.com/jenkinsci/ssh-steps-plugin#pipeline-steps">https://github.com/jenkinsci/ssh-steps-plugin#pipeline-steps</a></p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">#!<span class="regexp">/usr/</span>bin/env groovy</span><br><span class="line"></span><br><span class="line">def registry = <span class="string">&quot;192.168.0.12&quot;</span>      </span><br><span class="line">def project = <span class="string">&quot;dev&quot;</span>                </span><br><span class="line">def app_name = <span class="string">&quot;java-demo&quot;</span>        </span><br><span class="line">def image_name = <span class="string">&quot;$&#123;registry&#125;/$&#123;project&#125;/$&#123;app_name&#125;:$&#123;Branch&#125;-$&#123;BUILD_NUMBER&#125;&quot;</span>                                                                                </span><br><span class="line">def git_address = <span class="string">&quot;http://192.168.0.11:9999/root/java-demo.git&quot;</span>      </span><br><span class="line">def docker_registry_auth = <span class="string">&quot;30fae7e1-22c4-4083-848f-a5e90eff9e1f&quot;</span>     </span><br><span class="line">def git_auth = <span class="string">&quot;05750892-5303-49ab-a6d0-33a78ef6c839&quot;</span>   </span><br><span class="line">def remote = [:]</span><br><span class="line">    remote.<span class="property">name</span> = <span class="string">&quot;test&quot;</span></span><br><span class="line">    remote.<span class="property">host</span> = <span class="string">&quot;192.168.0.12&quot;</span></span><br><span class="line">    remote.<span class="property">user</span> = <span class="string">&#x27;root&#x27;</span></span><br><span class="line">    remote.<span class="property">password</span> = <span class="string">&#x27;123.com&#x27;</span></span><br><span class="line">    remote.<span class="property">allowAnyHosts</span> = <span class="literal">true</span></span><br><span class="line">  </span><br><span class="line">pipeline &#123;</span><br><span class="line">    agent any</span><br><span class="line">    stages &#123;</span><br><span class="line">        <span class="title function_">stage</span>(<span class="params"><span class="string">&#x27;拉取代码&#x27;</span></span>)&#123;</span><br><span class="line">            steps &#123;</span><br><span class="line">              <span class="title function_">checkout</span>([<span class="attr">$class</span>: <span class="string">&#x27;GitSCM&#x27;</span>, <span class="attr">branches</span>: [[<span class="attr">name</span>: <span class="string">&#x27;$&#123;Branch&#125;&#x27;</span>]], <span class="attr">userRemoteConfigs</span>: [[<span class="attr">credentialsId</span>: <span class="string">&quot;$&#123;git_auth&#125;&quot;</span>, <span class="attr">url</span>: <span class="string">&quot;$&#123;git_address&#125;&quot;</span>]]])</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="title function_">stage</span>(<span class="params"><span class="string">&#x27;代码编译&#x27;</span></span>)&#123;</span><br><span class="line">           steps &#123;</span><br><span class="line">             sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">                pwd</span></span><br><span class="line"><span class="string">                ls</span></span><br><span class="line"><span class="string">                JAVA_HOME=/usr/local/jdk</span></span><br><span class="line"><span class="string">                PATH=$JAVA_HOME/bin:/usr/local/maven/bin:$PATH</span></span><br><span class="line"><span class="string">                mvn clean package -Dmaven.test.skip=true</span></span><br><span class="line"><span class="string">                &quot;</span><span class="string">&quot;&quot;</span> </span><br><span class="line">           &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="title function_">stage</span>(<span class="params"><span class="string">&#x27;构建镜像&#x27;</span></span>)&#123;</span><br><span class="line">           steps &#123;</span><br><span class="line">                <span class="title function_">withCredentials</span>(<span class="params">[usernamePassword(credentialsId: <span class="string">&quot;$&#123;docker_registry_auth&#125;&quot;</span>, passwordVariable: <span class="string">&#x27;password&#x27;</span>, usernameVariable: <span class="string">&#x27;username&#x27;</span>)]</span>) &#123;</span><br><span class="line">                sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">                  echo &#x27;</span></span><br><span class="line"><span class="string">                    FROM $&#123;registry&#125;/library/tomcat:v1</span></span><br><span class="line"><span class="string">                    LABEL maitainer liuzhe</span></span><br><span class="line"><span class="string">                    RUN rm -rf /usr/local/tomcat/webapps/*</span></span><br><span class="line"><span class="string">                    ADD target/*.war /usr/local/tomcat/webapps/ROOT.war</span></span><br><span class="line"><span class="string">                  &#x27; &gt; Dockerfile</span></span><br><span class="line"><span class="string">                  docker build -t $&#123;image_name&#125; .</span></span><br><span class="line"><span class="string">                  docker login -u $&#123;username&#125; -p &#x27;$&#123;password&#125;&#x27; $&#123;registry&#125;</span></span><br><span class="line"><span class="string">                  docker push $&#123;image_name&#125;</span></span><br><span class="line"><span class="string">                &quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">                &#125;</span><br><span class="line">           &#125; </span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="title function_">stage</span>(<span class="params"><span class="string">&#x27;部署到Docker&#x27;</span></span>)&#123;</span><br><span class="line">           steps &#123;</span><br><span class="line">                sshCommand <span class="attr">remote</span>: remote, <span class="attr">command</span>: <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">                ip a</span></span><br><span class="line"><span class="string">                docker rm -f tomcat-java-demo |true</span></span><br><span class="line"><span class="string">                docker pull $&#123;image_name&#125; </span></span><br><span class="line"><span class="string">                docker container run -d --name tomcat-java-demo -p 88:8080 $&#123;image_name&#125;</span></span><br><span class="line"><span class="string">               &quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">           &#125;    </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>验证：</p>
+<p>1.访问harbor仓库查看是否有上传的镜像    <a target="_blank" rel="noopener" href="http://192.168.0.12/">http://192.168.0.12/</a></p>
+<p><img src="/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/04418B7661DC49D1AD92114AC38F5A64clipboard.png" alt></p>
+<p>2.docker主机上运行的项目镜像容器</p>
+<p><img src="/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/03E31D0090E748B5B3B8416B4C4EEC4Cclipboard.png" alt></p>
+<p>3.访问部署java-demo示例     <a target="_blank" rel="noopener" href="http://192.168.0.13:88/">http://192.168.0.13:88/</a></p>
+<p><img src="/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/5DF2722940214B15AB62A6AA70E96839clipboard.png" alt></p>
+<p>CI/CD收益</p>
+<p>高效的CI/CD环境可以获得：</p>
+<p>1.及时发现问题</p>
+<p>2.大幅度减少故障率</p>
+<p>3.加快迭代速度</p>
+<p>4.减少时间成本</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io">阿哲</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/">http://liuzhemax.github.io/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://liuzhemax.github.io" target="_blank">阿哲技术之路</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Docker/">Docker</a></div><div class="post_share"><div class="social-share" data-image="/medias/%E6%90%AC%E7%A0%96.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2022/05/26/%E5%AE%9E%E7%8E%B0Docker%E5%AE%B9%E5%99%A8%E5%A4%9A%E4%B8%BB%E6%9C%BA%E9%80%9A%E4%BF%A1/" title="实现Docker容器多主机通信"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">实现Docker容器多主机通信</div></div></a></div><div class="next-post pull-right"><a href="/2022/05/28/%E5%AE%B9%E5%99%A8%E5%8C%96%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E7%B3%BB%E7%BB%9F/" title="容器化搭建个人博客系统"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">容器化搭建个人博客系统</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2022/05/25/Harbor%E9%83%A8%E7%BD%B2/" title="Harbor部署"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-05-25</div><div class="title">Harbor部署</div></div></a></div><div><a href="/2022/05/23/JAVA%E9%A1%B9%E7%9B%AE%E9%95%9C%E5%83%8F%E6%9E%84%E5%BB%BA/" title="JAVA项目镜像构建：Tomcat"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-05-23</div><div class="title">JAVA项目镜像构建：Tomcat</div></div></a></div><div><a href="/2022/05/26/%E5%AE%9E%E7%8E%B0Docker%E5%AE%B9%E5%99%A8%E5%A4%9A%E4%B8%BB%E6%9C%BA%E9%80%9A%E4%BF%A1/" title="实现Docker容器多主机通信"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-05-26</div><div class="title">实现Docker容器多主机通信</div></div></a></div><div><a href="/2022/05/28/%E5%AE%B9%E5%99%A8%E5%8C%96%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E7%B3%BB%E7%BB%9F/" title="容器化搭建个人博客系统"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-05-28</div><div class="title">容器化搭建个人博客系统</div></div></a></div><div><a href="/2022/05/24/%E9%95%9C%E5%83%8F%E7%9A%84%E5%88%B6%E4%BD%9CCMD%E4%B8%8EENTRYPOINT%E5%8C%BA%E5%88%AB/" title="镜像的制作CMD与ENTRYPOINT区别"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-05-24</div><div class="title">镜像的制作CMD与ENTRYPOINT区别</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">阿哲</div><div class="author-info__description">强大自己是解决问题的唯一办法</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">7</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1437626743@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">分享个人经验总结</div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/05/21/hello-world/" title="Hello World">Hello World</a><time datetime="2024-05-21T14:04:13.000Z" title="发表于 2024-05-21 22:04:13">2024-05-21</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/05/28/%E5%AE%B9%E5%99%A8%E5%8C%96%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E7%B3%BB%E7%BB%9F/" title="容器化搭建个人博客系统">容器化搭建个人博客系统</a><time datetime="2022-05-28T13:45:32.000Z" title="发表于 2022-05-28 21:45:32">2022-05-28</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/05/27/%E5%9F%BA%E4%BA%8EDocker%E6%9E%84%E5%BB%BA%E4%BC%81%E4%B8%9AJenkins%E5%B9%B3%E5%8F%B0/" title="基于Docker构建企业Jenkins平台">基于Docker构建企业Jenkins平台</a><time datetime="2022-05-27T13:45:32.000Z" title="发表于 2022-05-27 21:45:32">2022-05-27</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/05/26/%E5%AE%9E%E7%8E%B0Docker%E5%AE%B9%E5%99%A8%E5%A4%9A%E4%B8%BB%E6%9C%BA%E9%80%9A%E4%BF%A1/" title="实现Docker容器多主机通信">实现Docker容器多主机通信</a><time datetime="2022-05-26T13:45:32.000Z" title="发表于 2022-05-26 21:45:32">2022-05-26</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/05/25/Harbor%E9%83%A8%E7%BD%B2/" title="Harbor部署">Harbor部署</a><time datetime="2022-05-25T13:45:32.000Z" title="发表于 2022-05-25 21:45:32">2022-05-25</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="footer_custom_text">阿哲技术之路</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.13.0"></script></div></div></body></html>
