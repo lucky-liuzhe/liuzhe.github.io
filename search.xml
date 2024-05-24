@@ -1,8 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>JAVA项目镜像构建：Tomcat</title>
+    <url>/2022/05/23/JAVA%E9%A1%B9%E7%9B%AE%E9%95%9C%E5%83%8F%E6%9E%84%E5%BB%BA/</url>
+    <content><![CDATA[<p>JAVA项目镜像构建：Tomcat</p>
+<p>tomcat目录文件：1.apache-tomcat-8.5.43.tar.gz  2.Dockerfile   3.Dockerfile2  4.ROOT.war</p>
+<p>Dockerfile（环境镜像）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">FROM centos:7</span><br><span class="line">MAINTAINER www.ctnrs.com</span><br><span class="line"></span><br><span class="line">ENV VERSION=8.5.43</span><br><span class="line"></span><br><span class="line">RUN yum install java-1.8.0-openjdk wget curl unzip iproute net-tools -y &amp;&amp; \</span><br><span class="line">    yum clean all &amp;&amp; \</span><br><span class="line">    <span class="built_in">rm</span> -rf /var/cache/yum/*</span><br><span class="line"></span><br><span class="line">ADD apache-tomcat-<span class="variable">$&#123;VERSION&#125;</span>.tar.gz /usr/local/</span><br><span class="line">RUN <span class="built_in">mv</span> /usr/local/apache-tomcat-<span class="variable">$&#123;VERSION&#125;</span> /usr/local/tomcat &amp;&amp; \</span><br><span class="line">    sed -i <span class="string">&#x27;1a JAVA_OPTS=&quot;-Djava.security.egd=file:/dev/./urandom&quot;&#x27;</span> /usr/local/tomcat/bin/catalina.sh &amp;&amp; \</span><br><span class="line">    <span class="built_in">ln</span> -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</span><br><span class="line"></span><br><span class="line">ENV PATH <span class="variable">$PATH</span>:/usr/local/tomcat/bin</span><br><span class="line"></span><br><span class="line">WORKDIR /usr/local/tomcat</span><br><span class="line"></span><br><span class="line">EXPOSE 8080</span><br><span class="line">CMD [<span class="string">&quot;catalina.sh&quot;</span>, <span class="string">&quot;run&quot;</span>]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>Dockerfile2 (基于环境镜像打包的项目镜像）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">FROM tomcat:v1</span><br><span class="line">RUN <span class="built_in">rm</span> -rf /usr/local/tomcat/webapps/*</span><br><span class="line">COPY ROOT.war /usr/local/tomcat/webapps</span><br></pre></td></tr></table></figure>
+<p>构建镜像</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> tomcat/</span><br><span class="line">docker build -t tomcat:v1 .</span><br><span class="line">docker build -t tomcat:v2 -f Dockerfile2 .</span><br><span class="line">docker run -d -p 8888:8080 --name tomcat tomcat:v2</span><br></pre></td></tr></table></figure>
+<p>访问tomcat 8888端口</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">http://192.168.0.11:8888/</span><br></pre></td></tr></table></figure>
+<p>JAVA微服务镜像构建：Jar</p>
+<p>java目录文件:1.Dockerfile  2.hello.jar</p>
+<p>Dockerfile(基于环境镜像打包的项目镜像）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">FROM java:8-jdk-alpine</span><br><span class="line">LABEL maintainer www.ctnrs.com</span><br><span class="line">ENV JAVA_OPTS=<span class="string">&quot;<span class="variable">$JAVA_OPTS</span> -Dfile.encoding=UTF8 -Duser.timezone=GMT+08&quot;</span></span><br><span class="line">RUN sed -i <span class="string">&#x27;s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g&#x27;</span> /etc/apk/repositories &amp;&amp; \</span><br><span class="line">    apk add -U tzdata &amp;&amp; \</span><br><span class="line">    <span class="built_in">ln</span> -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</span><br><span class="line">COPY hello.jar /</span><br><span class="line">EXPOSE 8888</span><br><span class="line">CMD [<span class="string">&quot;/bin/sh&quot;</span>, <span class="string">&quot;-c&quot;</span>, <span class="string">&quot;java -jar <span class="variable">$JAVA_OPTS</span> /hello.jar&quot;</span>]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>编写Dockerfile最佳实践</p>
+<p>减少镜像层：一次RUN指令形成新的一层，尽量Shell命令都写在一行，减少镜像层。</p>
+<p>优化镜像大小：一次RUN形成新的一层，如果没有在同一层删除，无论文件是否最后删除， 都会带到下一层，所以要在每一层清理对应的残留数据，减小镜像大小。</p>
+<p>减少网络传输时间：例如软件包、mvn仓库等</p>
+<p>多阶段构建：代码编译、部署在一个Dockerfile完成，只会保留部署阶段产生数据。</p>
+<p>选择最小的基础镜像：例如alpine</p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Harbor部署</title>
-    <url>/2022/05/25/Harbor%E9%83%A8%E7%BD%B2/</url>
+    <url>/2022/05/25/harbor/</url>
     <content><![CDATA[<p>Harbor 概述</p>
 <p>Harbor是由VMWare公司开源的容器镜像仓库。事实上，Harbor是在Docker Registry上进行了相应的企业级扩展， 从而获得了更加广泛的应用，这些新的企业级特性包括：管理用户界面，基于角色的访问控制 ，AD/LDAP集成以及 审计日志等，足以满足基本企业需求。</p>
 <p>官方：<a href="https://goharbor.io/">https://goharbor.io/</a></p>
@@ -24,7 +55,7 @@
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">mv</span> docker-compose-Linux-x86_64 /usr/bin/docker-compose</span><br><span class="line"><span class="built_in">chmod</span> +x /usr/bin/docker-compose</span><br><span class="line"></span><br><span class="line">tar zxvf harbor-offline-installer-v2.0.0.tgz </span><br><span class="line"><span class="built_in">cd</span> harbor </span><br><span class="line"><span class="built_in">cp</span> harbor.yml.tmpl harbor.yml </span><br><span class="line"></span><br><span class="line">vi harbor.yml </span><br><span class="line">hostname: reg.azhe.com </span><br><span class="line"><span class="comment">#https: # 先注释https相关配置 </span></span><br><span class="line">harbor_admin_password: Harbor12345 </span><br><span class="line">./prepare</span><br><span class="line">./install.sh</span><br></pre></td></tr></table></figure>
 <p>3、访问harbor</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">http://reg.azhe.com/</span><br></pre></td></tr></table></figure>
-<p><img src="/images/65FF30622A314D5391BD5ACBBEC52776clipboard.png" alt></p>
+<p><img src="images/65FF30622A314D5391BD5ACBBEC52776clipboard.png" alt></p>
 <p>Harbor 基本使用</p>
 <p>1、配置http镜像仓库可信任（默认是https访问的，上面配置的是http，这里需要配置可信任)</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#配置http镜像仓库可信任</span></span><br><span class="line">vi /etc/docker/daemon.json </span><br><span class="line">&#123;<span class="string">&quot;insecure-registries&quot;</span>:[<span class="string">&quot;reg.azhe.com&quot;</span>]&#125; </span><br><span class="line">systemctl restart docker</span><br><span class="line"><span class="comment">#查看是否有harbor容器退出，重新停止再拉起</span></span><br><span class="line">docker-compose ps</span><br><span class="line">docker-compose down</span><br><span class="line">docker-compose up -d</span><br></pre></td></tr></table></figure>
@@ -73,37 +104,6 @@
 <p>日志文件目录：/var/log/harbor</p>
 <p>PG数据库做好定期备份，里面存放用户数据文件。</p>
 <p>主从复制，主harbor挂掉，启用备harbor，需要把pg数据导入到备harbor。</p>
-]]></content>
-      <categories>
-        <category>Docker</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>JAVA项目镜像构建：Tomcat</title>
-    <url>/2022/05/23/JAVA%E9%A1%B9%E7%9B%AE%E9%95%9C%E5%83%8F%E6%9E%84%E5%BB%BA/</url>
-    <content><![CDATA[<p>JAVA项目镜像构建：Tomcat</p>
-<p>tomcat目录文件：1.apache-tomcat-8.5.43.tar.gz  2.Dockerfile   3.Dockerfile2  4.ROOT.war</p>
-<p>Dockerfile（环境镜像）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">FROM centos:7</span><br><span class="line">MAINTAINER www.ctnrs.com</span><br><span class="line"></span><br><span class="line">ENV VERSION=8.5.43</span><br><span class="line"></span><br><span class="line">RUN yum install java-1.8.0-openjdk wget curl unzip iproute net-tools -y &amp;&amp; \</span><br><span class="line">    yum clean all &amp;&amp; \</span><br><span class="line">    <span class="built_in">rm</span> -rf /var/cache/yum/*</span><br><span class="line"></span><br><span class="line">ADD apache-tomcat-<span class="variable">$&#123;VERSION&#125;</span>.tar.gz /usr/local/</span><br><span class="line">RUN <span class="built_in">mv</span> /usr/local/apache-tomcat-<span class="variable">$&#123;VERSION&#125;</span> /usr/local/tomcat &amp;&amp; \</span><br><span class="line">    sed -i <span class="string">&#x27;1a JAVA_OPTS=&quot;-Djava.security.egd=file:/dev/./urandom&quot;&#x27;</span> /usr/local/tomcat/bin/catalina.sh &amp;&amp; \</span><br><span class="line">    <span class="built_in">ln</span> -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</span><br><span class="line"></span><br><span class="line">ENV PATH <span class="variable">$PATH</span>:/usr/local/tomcat/bin</span><br><span class="line"></span><br><span class="line">WORKDIR /usr/local/tomcat</span><br><span class="line"></span><br><span class="line">EXPOSE 8080</span><br><span class="line">CMD [<span class="string">&quot;catalina.sh&quot;</span>, <span class="string">&quot;run&quot;</span>]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>Dockerfile2 (基于环境镜像打包的项目镜像）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">FROM tomcat:v1</span><br><span class="line">RUN <span class="built_in">rm</span> -rf /usr/local/tomcat/webapps/*</span><br><span class="line">COPY ROOT.war /usr/local/tomcat/webapps</span><br></pre></td></tr></table></figure>
-<p>构建镜像</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> tomcat/</span><br><span class="line">docker build -t tomcat:v1 .</span><br><span class="line">docker build -t tomcat:v2 -f Dockerfile2 .</span><br><span class="line">docker run -d -p 8888:8080 --name tomcat tomcat:v2</span><br></pre></td></tr></table></figure>
-<p>访问tomcat 8888端口</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">http://192.168.0.11:8888/</span><br></pre></td></tr></table></figure>
-<p>JAVA微服务镜像构建：Jar</p>
-<p>java目录文件:1.Dockerfile  2.hello.jar</p>
-<p>Dockerfile(基于环境镜像打包的项目镜像）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">FROM java:8-jdk-alpine</span><br><span class="line">LABEL maintainer www.ctnrs.com</span><br><span class="line">ENV JAVA_OPTS=<span class="string">&quot;<span class="variable">$JAVA_OPTS</span> -Dfile.encoding=UTF8 -Duser.timezone=GMT+08&quot;</span></span><br><span class="line">RUN sed -i <span class="string">&#x27;s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g&#x27;</span> /etc/apk/repositories &amp;&amp; \</span><br><span class="line">    apk add -U tzdata &amp;&amp; \</span><br><span class="line">    <span class="built_in">ln</span> -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</span><br><span class="line">COPY hello.jar /</span><br><span class="line">EXPOSE 8888</span><br><span class="line">CMD [<span class="string">&quot;/bin/sh&quot;</span>, <span class="string">&quot;-c&quot;</span>, <span class="string">&quot;java -jar <span class="variable">$JAVA_OPTS</span> /hello.jar&quot;</span>]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>编写Dockerfile最佳实践</p>
-<p>减少镜像层：一次RUN指令形成新的一层，尽量Shell命令都写在一行，减少镜像层。</p>
-<p>优化镜像大小：一次RUN形成新的一层，如果没有在同一层删除，无论文件是否最后删除， 都会带到下一层，所以要在每一层清理对应的残留数据，减小镜像大小。</p>
-<p>减少网络传输时间：例如软件包、mvn仓库等</p>
-<p>多阶段构建：代码编译、部署在一个Dockerfile完成，只会保留部署阶段产生数据。</p>
-<p>选择最小的基础镜像：例如alpine</p>
 ]]></content>
       <categories>
         <category>Docker</category>
