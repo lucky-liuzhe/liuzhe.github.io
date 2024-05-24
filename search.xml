@@ -378,9 +378,8 @@
 <p>kubeadm方式修改ipvs模式：</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl edit configmaps kube-proxy -n kube-system </span><br><span class="line"><span class="comment">#搜索mode，添加ipvs，修改完保存</span></span><br><span class="line">  mode: <span class="string">&quot;ipvs&quot;</span></span><br><span class="line"><span class="comment">#删除node1节点proxy的pod,重新生成新的pod</span></span><br><span class="line">kubectl delete pod kube-proxy-lzjgg -n kube-system </span><br><span class="line">kubectl get pod -o wide -n kube-system </span><br><span class="line">kubectl logs kube-proxy-hnw5p -n kube-system </span><br></pre></td></tr></table></figure>
 <p><img src="/images/A3F8D2A415C546398858681A0512333Dclipboard.png" alt></p>
-<p>注： 1、kube-proxy配置文件以configmap方式存储</p>
-<pre><code>     2、如果让所有节点生效，需要重建所有节点kube-proxy pod
-</code></pre>
+<p>注： 1、kube-proxy配置文件以configmap方式存储<br>
+2、如果让所有节点生效，需要重建所有节点kube-proxy pod</p>
 <p>在node1节点上安装ipvsadm工具</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum -y install ipvsadm</span><br><span class="line">ipvsadm -L -n</span><br></pre></td></tr></table></figure>
 <p><img src="/images/9ECAC01183284036B4DFF293FB29FA02clipboard.png" alt></p>
