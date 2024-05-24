@@ -287,11 +287,11 @@
 <p>ip a</p>
 <p><img src="/images/C1397ED986B04C628380BEFC3B50A968clipboard.png" alt></p>
 <p>二进制方式修改ipvs模式：</p>
-<h1>vi kube-proxy-config.yml</h1>
+<p>vi kube-proxy-config.yml</p>
 <p>mode: ipvs</p>
 <p>ipvs:</p>
 <p>scheduler: &quot;rr“</p>
-<h1>systemctl restart kube-proxy</h1>
+<p>systemctl restart kube-proxy</p>
 <p>注：参考不同资料，文件名可能不同</p>
 <p>流程包流程：客户端 -&gt;NodePort/ClusterIP（iptables/Ipvs负载均衡规则） -&gt; 分布在各节点Pod</p>
 <p>查看负载均衡规则：</p>
