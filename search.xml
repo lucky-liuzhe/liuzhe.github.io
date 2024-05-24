@@ -364,31 +364,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Hello World</title>
-    <url>/2024/05/21/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start">Quick Start</h2>
-<h3 id="Create-a-new-post">Create a new post</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server">Run server</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files">Generate static files</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites">Deploy to remote sites</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-      <categories>
-        <category>DevOps</category>
-      </categories>
-      <tags>
-        <tag>DevOps</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>kubectl命令行管理工具</title>
     <url>/2022/06/12/kubectl%E5%91%BD%E4%BB%A4%E8%A1%8C%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/</url>
     <content><![CDATA[<h2 id="kubeconfig配置文件">kubeconfig配置文件</h2>
@@ -1393,18 +1368,18 @@
 <p>3.验证</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f pod3.yaml </span><br><span class="line">kubectl get pod   <span class="comment">#查看pod3是否处于pending状态</span></span><br><span class="line">kubectl describe pod pod3    <span class="comment">#查看pod3的状态</span></span><br></pre></td></tr></table></figure>
 <p><img src="/images/5E8FF7CD88DC4C12AF574509137E2137clipboard.png" alt></p>
-<h2 id="上面的意思是默认计划程序0-3个节点可用：1个节点有污点-disktype-ssd-，pod不能容忍，1个节点有污点-gpu-iniaid-，pod不能容忍，1个节点有污点-node-role-kubernetes-io-主。">上面的意思是默认计划程序0/3个节点可用：1个节点有污点{disktype:ssd}，pod不能容忍，1个节点有污点{gpu:iniaid}，pod不能容忍，1个节点有污点{node}-role.kubernetes.io/主。</h2>
-<h2 id="示例三">示例三</h2>
+<p>上面的意思是默认计划程序0/3个节点可用：1个节点有污点{disktype:ssd}，pod不能容忍，1个节点有污点{gpu:iniaid}，pod不能容忍，1个节点有污点{node}-role.kubernetes.io/主。</p>
+<p>示例三</p>
 <p>1.基于示例二，添加污点容忍使pod能够分配到node1节点上</p>
 <p>vim pod4.yaml</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: pod4</span><br><span class="line">spec:</span><br><span class="line">  tolerations:                  <span class="comment">#意思是分配到标签gpu=iniaid的这个节点上</span></span><br><span class="line">  - key: <span class="string">&quot;gpu&quot;</span>                   </span><br><span class="line">    operator: <span class="string">&quot;Equal&quot;</span>           <span class="comment">#操作符等于的意思</span></span><br><span class="line">    value: <span class="string">&quot;iniaid&quot;</span></span><br><span class="line">    effect: <span class="string">&quot;NoSchedule&quot;</span></span><br><span class="line">  containers:</span><br><span class="line">  - name: web</span><br><span class="line">    image: nginx</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h2 id="加上effect-NoSchedule-的意思：更精确一点，如果不加的话，比如两个节点都有gpu-iniaid这个标签，但它们的effect的调度策略不同，那么pod可能会分配到这两个节点上。">加上effect: &quot;NoSchedule&quot;的意思：更精确一点，如果不加的话，比如两个节点都有gpu=iniaid这个标签，但它们的effect的调度策略不同，那么pod可能会分配到这两个节点上。</h2>
-<h2 id="2-验证">2.验证</h2>
+<p>加上effect: &quot;NoSchedule&quot;的意思：更精确一点，如果不加的话，比如两个节点都有gpu=iniaid这个标签，但它们的effect的调度策略不同，那么pod可能会分配到这两个节点上。</p>
+<p>2.验证</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f pod4.yaml </span><br><span class="line">kubectl get pod  -o wide   <span class="comment">#验证是否被分配到node1节点上</span></span><br></pre></td></tr></table></figure>
 <p><img src="/images/982EB5703C1E487E9146B059C6435868clipboard.png" alt></p>
-<h2 id="最后去掉污点">最后去掉污点</h2>
+<p>最后去掉污点</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl describe nodes |grep Taint   <span class="comment">#查看当前有污点的节点</span></span><br><span class="line">kubectl taint node k8s-nod2 disktype-    <span class="comment">#去掉node1节点的污点</span></span><br><span class="line">kubectl taint node k8s-node2 disktype-   <span class="comment">#去掉node2节点的污点</span></span><br><span class="line">kubectl describe nodes |grep Taint      <span class="comment">#验证是否去掉了污点</span></span><br></pre></td></tr></table></figure>
-<h2 id="验证pod3是否被调度成功">验证pod3是否被调度成功</h2>
+<p>验证pod3是否被调度成功</p>
 <p><img src="/images/4978D9F6F11F4C1987D9EC08C3E68324clipboard.png" alt></p>
 <h2 id="nodeName">nodeName</h2>
 <p>nodeName：指定节点名称，用于将Pod调度到指定的Node上，不经过调度器</p>
