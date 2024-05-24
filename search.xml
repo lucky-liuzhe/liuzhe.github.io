@@ -1,31 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Hello World</title>
-    <url>/2024/05/21/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start">Quick Start</h2>
-<h3 id="Create-a-new-post">Create a new post</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server">Run server</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files">Generate static files</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites">Deploy to remote sites</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
-      <categories>
-        <category>DevOps</category>
-      </categories>
-      <tags>
-        <tag>DevOps</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Harbor部署</title>
     <url>/2024/05/23/harbor/</url>
     <content><![CDATA[<p><strong>Harbor 概述</strong></p>
@@ -213,6 +188,31 @@
       </categories>
       <tags>
         <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/2024/05/21/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start">Quick Start</h2>
+<h3 id="Create-a-new-post">Create a new post</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server">Run server</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files">Generate static files</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites">Deploy to remote sites</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+      <categories>
+        <category>DevOps</category>
+      </categories>
+      <tags>
+        <tag>DevOps</tag>
       </tags>
   </entry>
   <entry>
@@ -451,6 +451,48 @@
       </categories>
       <tags>
         <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>容器化搭建个人博客系统</title>
+    <url>/2024/05/23/%E5%AE%B9%E5%99%A8%E5%8C%96%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E7%B3%BB%E7%BB%9F/</url>
+    <content><![CDATA[<p>Dockerfile涉及相关的文件及安装包</p>
+<p><a href="attachments/F00C39A38A9E42F1B5B1DB1B3DA7CB4Adockerfile.zip">dockerfile.zip</a></p>
+<p><img src="/2024/05/23/%E5%AE%B9%E5%99%A8%E5%8C%96%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E7%B3%BB%E7%BB%9F/418306A840FE4995A255CA27354E9163clipboard.png" alt></p>
+<p>前端项目镜像构建与部署：Nginx</p>
+<p>nginx目录文件: 1.Dockerfile 2.nginx-1.15.5.tar.gz 3.nginx.conf4.php.conf</p>
+<p>Dockerfile</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="variable constant_">FROM</span> <span class="attr">centos</span>:<span class="number">7</span></span><br><span class="line"><span class="variable constant_">LABEL</span> maintainer www.<span class="property">ctnrs</span>.<span class="property">com</span></span><br><span class="line"><span class="variable constant_">RUN</span> yum install -y gcc gcc-c++ make \</span><br><span class="line">    openssl-devel pcre-devel gd-devel \</span><br><span class="line">    iproute net-tools telnet wget curl &amp;&amp; \</span><br><span class="line">    yum clean all &amp;&amp; \</span><br><span class="line">    rm -rf /<span class="keyword">var</span>/cache/yum<span class="comment">/*</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">ADD nginx-1.15.5.tar.gz /</span></span><br><span class="line"><span class="comment">RUN cd nginx-1.15.5 &amp;&amp; \</span></span><br><span class="line"><span class="comment">    ./configure --prefix=/usr/local/nginx \</span></span><br><span class="line"><span class="comment">    --with-http_ssl_module \</span></span><br><span class="line"><span class="comment">    --with-http_stub_status_module &amp;&amp; \</span></span><br><span class="line"><span class="comment">    make -j 4 &amp;&amp; make install &amp;&amp; \</span></span><br><span class="line"><span class="comment">    mkdir /usr/local/nginx/conf/vhost &amp;&amp; \</span></span><br><span class="line"><span class="comment">    cd / &amp;&amp; rm -rf nginx* &amp;&amp; \</span></span><br><span class="line"><span class="comment">    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">ENV PATH $PATH:/usr/local/nginx/sbin</span></span><br><span class="line"><span class="comment">COPY nginx.conf /usr/local/nginx/conf/nginx.conf</span></span><br><span class="line"><span class="comment">WORKDIR /usr/local/nginx</span></span><br><span class="line"><span class="comment">EXPOSE 80</span></span><br><span class="line"><span class="comment">CMD [&quot;nginx&quot;, &quot;-g&quot;, &quot;daemon off;&quot;]</span></span><br><span class="line"><span class="comment"></span></span><br></pre></td></tr></table></figure>
+<p>nginx.conf</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">user                 nobody;</span><br><span class="line">worker_processes     <span class="number">4</span>;</span><br><span class="line">worker_rlimit_nofile <span class="number">65535</span>;</span><br><span class="line"></span><br><span class="line">error_log  logs/error.<span class="property">log</span>  notice;</span><br><span class="line"></span><br><span class="line">pid        /<span class="keyword">var</span>/run/nginx.<span class="property">pid</span>;</span><br><span class="line"></span><br><span class="line">events &#123;</span><br><span class="line">    use epoll;</span><br><span class="line">    worker_connections  <span class="number">4096</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">http &#123;</span><br><span class="line"></span><br><span class="line">    include       mime.<span class="property">types</span>;</span><br><span class="line">    default_type  application/octet-stream;</span><br><span class="line"></span><br><span class="line">    log_format  main <span class="string">&#x27;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#x27;</span></span><br><span class="line">                      <span class="string">&#x27;$status $body_bytes_sent &quot;$http_referer&quot; &#x27;</span></span><br><span class="line">                      <span class="string">&#x27;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#x27;</span>;</span><br><span class="line"></span><br><span class="line">    access_log off;</span><br><span class="line">    keepalive_timeout  <span class="number">65</span>;</span><br><span class="line"></span><br><span class="line">    client_max_body_size         64m;</span><br><span class="line">    include /usr/local/nginx/conf/vhost<span class="comment">/*.conf;</span></span><br><span class="line"><span class="comment">    </span></span><br><span class="line"><span class="comment">    server &#123;</span></span><br><span class="line"><span class="comment">        listen 80;</span></span><br><span class="line"><span class="comment">        server_name localhost;</span></span><br><span class="line"><span class="comment">        index index.html;</span></span><br><span class="line"><span class="comment">        access_log logs/access.log;</span></span><br><span class="line"><span class="comment">        location / &#123;</span></span><br><span class="line"><span class="comment">            root html;</span></span><br><span class="line"><span class="comment">        &#125;</span></span><br><span class="line"><span class="comment">    &#125;</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">&#125;</span></span><br><span class="line"><span class="comment"></span></span><br></pre></td></tr></table></figure>
+<p>php.conf</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen <span class="number">80</span>;</span><br><span class="line">    server_name example.<span class="property">ctnrs</span>.<span class="property">com</span>;</span><br><span class="line">    index index.<span class="property">php</span> index.<span class="property">html</span>;</span><br><span class="line"></span><br><span class="line">    access_log logs/www.<span class="property">ctnrs</span>.<span class="property">com_access</span>.<span class="property">log</span>;</span><br><span class="line">    error_log logs/www.<span class="property">ctnrs</span>.<span class="property">com_error</span>.<span class="property">log</span>;</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        root /wwwroot;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    location ~* \.<span class="property">php$</span> &#123;</span><br><span class="line">        root /wwwroot;</span><br><span class="line">        fastcgi_pass <span class="attr">lnmp_php</span>:<span class="number">9000</span>;</span><br><span class="line">        fastcgi_param <span class="variable constant_">SCRIPT_FILENAME</span> $document_root$fastcgi_script_name;</span><br><span class="line">        include fastcgi_params;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>PHP项目镜像构建：PHP</p>
+<p>php目录文件: 1.Dockerfile 2.php-5.6.36.tar.gz 3.php-fpm.conf  4.php.ini</p>
+<p>Dockerfile</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="variable constant_">FROM</span> <span class="attr">centos</span>:<span class="number">7</span></span><br><span class="line"><span class="variable constant_">MAINTAINER</span> www.<span class="property">ctnrs</span>.<span class="property">com</span></span><br><span class="line"><span class="variable constant_">RUN</span> yum install epel-release -y &amp;&amp; \</span><br><span class="line">    yum install -y gcc gcc-c++ make gd-devel libxml2-devel \</span><br><span class="line">    libcurl-devel libjpeg-devel libpng-devel openssl-devel \</span><br><span class="line">    libmcrypt-devel libxslt-devel libtidy-devel autoconf \</span><br><span class="line">    iproute net-tools telnet wget curl &amp;&amp; \</span><br><span class="line">    yum clean all &amp;&amp; \</span><br><span class="line">    rm -rf /<span class="keyword">var</span>/cache/yum<span class="comment">/*</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">ADD php-5.6.36.tar.gz /</span></span><br><span class="line"><span class="comment">RUN cd php-5.6.36 &amp;&amp; \</span></span><br><span class="line"><span class="comment">    ./configure --prefix=/usr/local/php \</span></span><br><span class="line"><span class="comment">    --with-config-file-path=/usr/local/php/etc \</span></span><br><span class="line"><span class="comment">    --enable-fpm --enable-opcache \</span></span><br><span class="line"><span class="comment">    --with-mysql --with-mysqli --with-pdo-mysql \</span></span><br><span class="line"><span class="comment">    --with-openssl --with-zlib --with-curl --with-gd \</span></span><br><span class="line"><span class="comment">    --with-jpeg-dir --with-png-dir --with-freetype-dir \</span></span><br><span class="line"><span class="comment">    --enable-mbstring --with-mcrypt --enable-hash &amp;&amp; \</span></span><br><span class="line"><span class="comment">    make -j 4 &amp;&amp; make install &amp;&amp; \</span></span><br><span class="line"><span class="comment">    cp php.ini-production /usr/local/php/etc/php.ini &amp;&amp; \</span></span><br><span class="line"><span class="comment">    cp sapi/fpm/php-fpm.conf /usr/local/php/etc/php-fpm.conf &amp;&amp; \</span></span><br><span class="line"><span class="comment">    sed -i &quot;90a \daemonize = no&quot; /usr/local/php/etc/php-fpm.conf &amp;&amp; \</span></span><br><span class="line"><span class="comment">    mkdir /usr/local/php/log &amp;&amp; \</span></span><br><span class="line"><span class="comment">    cd / &amp;&amp; rm -rf php* &amp;&amp; \</span></span><br><span class="line"><span class="comment">    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">ENV PATH $PATH:/usr/local/php/sbin</span></span><br><span class="line"><span class="comment">COPY php.ini /usr/local/php/etc/</span></span><br><span class="line"><span class="comment">COPY php-fpm.conf /usr/local/php/etc/</span></span><br><span class="line"><span class="comment">WORKDIR /usr/local/php</span></span><br><span class="line"><span class="comment">EXPOSE 9000</span></span><br><span class="line"><span class="comment">CMD [&quot;php-fpm&quot;]</span></span><br><span class="line"><span class="comment"></span></span><br></pre></td></tr></table></figure>
+<p>容器化搭建个人博客系统</p>
+<p>1、自定义网络</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">docker network create lnmp</span><br></pre></td></tr></table></figure>
+<p>2、创建Mysql容器</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">docker run -d --name lnmp_mysql --net lnmp --mount src=mysql-vol,dst=<span class="regexp">/var/</span>lib/mysql -e <span class="variable constant_">MYSQL_ROOT_PASSWORD</span>=<span class="number">123456</span> -e <span class="variable constant_">MYSQL_DATABASE</span>=wordpress <span class="attr">mysql</span>:<span class="number">5.7</span> --character-set-server=utf8</span><br></pre></td></tr></table></figure>
+<p>3、创建PHP容器</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">docker run -d --name lnmp_php --net lnmp --mount src=wwwroot,dst=/wwwroot <span class="attr">php</span>:v1</span><br></pre></td></tr></table></figure>
+<p>4、创建Nginx容器</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">docker run -d --name lnmp_nginx --net lnmp -p <span class="number">88</span>:<span class="number">80</span> --mount src=wwwroot,dst=<span class="regexp">/wwwroot --mount type=bind,src=$PWD/</span>php.<span class="property">conf</span>,dst=<span class="regexp">/usr/</span>local/nginx/conf/vhost/php.<span class="property">conf</span> <span class="attr">nginx</span>:v1</span><br></pre></td></tr></table></figure>
+<p>5、访问php网页</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">cd  /<span class="keyword">var</span>/lib/docker/volumes/wwwroot/_data/</span><br><span class="line">vim test.<span class="property">php</span></span><br><span class="line">&lt;?php <span class="title function_">phpinfo</span>();?&gt;</span><br><span class="line"></span><br><span class="line"><span class="attr">http</span>:<span class="comment">//192.168.0.11:88/test.php</span></span><br></pre></td></tr></table></figure>
+<p>6.以wordpress博客为例</p>
+<p><a href="attachments/DA30ED5D4B2C4750AEA183252F67A445wordpress-4.9.4-zh_CN.tar.gz">wordpress-4.9.4-zh_CN.tar.gz</a></p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">cd  /<span class="keyword">var</span>/lib/docker/volumes/wwwroot/_data/</span><br><span class="line">tar -zxf wordpress-<span class="number">4.9</span><span class="number">.4</span>-zh_CN.<span class="property">tar</span>.<span class="property">gz</span></span><br><span class="line">mv wordpress<span class="comment">/* .</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">http://192.168.0.11:88</span></span><br></pre></td></tr></table></figure>
+<p><img src="/2024/05/23/%E5%AE%B9%E5%99%A8%E5%8C%96%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E7%B3%BB%E7%BB%9F/691AF1100B69430F9FF94B594939ED9Eclipboard.png" alt></p>
+<p><img src="/2024/05/23/%E5%AE%B9%E5%99%A8%E5%8C%96%E6%90%AD%E5%BB%BA%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E7%B3%BB%E7%BB%9F/AA9191C1DDFA433D88B7445EB109505Dclipboard.png" alt></p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
       </tags>
   </entry>
 </search>
