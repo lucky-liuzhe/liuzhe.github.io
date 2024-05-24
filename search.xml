@@ -1156,10 +1156,10 @@
 <p><img src="/images/3D917C45F9F8485CBA8164C9A519E60Bclipboard.png" alt></p>
 <p>示例：端口探测</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: probe-demo</span><br><span class="line">  namespace: demo</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - name: web</span><br><span class="line">    image: nginx</span><br><span class="line">    ports:</span><br><span class="line">    - containerPort: 80</span><br><span class="line">    readinessProbe:</span><br><span class="line">      httpGet:</span><br><span class="line">        path: /</span><br><span class="line">        port: 80</span><br><span class="line">      initialDelaySeconds: 30 <span class="comment">#启动容器后多少秒健康检查</span></span><br><span class="line">      periodSeconds: 10 <span class="comment">#以后间隔多少秒检查一次</span></span><br><span class="line">    livenessProbe:</span><br><span class="line">      httpGet:</span><br><span class="line">        path: /</span><br><span class="line">        port: 80</span><br><span class="line">      initialDelaySeconds: 30 <span class="comment">#启动容器后多少秒健康检查</span></span><br><span class="line">      periodSeconds: 10 <span class="comment">#以后间隔多少秒检查一次</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h2 id="注：livenessProbe与readinessProbe配置一样。">注：livenessProbe与readinessProbe配置一样。</h2>
+<p>注：livenessProbe与readinessProbe配置一样。</p>
 <p>示例：执行Shell命令</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">livenessProbe:</span><br><span class="line">  <span class="built_in">exec</span>:</span><br><span class="line">    <span class="built_in">command</span>:</span><br><span class="line">    - <span class="built_in">cat</span></span><br><span class="line">    - /tmp/healthy</span><br></pre></td></tr></table></figure>
-<h2 id="示例：HTTP请求">示例：HTTP请求</h2>
+<p>示例：HTTP请求</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">livenessProbe:</span><br><span class="line">  httpGet:</span><br><span class="line">    path: /healthz</span><br><span class="line">    port: 8080</span><br><span class="line">    httpHeaders:</span><br><span class="line">    - name: Custom-Header</span><br><span class="line">      value: Awesome</span><br></pre></td></tr></table></figure>
 <h2 id="环境变量">环境变量</h2>
 <p>变量值几种定义方式：</p>
@@ -1433,7 +1433,6 @@
 <p>部署：kubectl apply -f xxx.yaml</p>
 <p>卸载：kubectl delete -f xxx.yaml</p>
 <p><img src="/images/049922DAA12B45238787D8DCE47434FBclipboard.png" alt></p>
-<h2 id></h2>
 <h2 id="资源字段太多，记不住怎么办">资源字段太多，记不住怎么办</h2>
 <p>用create命令生成</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create deployment nginx --image=nginx:1.16 -o yaml --dry-run=client &gt; my-deploy.yaml</span><br></pre></td></tr></table></figure>
