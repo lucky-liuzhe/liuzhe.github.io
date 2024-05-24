@@ -159,7 +159,7 @@
 <p>• Weave</p>
 <p>• Calico</p>
 <p>• OpenvSwitch</p>
-<p><img src="/2022/05/26/%E5%AE%9E%E7%8E%B0Docker%E5%AE%B9%E5%99%A8%E5%A4%9A%E4%B8%BB%E6%9C%BA%E9%80%9A%E4%BF%A1/10B81BDFE6B2495FB1B335FAC555BF8Dclipboard.png" alt></p>
+<p><img src="images/10B81BDFE6B2495FB1B335FAC555BF8Dclipboard.png" alt></p>
 <p>1、etcd安装并配置（任意找一台节点安装即可）</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum -y install etcd</span><br><span class="line">vim /etc/etcd/etcd.conf </span><br><span class="line">ETCD_DATA_DIR=<span class="string">&quot;/var/lib/etcd/default.etcd&quot;</span></span><br><span class="line">ETCD_LISTEN_CLIENT_URLS=<span class="string">&quot;http://192.168.0.11:2379&quot;</span></span><br><span class="line">ETCD_NAME=<span class="string">&quot;default&quot;</span></span><br><span class="line">ETCD_ADVERTISE_CLIENT_URLS=<span class="string">&quot;http://192.168.0.11:2379&quot;</span></span><br><span class="line">systemctl start etcd</span><br><span class="line">systemctl <span class="built_in">enable</span> etcd</span><br><span class="line">ss -anpt |grep 2379</span><br></pre></td></tr></table></figure>
 <p>2、flanneld安装并配置（两台跨主机的docker主机安装）</p>
