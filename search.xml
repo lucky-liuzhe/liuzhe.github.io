@@ -32,7 +32,7 @@
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">vim /etc/hosts</span><br><span class="line">192.168.0.11 reg.azhe.com</span><br></pre></td></tr></table></figure>
 <p>3.登录harbbor,打标签，上传，下载</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker login reg.azhe.com</span><br><span class="line">Username: admin</span><br><span class="line">Password: Harbor12345</span><br><span class="line"></span><br><span class="line">docker images</span><br><span class="line">docker tag mysql:5.7 reg.azhe.com/library/mysql:5.7</span><br><span class="line">docker push reg.azhe.com/library/mysql:5.7</span><br><span class="line">docker pull reg.azhe.com/library/mysql:5.7</span><br></pre></td></tr></table></figure>
-<p><img src="images/158D447BE1A84A4C96A9CC38A8FF762Dclipboard.png" alt></p>
+<p><img src="/images/158D447BE1A84A4C96A9CC38A8FF762Dclipboard.png" alt></p>
 <p>Harbor 部署HTTPS</p>
 <p>1、生成SSL证书</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> ssl</span><br><span class="line"><span class="built_in">cd</span> ssl</span><br><span class="line"><span class="built_in">ls</span></span><br><span class="line">ca-config.json  ca-key.pem  cfssl.sh               reg.azhe.com-key.pem</span><br><span class="line">ca.csr          ca.pem      reg.azhe.com.csr       reg.azhe.com.pem</span><br><span class="line">ca-csr.json     certs.sh    reg.azhe.com-csr.json</span><br></pre></td></tr></table></figure>
