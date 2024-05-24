@@ -216,7 +216,7 @@
     <title>Kubernetes核心概念</title>
     <url>/2022/06/10/kubernetes%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/</url>
     <content><![CDATA[<h2 id="有了Docker，为什么还用Kubernetes？">有了Docker，为什么还用Kubernetes？</h2>
-<h4 id="为提高业务并发和高可用，会使用多台服务器，因此会面向这些问题：">为提高业务并发和高可用，会使用多台服务器，因此会面向这些问题：</h4>
+<p>为提高业务并发和高可用，会使用多台服务器，因此会面向这些问题：</p>
 <ul>
 <li>
 <p>多容器跨主机提供服务</p>
@@ -232,7 +232,7 @@
 </li>
 </ul>
 <p><img src="/images/28FBDEB7C0804F9C9A9E53A5C9DEC0C5clipboard.png" alt></p>
-<h4 id="容器编排系统：">容器编排系统：</h4>
+<p>容器编排系统：</p>
 <ul>
 <li>
 <p>Kubernetes</p>
