@@ -7,7 +7,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg">
 <meta property="article:published_time" content="2023-05-10T13:45:32.000Z">
-<meta property="article:modified_time" content="2024-05-24T23:45:56.389Z">
+<meta property="article:modified_time" content="2024-05-24T23:52:07.240Z">
 <meta property="article:author" content="阿哲">
 <meta property="article:tag" content="K8S">
 <meta name="twitter:card" content="summary">
@@ -56,7 +56,7 @@
   isHome: false,
   isHighlightShrink: false,
   isToc: true,
-  postUpdate: '2024-05-25 07:45:56'
+  postUpdate: '2024-05-25 07:52:07'
 }</script><script>(win=>{
       win.saveToLocal = {
         set: (key, value, ttl) => {
@@ -153,12 +153,12 @@
         }
       }
       detectApple()
-    })(window)</script><meta name="generator" content="Hexo 7.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">24</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="阿哲技术之路"><img class="site-icon" src="/medias/%E6%90%AC%E7%A0%96.jpg"/><span class="site-name">阿哲技术之路</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">Prometheus+Grafana监控Kubernetes</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2023-05-10T13:45:32.000Z" title="发表于 2023-05-10 21:45:32">2023-05-10</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-05-24T23:45:56.389Z" title="更新于 2024-05-25 07:45:56">2024-05-25</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/K8S/">K8S</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="Prometheus+Grafana监控Kubernetes"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h2 id="Prometheus-介绍">Prometheus 介绍</h2>
+    })(window)</script><meta name="generator" content="Hexo 7.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">24</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="阿哲技术之路"><img class="site-icon" src="/medias/%E6%90%AC%E7%A0%96.jpg"/><span class="site-name">阿哲技术之路</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">Prometheus+Grafana监控Kubernetes</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2023-05-10T13:45:32.000Z" title="发表于 2023-05-10 21:45:32">2023-05-10</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-05-24T23:52:07.240Z" title="更新于 2024-05-25 07:52:07">2024-05-25</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/K8S/">K8S</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="Prometheus+Grafana监控Kubernetes"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h2 id="Prometheus-介绍">Prometheus 介绍</h2>
 <p>Prometheus（普罗米修斯）是一个最初在SoundCloud上构建的监控系统。自2012年成为社区开源项目， 拥有非常活跃的开发人员和用户社区。为强调开源及独立维护，Prometheus于2016年加入云原生云计算基 金会（CNCF），成为继Kubernetes之后的第二个托管项目。</p>
 <p><a target="_blank" rel="noopener" href="https://prometheus.io/">https://prometheus.io/</a></p>
 <p><a target="_blank" rel="noopener" href="https://github.com/prometheus">https://github.com/prometheus</a></p>
 <h2 id="Prometheus组件与架构">Prometheus组件与架构</h2>
-<p><img src="images/02E7559039504D2697674993D5445F38clipboard.png" alt></p>
+<p><img src="/images/02E7559039504D2697674993D5445F38clipboard.png" alt></p>
 <ul>
 <li>
 <p>Prometheus Server：收集指标和存储时间序列数据，并提供查询接口</p>
@@ -183,7 +183,7 @@
 <p>如果要想监控，前提是能获取被监控端指标数据，并且这个 数据格式必须遵循Prometheus数据模型，这样才能识别和 采集，一般使用exporter提供监控指标数据</p>
 <p>exporter列表：</p>
 <p><a target="_blank" rel="noopener" href="https://prometheus.io/docs/instrumenting/exporters">https://prometheus.io/docs/instrumenting/exporters</a></p>
-<p><img src="images/2D613AC47FB64D1E9B2A92FF54B9EE98clipboard.png" alt></p>
+<p><img src="/images/2D613AC47FB64D1E9B2A92FF54B9EE98clipboard.png" alt></p>
 <ul>
 <li>
 <p>Prometheus Server：收集指标和存储时间序列数据，并提供查询接口</p>
@@ -214,7 +214,7 @@
 <p>访问地址：<a target="_blank" rel="noopener" href="http://ip:3000/">http://ip:3000/</a></p>
 <p>部署文档：<a target="_blank" rel="noopener" href="https://grafana.com/grafana/download">https://grafana.com/grafana/download</a></p>
 <p>用户名/密码：admin/admin # 第一次需要重置密码</p>
-<p><img src="images/810B7F4A81EE44BA9DD094BF855C8763clipboard.png" alt></p>
+<p><img src="/images/810B7F4A81EE44BA9DD094BF855C8763clipboard.png" alt></p>
 <h2 id="Prometheus基本使用：监控Linux服务器">Prometheus基本使用：监控Linux服务器</h2>
 <p>node_exporter：用于监控Linux系统的指标采集器。</p>
 <p>常用指标：</p>
@@ -247,8 +247,8 @@
 <p>在Prometheus配置文件添加被监控端：</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">scrape_configs:                                                    </span><br><span class="line">  <span class="comment"># The job name is added as a label `job=&lt;job_name&gt;` to any timeseries scraped from this config.</span></span><br><span class="line">  - job_name: <span class="string">&#x27;prometheus&#x27;</span>                                                                       </span><br><span class="line">                                                                                                 </span><br><span class="line">    <span class="comment"># metrics_path defaults to &#x27;/metrics&#x27;</span></span><br><span class="line">    <span class="comment"># scheme defaults to &#x27;http&#x27;.         </span></span><br><span class="line">                                         </span><br><span class="line">    static_configs:             </span><br><span class="line">    - targets: [<span class="string">&#x27;localhost:9090&#x27;</span>]</span><br><span class="line">  - job_name: <span class="string">&#x27;Linux Server&#x27;</span>     </span><br><span class="line">    static_configs:              </span><br><span class="line">    - targets: [<span class="string">&#x27;192.168.0.12:9100&#x27;</span>,<span class="string">&#x27;192.168.0.13:9100&#x27;</span>]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>使用Grafana展示node_exporter数据指标，仪表盘ID： 9276</p>
-<p><img src="images/94A58E9E493A4507828805F430835074clipboard.png" alt></p>
-<p><img src="images/E0C7336FB9014DCF886C68EA1A6D4BDAclipboard.png" alt></p>
+<p><img src="/images/94A58E9E493A4507828805F430835074clipboard.png" alt></p>
+<p><img src="/images/E0C7336FB9014DCF886C68EA1A6D4BDAclipboard.png" alt></p>
 <h2 id="Prometheus基本使用：查询数据">Prometheus基本使用：查询数据</h2>
 <p>PromQL(Prometheus Query Language) 是 Prometheus 自己开发的数据查询 DSL 语言，语言表现力非常丰 富，支持条件查询、操作符，并且内建了大量内置函数，供我们针对监控数据的各种维度进行查询。</p>
 <p>数据模型：</p>
@@ -272,7 +272,7 @@
 <p>node_cpu_seconds_total{job=“Linux Server”}</p>
 <p>查询指标近5分钟内样本（称为范围向量，时间单位 s，m，h，d，w，y）： node_cpu_seconds_total{job=“Linux Server”}[5m]</p>
 <p>node_cpu_seconds_total{job=“Linux Server”}[1h]</p>
-<p><img src="images/C15669D7F54143B9B450796E42803460clipboard.png" alt></p>
+<p><img src="/images/C15669D7F54143B9B450796E42803460clipboard.png" alt></p>
 <h2 id="Kubernetes-监控指标">Kubernetes 监控指标</h2>
 <p>Kubernetes本身监控</p>
 <ul>
@@ -302,8 +302,8 @@
 </li>
 </ul>
 <h2 id="Kubernetes-监控实现思路">Kubernetes 监控实现思路</h2>
-<p><img src="images/27D0E1AC0E504AF28615CE9BA0D66E7Aclipboard.png" alt></p>
-<p><img src="images/AFBC9203DEBA40ECBFE01B98E1F76880clipboard.png" alt></p>
+<p><img src="/images/27D0E1AC0E504AF28615CE9BA0D66E7Aclipboard.png" alt></p>
+<p><img src="/images/AFBC9203DEBA40ECBFE01B98E1F76880clipboard.png" alt></p>
 <p>Pod</p>
 <p>kubelet的节点使用cAdvisor提供的metrics接口获取该节点所有Pod和容器相关的性能指标数据。</p>
 <p>指标接口：<a target="_blank" rel="noopener" href="https://NodeIP:10250/metrics/cadvisor">https://NodeIP:10250/metrics/cadvisor</a></p>
@@ -362,7 +362,7 @@
 <p>在Prometheus中创建告警规则</p>
 </li>
 </ol>
-<p><img src="images/7A103C798FC745D78E01C269EA892CEEclipboard.png" alt></p>
+<p><img src="/images/7A103C798FC745D78E01C269EA892CEEclipboard.png" alt></p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">global:</span><br><span class="line"> resolve_timeout: 5m</span><br><span class="line"> <span class="comment"># 邮箱服务器</span></span><br><span class="line"> smtp_smarthost: <span class="string">&#x27;smtp.163.com:25&#x27;</span></span><br><span class="line"> smtp_from: <span class="string">&#x27;baojingtongzhi@163.com&#x27;</span></span><br><span class="line"> smtp_auth_username: <span class="string">&#x27;baojingtongzhi@163.com&#x27;</span></span><br><span class="line"> smtp_auth_password: <span class="string">&#x27;xxx&#x27;</span></span><br><span class="line"> smtp_require_tls: <span class="literal">false</span></span><br><span class="line"><span class="comment"># 配置路由树</span></span><br><span class="line">route:</span><br><span class="line"> group_by: [‘alertname’] <span class="comment"># 根据告警规则组名进行分组</span></span><br><span class="line"> group_wait: 10s <span class="comment"># 分组内第一个告警等待时间，10s内如有第二个告警会合并一个告警</span></span><br><span class="line"> group_interval: 10s <span class="comment"># 发送新告警间隔时间</span></span><br><span class="line"> repeat_interval: 1h <span class="comment"># 重复告警间隔发送时间</span></span><br><span class="line"> receiver: <span class="string">&#x27;mail&#x27;</span></span><br><span class="line"><span class="comment"># 接收人</span></span><br><span class="line">receivers:</span><br><span class="line">- name: <span class="string">&#x27;mail&#x27;</span></span><br><span class="line">  email_configs:</span><br><span class="line">  - to: <span class="string">&#x27;zhenliang369@163.com&#x27;</span></span><br></pre></td></tr></table></figure>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># vi prometheus.yml</span></span><br><span class="line"><span class="comment"># 指定Alertmanager组件地址</span></span><br><span class="line">alerting:</span><br><span class="line">  alertmanagers:</span><br><span class="line">  - static_configs:</span><br><span class="line">    - targets:</span><br><span class="line">      - 127.0.0.1:9093</span><br><span class="line"><span class="comment"># 执行告警规则</span></span><br><span class="line">rule_files:</span><br><span class="line">  - <span class="string">&quot;rules/*.yml&quot;</span></span><br><span class="line">  </span><br><span class="line"><span class="comment"># vi rules/general.yml</span></span><br><span class="line"><span class="built_in">groups</span>:</span><br><span class="line">- name: example <span class="comment">#告警规则组名称</span></span><br><span class="line">  rules:</span><br><span class="line">  <span class="comment"># 任何实例5分钟内无法访问发出告警</span></span><br><span class="line">  - alert: InstanceDown <span class="comment"># 告警规则名称</span></span><br><span class="line">    <span class="built_in">expr</span>: up == 0 <span class="comment"># 基于PromQL的触发条件</span></span><br><span class="line">    <span class="keyword">for</span>: 5m <span class="comment"># 等待评估时间</span></span><br><span class="line">    labels: <span class="comment"># 自定义标签</span></span><br><span class="line">      severity: page</span><br><span class="line">    annotations: <span class="comment"># 指定附加信息</span></span><br><span class="line">      summary: <span class="string">&quot; &#123;&#123; <span class="variable">$labels</span>.instance &#125;&#125; 停止工作&quot;</span></span><br><span class="line">      description: <span class="string">&quot;&#123;&#123; <span class="variable">$labels</span>.instance &#125;&#125;：job &#123;&#123; <span class="variable">$labels</span>.job &#125;&#125; 已经停止5分钟以上.&quot;</span>  </span><br><span class="line">  </span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>告警状态：</p>
@@ -377,10 +377,10 @@
 <p>Firing：已触发阈值且满足告警持续时间。警报发送给接受者。</p>
 </li>
 </ul>
-<p><img src="images/80903A4C542A4376BF2CCF2255CA6F5Fclipboard.png" alt></p>
-<p><img src="images/166CD46A4C7F4434A1E761175A1B05E6clipboard.png" alt></p>
-<p><img src="images/29359740BD3A4AF498A5A7CC1F94E911clipboard.png" alt></p>
-<p><img src="images/49E932B96C6241CABC2D385839708FE4clipboard.png" alt></p>
+<p><img src="/images/80903A4C542A4376BF2CCF2255CA6F5Fclipboard.png" alt></p>
+<p><img src="/images/166CD46A4C7F4434A1E761175A1B05E6clipboard.png" alt></p>
+<p><img src="/images/29359740BD3A4AF498A5A7CC1F94E911clipboard.png" alt></p>
+<p><img src="/images/49E932B96C6241CABC2D385839708FE4clipboard.png" alt></p>
 <p>小结：</p>
 <p>1.在k8s中部署应用，在service或者pod中配置注解</p>
 <p>annotations:</p>

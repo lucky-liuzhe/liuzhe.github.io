@@ -40,26 +40,26 @@
 </ul>
 <p>示例：标准输出</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl run nginx --image=nginx </span><br><span class="line">kubectl get pod -o wide</span><br><span class="line">curl -I 10.244.36.65</span><br><span class="line">kubectl <span class="built_in">exec</span> -it nginx -- bash</span><br></pre></td></tr></table></figure>
-<p><img src="images/1AD8668512ED40C7982F71EEF7578947clipboard.png" alt></p>
-<p><img src="images/BCA6E0A58E0B4B57864D0463C3A40454clipboard.png" alt></p>
+<p><img src="/images/1AD8668512ED40C7982F71EEF7578947clipboard.png" alt></p>
+<p><img src="/images/BCA6E0A58E0B4B57864D0463C3A40454clipboard.png" alt></p>
 <p>日志文件在宿主机上的路径</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get pod -o wide     <span class="comment">#查看pod所在节点</span></span><br></pre></td></tr></table></figure>
-<p><img src="images/AC3C714989FF4404BD41B4DFF6EE4508clipboard.png" alt></p>
+<p><img src="/images/AC3C714989FF4404BD41B4DFF6EE4508clipboard.png" alt></p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#采集所有容器的日志</span></span><br><span class="line">/var/lib/docker/containers/*/*-json.log</span><br></pre></td></tr></table></figure>
 <p>示例：日志文件</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl run tomcat --image=tomcat</span><br><span class="line">kubectl get pod -o wide</span><br><span class="line">curl 10.244.36.66:8080</span><br><span class="line">kubectl <span class="built_in">exec</span> -it tomcat -- bash</span><br></pre></td></tr></table></figure>
-<p><img src="images/ABF0ED03F8B84009870BC9853D2F5CFAclipboard.png" alt></p>
+<p><img src="/images/ABF0ED03F8B84009870BC9853D2F5CFAclipboard.png" alt></p>
 <p>方式一：使用emptyDir数据卷挂载容器日志路径到宿主机上，DaemonSet方式部署，在每个节点部署日志采集器采集日志。</p>
 <p>vim tomcat.yaml</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: tomcat-web</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - image: tomcat</span><br><span class="line">    name: web</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: logs</span><br><span class="line">      mountPath: /usr/local/tomcat/logs</span><br><span class="line"></span><br><span class="line">  volumes:</span><br><span class="line">  - name: logs</span><br><span class="line">    emptyDir: &#123;&#125;</span><br></pre></td></tr></table></figure>
-<p><img src="images/792129A318954414A785DF716F403E67clipboard.png" alt></p>
-<p><img src="images/B39AB402B525404DB60FF061FFE148D0clipboard.png" alt></p>
+<p><img src="/images/792129A318954414A785DF716F403E67clipboard.png" alt></p>
+<p><img src="/images/B39AB402B525404DB60FF061FFE148D0clipboard.png" alt></p>
 <p>方式二：使用emptyDir数据卷共享应用容器的日志让日志采集器容器能够采集到</p>
 <p>vim tomcat.yaml</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: tomcat-web</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - image: tomcat</span><br><span class="line">    name: web</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: logs</span><br><span class="line">      mountPath: /usr/local/tomcat/logs</span><br><span class="line">  - image: busybox</span><br><span class="line">    name: <span class="built_in">test</span></span><br><span class="line">    <span class="built_in">command</span>: [/bin/sh,-c,<span class="string">&#x27;tail -f /tmp/localhost_access_log.2021-02-26.txt&#x27;</span>]</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: logs</span><br><span class="line">      mountPath: /tmp</span><br><span class="line"></span><br><span class="line">  volumes:</span><br><span class="line">  - name: logs</span><br><span class="line">    emptyDir: &#123;&#125;</span><br></pre></td></tr></table></figure>
-<p><img src="images/DCE9C4C11E3D48AFBD309303774D4515clipboard.png" alt></p>
+<p><img src="/images/DCE9C4C11E3D48AFBD309303774D4515clipboard.png" alt></p>
 <h2 id="Kubernetes应用日志收集">Kubernetes应用日志收集</h2>
-<p><img src="images/AD6A4A61D93642979FC4597F279971CEclipboard.png" alt></p>
+<p><img src="/images/AD6A4A61D93642979FC4597F279971CEclipboard.png" alt></p>
 <h2 id="ELK-Stack日志系统">ELK Stack日志系统</h2>
 <p>ELK 是三个开源软件的缩写，提供一套完整的企业级日 志平台解决方案。</p>
 <p>分别是：</p>
@@ -77,7 +77,7 @@
 <p>Beats ：集合了多种单一用途数据采集器，用于实 现从边缘机器向 Logstash 和 Elasticsearch 发送数 据。里面应用最多的是Filebeat，是一个轻量级日 志采集器</p>
 </li>
 </ul>
-<p><img src="images/F17E6A5760E5440D935C1A2AE3DCC9CBclipboard.png" alt></p>
+<p><img src="/images/F17E6A5760E5440D935C1A2AE3DCC9CBclipboard.png" alt></p>
 <p>部署nfs-pv自动供给</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装nfs安装包（每个k8s节点都要安装）</span></span><br><span class="line">yum install nfs-utils</span><br><span class="line"><span class="comment">#创建nfs共享目录</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /nfs/kubernetes</span><br><span class="line"><span class="comment">#修改nfs配置文件</span></span><br><span class="line">vim /etc/exports</span><br><span class="line">/nfs/kubernetes *(rw,no_root_squash)</span><br><span class="line"><span class="comment">#启动nfs并加入开机自启</span></span><br><span class="line">systemctl start nfs</span><br><span class="line">systemctl <span class="built_in">enable</span> nfs</span><br><span class="line"></span><br><span class="line"><span class="comment">#部署NFS实现自动创建PV插件：</span></span><br><span class="line">git <span class="built_in">clone</span> https://github.com/kubernetes-incubator/external-storage </span><br><span class="line"><span class="built_in">cd</span> nfs-client/deploy </span><br><span class="line">kubectl apply -f rbac.yaml <span class="comment"># 授权访问apiserver </span></span><br><span class="line">kubectl apply -f deployment.yaml <span class="comment"># 部署插件，需修改里面NFS服务器地址与共享目录 </span></span><br><span class="line">kubectl apply -f class.yaml <span class="comment"># 创建存储类</span></span><br><span class="line">kubectl get sc  <span class="comment"># 查看存储类</span></span><br></pre></td></tr></table></figure>
 <p><a href="/attachments/C51F66682474432DB8DEEF207364AA3Delk.zip">elk.zip</a></p>
@@ -114,9 +114,9 @@
 <p>在Discover选择索引模式查看日志</p>
 </li>
 </ol>
-<p><img src="images/BBE56CA4DD2C4075B8E673533B732201clipboard.png" alt></p>
-<p><img src="images/6C71CC0FD2EC42A998135CB4485B01B2clipboard.png" alt></p>
-<p><img src="images/4CB047B4EFBC4538A62072AC9D70C419clipboard.png" alt></p>
+<p><img src="/images/BBE56CA4DD2C4075B8E673533B732201clipboard.png" alt></p>
+<p><img src="/images/6C71CC0FD2EC42A998135CB4485B01B2clipboard.png" alt></p>
+<p><img src="/images/4CB047B4EFBC4538A62072AC9D70C419clipboard.png" alt></p>
 ]]></content>
       <categories>
         <category>K8S</category>
@@ -818,7 +818,7 @@
 <p><a href="https://prometheus.io/">https://prometheus.io/</a></p>
 <p><a href="https://github.com/prometheus">https://github.com/prometheus</a></p>
 <h2 id="Prometheus组件与架构">Prometheus组件与架构</h2>
-<p><img src="images/02E7559039504D2697674993D5445F38clipboard.png" alt></p>
+<p><img src="/images/02E7559039504D2697674993D5445F38clipboard.png" alt></p>
 <ul>
 <li>
 <p>Prometheus Server：收集指标和存储时间序列数据，并提供查询接口</p>
@@ -843,7 +843,7 @@
 <p>如果要想监控，前提是能获取被监控端指标数据，并且这个 数据格式必须遵循Prometheus数据模型，这样才能识别和 采集，一般使用exporter提供监控指标数据</p>
 <p>exporter列表：</p>
 <p><a href="https://prometheus.io/docs/instrumenting/exporters">https://prometheus.io/docs/instrumenting/exporters</a></p>
-<p><img src="images/2D613AC47FB64D1E9B2A92FF54B9EE98clipboard.png" alt></p>
+<p><img src="/images/2D613AC47FB64D1E9B2A92FF54B9EE98clipboard.png" alt></p>
 <ul>
 <li>
 <p>Prometheus Server：收集指标和存储时间序列数据，并提供查询接口</p>
@@ -874,7 +874,7 @@
 <p>访问地址：<a href="http://ip:3000/">http://ip:3000/</a></p>
 <p>部署文档：<a href="https://grafana.com/grafana/download">https://grafana.com/grafana/download</a></p>
 <p>用户名/密码：admin/admin # 第一次需要重置密码</p>
-<p><img src="images/810B7F4A81EE44BA9DD094BF855C8763clipboard.png" alt></p>
+<p><img src="/images/810B7F4A81EE44BA9DD094BF855C8763clipboard.png" alt></p>
 <h2 id="Prometheus基本使用：监控Linux服务器">Prometheus基本使用：监控Linux服务器</h2>
 <p>node_exporter：用于监控Linux系统的指标采集器。</p>
 <p>常用指标：</p>
@@ -907,8 +907,8 @@
 <p>在Prometheus配置文件添加被监控端：</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">scrape_configs:                                                    </span><br><span class="line">  <span class="comment"># The job name is added as a label `job=&lt;job_name&gt;` to any timeseries scraped from this config.</span></span><br><span class="line">  - job_name: <span class="string">&#x27;prometheus&#x27;</span>                                                                       </span><br><span class="line">                                                                                                 </span><br><span class="line">    <span class="comment"># metrics_path defaults to &#x27;/metrics&#x27;</span></span><br><span class="line">    <span class="comment"># scheme defaults to &#x27;http&#x27;.         </span></span><br><span class="line">                                         </span><br><span class="line">    static_configs:             </span><br><span class="line">    - targets: [<span class="string">&#x27;localhost:9090&#x27;</span>]</span><br><span class="line">  - job_name: <span class="string">&#x27;Linux Server&#x27;</span>     </span><br><span class="line">    static_configs:              </span><br><span class="line">    - targets: [<span class="string">&#x27;192.168.0.12:9100&#x27;</span>,<span class="string">&#x27;192.168.0.13:9100&#x27;</span>]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>使用Grafana展示node_exporter数据指标，仪表盘ID： 9276</p>
-<p><img src="images/94A58E9E493A4507828805F430835074clipboard.png" alt></p>
-<p><img src="images/E0C7336FB9014DCF886C68EA1A6D4BDAclipboard.png" alt></p>
+<p><img src="/images/94A58E9E493A4507828805F430835074clipboard.png" alt></p>
+<p><img src="/images/E0C7336FB9014DCF886C68EA1A6D4BDAclipboard.png" alt></p>
 <h2 id="Prometheus基本使用：查询数据">Prometheus基本使用：查询数据</h2>
 <p>PromQL(Prometheus Query Language) 是 Prometheus 自己开发的数据查询 DSL 语言，语言表现力非常丰 富，支持条件查询、操作符，并且内建了大量内置函数，供我们针对监控数据的各种维度进行查询。</p>
 <p>数据模型：</p>
@@ -932,7 +932,7 @@
 <p>node_cpu_seconds_total{job=“Linux Server”}</p>
 <p>查询指标近5分钟内样本（称为范围向量，时间单位 s，m，h，d，w，y）： node_cpu_seconds_total{job=“Linux Server”}[5m]</p>
 <p>node_cpu_seconds_total{job=“Linux Server”}[1h]</p>
-<p><img src="images/C15669D7F54143B9B450796E42803460clipboard.png" alt></p>
+<p><img src="/images/C15669D7F54143B9B450796E42803460clipboard.png" alt></p>
 <h2 id="Kubernetes-监控指标">Kubernetes 监控指标</h2>
 <p>Kubernetes本身监控</p>
 <ul>
@@ -962,8 +962,8 @@
 </li>
 </ul>
 <h2 id="Kubernetes-监控实现思路">Kubernetes 监控实现思路</h2>
-<p><img src="images/27D0E1AC0E504AF28615CE9BA0D66E7Aclipboard.png" alt></p>
-<p><img src="images/AFBC9203DEBA40ECBFE01B98E1F76880clipboard.png" alt></p>
+<p><img src="/images/27D0E1AC0E504AF28615CE9BA0D66E7Aclipboard.png" alt></p>
+<p><img src="/images/AFBC9203DEBA40ECBFE01B98E1F76880clipboard.png" alt></p>
 <p>Pod</p>
 <p>kubelet的节点使用cAdvisor提供的metrics接口获取该节点所有Pod和容器相关的性能指标数据。</p>
 <p>指标接口：<a href="https://NodeIP:10250/metrics/cadvisor">https://NodeIP:10250/metrics/cadvisor</a></p>
@@ -1022,7 +1022,7 @@
 <p>在Prometheus中创建告警规则</p>
 </li>
 </ol>
-<p><img src="images/7A103C798FC745D78E01C269EA892CEEclipboard.png" alt></p>
+<p><img src="/images/7A103C798FC745D78E01C269EA892CEEclipboard.png" alt></p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">global:</span><br><span class="line"> resolve_timeout: 5m</span><br><span class="line"> <span class="comment"># 邮箱服务器</span></span><br><span class="line"> smtp_smarthost: <span class="string">&#x27;smtp.163.com:25&#x27;</span></span><br><span class="line"> smtp_from: <span class="string">&#x27;baojingtongzhi@163.com&#x27;</span></span><br><span class="line"> smtp_auth_username: <span class="string">&#x27;baojingtongzhi@163.com&#x27;</span></span><br><span class="line"> smtp_auth_password: <span class="string">&#x27;xxx&#x27;</span></span><br><span class="line"> smtp_require_tls: <span class="literal">false</span></span><br><span class="line"><span class="comment"># 配置路由树</span></span><br><span class="line">route:</span><br><span class="line"> group_by: [‘alertname’] <span class="comment"># 根据告警规则组名进行分组</span></span><br><span class="line"> group_wait: 10s <span class="comment"># 分组内第一个告警等待时间，10s内如有第二个告警会合并一个告警</span></span><br><span class="line"> group_interval: 10s <span class="comment"># 发送新告警间隔时间</span></span><br><span class="line"> repeat_interval: 1h <span class="comment"># 重复告警间隔发送时间</span></span><br><span class="line"> receiver: <span class="string">&#x27;mail&#x27;</span></span><br><span class="line"><span class="comment"># 接收人</span></span><br><span class="line">receivers:</span><br><span class="line">- name: <span class="string">&#x27;mail&#x27;</span></span><br><span class="line">  email_configs:</span><br><span class="line">  - to: <span class="string">&#x27;zhenliang369@163.com&#x27;</span></span><br></pre></td></tr></table></figure>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># vi prometheus.yml</span></span><br><span class="line"><span class="comment"># 指定Alertmanager组件地址</span></span><br><span class="line">alerting:</span><br><span class="line">  alertmanagers:</span><br><span class="line">  - static_configs:</span><br><span class="line">    - targets:</span><br><span class="line">      - 127.0.0.1:9093</span><br><span class="line"><span class="comment"># 执行告警规则</span></span><br><span class="line">rule_files:</span><br><span class="line">  - <span class="string">&quot;rules/*.yml&quot;</span></span><br><span class="line">  </span><br><span class="line"><span class="comment"># vi rules/general.yml</span></span><br><span class="line"><span class="built_in">groups</span>:</span><br><span class="line">- name: example <span class="comment">#告警规则组名称</span></span><br><span class="line">  rules:</span><br><span class="line">  <span class="comment"># 任何实例5分钟内无法访问发出告警</span></span><br><span class="line">  - alert: InstanceDown <span class="comment"># 告警规则名称</span></span><br><span class="line">    <span class="built_in">expr</span>: up == 0 <span class="comment"># 基于PromQL的触发条件</span></span><br><span class="line">    <span class="keyword">for</span>: 5m <span class="comment"># 等待评估时间</span></span><br><span class="line">    labels: <span class="comment"># 自定义标签</span></span><br><span class="line">      severity: page</span><br><span class="line">    annotations: <span class="comment"># 指定附加信息</span></span><br><span class="line">      summary: <span class="string">&quot; &#123;&#123; <span class="variable">$labels</span>.instance &#125;&#125; 停止工作&quot;</span></span><br><span class="line">      description: <span class="string">&quot;&#123;&#123; <span class="variable">$labels</span>.instance &#125;&#125;：job &#123;&#123; <span class="variable">$labels</span>.job &#125;&#125; 已经停止5分钟以上.&quot;</span>  </span><br><span class="line">  </span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>告警状态：</p>
@@ -1037,10 +1037,10 @@
 <p>Firing：已触发阈值且满足告警持续时间。警报发送给接受者。</p>
 </li>
 </ul>
-<p><img src="images/80903A4C542A4376BF2CCF2255CA6F5Fclipboard.png" alt></p>
-<p><img src="images/166CD46A4C7F4434A1E761175A1B05E6clipboard.png" alt></p>
-<p><img src="images/29359740BD3A4AF498A5A7CC1F94E911clipboard.png" alt></p>
-<p><img src="images/49E932B96C6241CABC2D385839708FE4clipboard.png" alt></p>
+<p><img src="/images/80903A4C542A4376BF2CCF2255CA6F5Fclipboard.png" alt></p>
+<p><img src="/images/166CD46A4C7F4434A1E761175A1B05E6clipboard.png" alt></p>
+<p><img src="/images/29359740BD3A4AF498A5A7CC1F94E911clipboard.png" alt></p>
+<p><img src="/images/49E932B96C6241CABC2D385839708FE4clipboard.png" alt></p>
 <p>小结：</p>
 <p>1.在k8s中部署应用，在service或者pod中配置注解</p>
 <p>annotations:</p>
@@ -1475,7 +1475,7 @@
     <title>基于Jenkins构建持续集成（CI）平台</title>
     <url>/2023/07/10/%E5%9F%BA%E4%BA%8Ejenkins%E6%9E%84%E5%BB%BA%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90ci%E5%B9%B3%E5%8F%B0/</url>
     <content><![CDATA[<h2 id="发布流程">发布流程</h2>
-<p><img src="images/B8B091A03DF44FACA92CA9079CCF4F6Eclipboard.png" alt></p>
+<p><img src="/images/B8B091A03DF44FACA92CA9079CCF4F6Eclipboard.png" alt></p>
 <h2 id="使用-Gitlab-作为代码仓库-使用-Harbor-作为镜像仓库">使用 Gitlab 作为代码仓库 &amp; 使用 Harbor 作为镜像仓库</h2>
 <p>1.部署gitlab</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> gitlab</span><br><span class="line"><span class="built_in">cd</span> gitlab</span><br><span class="line">docker run -d \</span><br><span class="line">  --name gitlab \</span><br><span class="line">  -p 8443:443 \</span><br><span class="line">  -p 9999:80 \</span><br><span class="line">  -p 9998:22 \</span><br><span class="line">  -v <span class="variable">$PWD</span>/config:/etc/gitlab \</span><br><span class="line">  -v <span class="variable">$PWD</span>/logs:/var/log/gitlab \</span><br><span class="line">  -v <span class="variable">$PWD</span>/data:/var/opt/gitlab \</span><br><span class="line">  -v /etc/localtime:/etc/localtime \</span><br><span class="line">  --restart=always \</span><br><span class="line">  lizhenliang/gitlab-ce-zh:latest</span><br></pre></td></tr></table></figure>
@@ -1492,7 +1492,7 @@
 <p>由于habor未配置https，还需要在docker配置可信任。</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># cat /etc/docker/daemon.json </span></span><br><span class="line">&#123;<span class="string">&quot;registry-mirrors&quot;</span>: [<span class="string">&quot;https://b9pmyelo.mirror.aliyuncs.com&quot;</span>],</span><br><span class="line">  <span class="string">&quot;insecure-registries&quot;</span>: [<span class="string">&quot;192.168.0.12&quot;</span>]</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment"># systemctl restart docker</span></span><br></pre></td></tr></table></figure>
 <h2 id="在Kubernetes平台部署Jenkins">在Kubernetes平台部署Jenkins</h2>
-<p><img src="images/C37831EBEEC44A3490C93047DA63180Bclipboard.png" alt></p>
+<p><img src="/images/C37831EBEEC44A3490C93047DA63180Bclipboard.png" alt></p>
 <p>部署nfs-pv自动供给</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装nfs安装包（每个k8s节点都要安装）</span></span><br><span class="line">yum install nfs-utils</span><br><span class="line"><span class="comment">#创建nfs共享目录</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /nfs/kubernetes</span><br><span class="line"><span class="comment">#修改nfs配置文件</span></span><br><span class="line">vim /etc/exports</span><br><span class="line">/nfs/kubernetes *(rw,no_root_squash)</span><br><span class="line"><span class="comment">#启动nfs并加入开机自启</span></span><br><span class="line">systemctl start nfs</span><br><span class="line">systemctl <span class="built_in">enable</span> nfs</span><br><span class="line"></span><br><span class="line"><span class="comment">#部署NFS实现自动创建PV插件：</span></span><br><span class="line">git <span class="built_in">clone</span> https://github.com/kubernetes-incubator/external-storage </span><br><span class="line"><span class="built_in">cd</span> nfs-client/deploy </span><br><span class="line">kubectl apply -f rbac.yaml <span class="comment"># 授权访问apiserver </span></span><br><span class="line">kubectl apply -f deployment.yaml <span class="comment"># 部署插件，需修改里面NFS服务器地址与共享目录 </span></span><br><span class="line">kubectl apply -f class.yaml <span class="comment"># 创建存储类</span></span><br><span class="line">kubectl get sc  <span class="comment"># 查看存储类</span></span><br></pre></td></tr></table></figure>
 <p>3.部署Jenkins</p>
@@ -1500,11 +1500,11 @@
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> jenkins </span><br><span class="line">kubectl apply -f jenkins.yaml </span><br><span class="line">kubectl get pods,svc -n ops -o wide</span><br></pre></td></tr></table></figure>
 <p>访问地址：<a href="http://NodePort:30008">http://NodePort:30008</a></p>
 <p>第一次部署会进行初始化：</p>
-<p><img src="images/806FCD61A4E74AE69DE24E9C44C5DC94clipboard.png" alt></p>
-<p><img src="images/902A866F027F444A9BAA5672C31CD3F6clipboard.png" alt></p>
+<p><img src="/images/806FCD61A4E74AE69DE24E9C44C5DC94clipboard.png" alt></p>
+<p><img src="/images/902A866F027F444A9BAA5672C31CD3F6clipboard.png" alt></p>
 <p>点无，不安装任何插件</p>
-<p><img src="images/30C5816DF5894B72B53F2C3DA2325B56clipboard.png" alt></p>
-<p><img src="images/33560ADB6FA64551B3AC680A423F5455clipboard.png" alt></p>
+<p><img src="/images/30C5816DF5894B72B53F2C3DA2325B56clipboard.png" alt></p>
+<p><img src="/images/33560ADB6FA64551B3AC680A423F5455clipboard.png" alt></p>
 <p>4.安装插件</p>
 <p>默认从国外网络下载插件，会比较慢，建议修改国内源：</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 进入到nfs共享目录</span></span><br><span class="line"><span class="built_in">cd</span> /nfs/kubernetes/ops-jenkins-pvc-0b76f611-9e06-433d-a666-8e7d0e9f1138/updates</span><br><span class="line">sed -i <span class="string">&#x27;s/https:\/\/updates.jenkins.io\/download/https:\/\/mirrors.tuna.tsinghua.edu.cn\/jenkins/g&#x27;</span> default.json </span><br><span class="line">sed -i <span class="string">&#x27;s/http:\/\/www.google.com/https:\/\/www.baidu.com/g&#x27;</span> default.json</span><br><span class="line"></span><br><span class="line"><span class="comment"># 删除pod重建，pod名称改成你实际的</span></span><br><span class="line">kubectl delete pod jenkins-d58f4db66-9cthj -n ops</span><br></pre></td></tr></table></figure>
@@ -1529,11 +1529,11 @@
 </ul>
 <p>5、添加kubernetes集群</p>
 <p>管理Jenkins-&gt;Manage Nodes and Clouds-&gt;configureClouds-&gt;Add</p>
-<p><img src="images/03D97C8EA28540C7BE60448E07D9ACC4clipboard.png" alt></p>
-<p><img src="images/ACCA74693EC542C7A7ED689ED3549A49clipboard.png" alt></p>
-<p><img src="images/661104035E1B475BA10156494C4999F4clipboard.png" alt></p>
+<p><img src="/images/03D97C8EA28540C7BE60448E07D9ACC4clipboard.png" alt></p>
+<p><img src="/images/ACCA74693EC542C7A7ED689ED3549A49clipboard.png" alt></p>
+<p><img src="/images/661104035E1B475BA10156494C4999F4clipboard.png" alt></p>
 <h2 id="构建Jenkins-Slave镜像">构建Jenkins-Slave镜像</h2>
-<p><img src="images/D60FD3F26D354454B8D2AA9C7966C5ECclipboard.png" alt></p>
+<p><img src="/images/D60FD3F26D354454B8D2AA9C7966C5ECclipboard.png" alt></p>
 <p><a href="/attachments/46211E5639224A3F86BBD7CCA0561FB5jenkins-slave.zip">jenkins-slave.zip</a></p>
 <p>6.构建Slave镜像</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> jenkins-slave</span><br></pre></td></tr></table></figure>
@@ -1555,11 +1555,11 @@
 <p>构建并推送到镜像仓库：</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker build -t 192.168.0.12/library/jenkins-slave-jdk:1.8 .</span><br><span class="line">docker push 192.168.0.12/library/jenkins-slave-jdk:1.8</span><br></pre></td></tr></table></figure>
 <h2 id="Jenkins在K8S中动态创建代理">Jenkins在K8S中动态创建代理</h2>
-<p><img src="images/4DFDC1E497AA4C26A3CC93DEFDFCCDB2clipboard.png" alt></p>
-<p><img src="images/F64A137138EC46E5AD60B4687BDCCB70clipboard.png" alt></p>
+<p><img src="/images/4DFDC1E497AA4C26A3CC93DEFDFCCDB2clipboard.png" alt></p>
+<p><img src="/images/F64A137138EC46E5AD60B4687BDCCB70clipboard.png" alt></p>
 <p>Kubernetes插件：Jenkins在Kubernetes集群中运行动态代理</p>
 <p>插件介绍：<a href="https://github.com/jenkinsci/kubernetes-plugin">https://github.com/jenkinsci/kubernetes-plugin</a></p>
-<p><img src="images/EADEC438404748B7B6F9B46B13AD34D7clipboard.png" alt></p>
+<p><img src="/images/EADEC438404748B7B6F9B46B13AD34D7clipboard.png" alt></p>
 <h2 id="Jenkins-Pipeline-介绍">Jenkins Pipeline 介绍</h2>
 <p>Jenkins Pipeline是一套运行工作流框架，将原本独立运行单个或者多个节点的任 务链接起来，实现单个任务难以完成的复杂流程编排和可视化。</p>
 <ul>
@@ -1573,8 +1573,8 @@
 <p>Jenkins Pipeline的定义被写入一个文本文件，称为Jenkinsfile。</p>
 </li>
 </ul>
-<p><img src="images/BB3AD16EE1E946D8ADEAC37E3A017C1Cclipboard.png" alt></p>
-<p><img src="images/662F7E09DE044DC4B7C04757AA644DBFclipboard.png" alt></p>
+<p><img src="/images/BB3AD16EE1E946D8ADEAC37E3A017C1Cclipboard.png" alt></p>
+<p><img src="/images/662F7E09DE044DC4B7C04757AA644DBFclipboard.png" alt></p>
 <ul>
 <li>
 <p>Stages 是 Pipeline 中最主要的组成部分，Jenkins 将会按照 Stages 中描述的顺序 从上往下的执行。</p>
@@ -1586,17 +1586,17 @@
 <p>Steps：步骤，Steps 是最基本的操作单元，可以是打印一句话，也可以是构建一 个 Docker 镜像，由各类 Jenkins 插件提供，比如命令：sh ‘mvn’，就相当于我 们平时 shell 终端中执行 mvn命令一样。</p>
 </li>
 </ul>
-<p><img src="images/DEC96708F922425299860AF5C06A3528clipboard.png" alt></p>
+<p><img src="/images/DEC96708F922425299860AF5C06A3528clipboard.png" alt></p>
 <h2 id="Jenkins在Kubernetes中持续部署">Jenkins在Kubernetes中持续部署</h2>
 <p>自动部署应用（yaml）：</p>
 <p>将kubectl工具封装到Slave镜像中，并通过Config File Provider插件存储连接K8s集群的kubeconfig认证文件，然后 挂载到Slave容器中，这样就能用kubectl apply deploy.yaml --kubeconfig=config</p>
 <p>注：为提高安全性，kubeconfig文件应分配权限</p>
 <p>除了上述方式，还可以使用Kubernetes Continuous Deploy插件，将资源配置（YAML）部署到Kubernetes，这种 不是很灵活性</p>
 <p>7.编写Pipeline脚本</p>
-<p><img src="images/D6F97AAB41B947219B5A23754BFDA7E1clipboard.png" alt></p>
-<p><img src="images/9D8F0EBA6330492589D80F9D4BEE2DFAclipboard.png" alt></p>
-<p><img src="images/10DD9C8133BF4D04AD2B944E26046C11clipboard.png" alt></p>
-<p><img src="images/C868CD38CD0545628DF7234A2B80F8ADclipboard.png" alt></p>
+<p><img src="/images/D6F97AAB41B947219B5A23754BFDA7E1clipboard.png" alt></p>
+<p><img src="/images/9D8F0EBA6330492589D80F9D4BEE2DFAclipboard.png" alt></p>
+<p><img src="/images/10DD9C8133BF4D04AD2B944E26046C11clipboard.png" alt></p>
+<p><img src="/images/C868CD38CD0545628DF7234A2B80F8ADclipboard.png" alt></p>
 <p>创建命名空间</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create ns dev</span><br><span class="line">kubectl create ns <span class="built_in">test</span></span><br><span class="line">kubectl create ns prod</span><br></pre></td></tr></table></figure>
 <p>将镜像仓库认证凭据保存在K8s Secret中</p>
@@ -1624,8 +1624,8 @@
 <p>2、将kubeconfig存储在Jenkins，用于slave镜像里kubectl连接k8s集群</p>
 <p>管理Jenkins-&gt; Managed files-&gt;Add-&gt;Custom file -&gt;Content字段内容是kubeconfig（默认路径在 master节点/root/.kube/config），然后复制ID替换上述脚本中k8s_auth变量的值。</p>
 <p>8.构建测试</p>
-<p><img src="images/A267258D41844B6F9E91E9818FCCB372clipboard.png" alt></p>
-<p><img src="images/88A6511809824849B7B75F287740A29Cclipboard.png" alt></p>
+<p><img src="/images/A267258D41844B6F9E91E9818FCCB372clipboard.png" alt></p>
+<p><img src="/images/88A6511809824849B7B75F287740A29Cclipboard.png" alt></p>
 <h2 id="流水线脚本与源代码一起版本管理">流水线脚本与源代码一起版本管理</h2>
 <p>Jenkinsfile文件建议与源代码一起版本管理，实现流水线即代码（Pipeline as Code）。 这样做的好处：</p>
 <ul>
@@ -1639,8 +1639,8 @@
 <p>可被项目成员查看和编辑</p>
 </li>
 </ul>
-<p><img src="images/83655B267EAF4BECB3EDA8DCA742EB78clipboard.png" alt></p>
-<p><img src="images/9454B5F4500646AAA91EBEF5ECA338DAclipboard.png" alt></p>
+<p><img src="/images/83655B267EAF4BECB3EDA8DCA742EB78clipboard.png" alt></p>
+<p><img src="/images/9454B5F4500646AAA91EBEF5ECA338DAclipboard.png" alt></p>
 <p>参考链接：<a href="https://www.cnblogs.com/u1s1/p/14231196.html">https://www.cnblogs.com/u1s1/p/14231196.html</a></p>
 ]]></content>
       <categories>
