@@ -2181,7 +2181,7 @@
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl delete pod kube-controller-manager-k8s-master -n kube-system</span><br></pre></td></tr></table></figure>
 <p>2、配置kubelet组件</p>
 <p>默认kubelet证书轮转已启用：</p>
-<h1>vi /var/lib/kubelet/config.yaml</h1>
+<p>vi /var/lib/kubelet/config.yaml</p>
 <p><img src="/images/67162AA145D94B059DEB71CB8C2ED2D5clipboard.png" alt></p>
 <p>3、测试</p>
 <p>找一台节点测试，先查看现有客户端证书有效期：</p>
