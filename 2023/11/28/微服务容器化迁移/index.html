@@ -1,0 +1,571 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>微服务容器化迁移 | 阿哲技术之路</title><meta name="author" content="阿哲"><meta name="copyright" content="阿哲"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一、从运维角度看微服务 单体应用 vs 微服务  特点：   易于部署   易于测试   不足：   代码膨胀，难以维护   构建、部署成本大   新人上手难    微服务特点 服务组件化 每个服务独立开发、部署，有效避免一个服务的修改引起整个系统重新部署。 技术栈灵活 约定通信方式，使得服务本身功能实现对技术要求不再那么敏感。 独立部署 每个微服务独立部署，加快部署速度，方便扩展。 扩展性强 每">
+<meta property="og:type" content="article">
+<meta property="og:title" content="微服务容器化迁移">
+<meta property="og:url" content="http://liuzhemax.github.io/2023/11/28/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E8%BF%81%E7%A7%BB/index.html">
+<meta property="og:site_name" content="阿哲技术之路">
+<meta property="og:description" content="一、从运维角度看微服务 单体应用 vs 微服务  特点：   易于部署   易于测试   不足：   代码膨胀，难以维护   构建、部署成本大   新人上手难    微服务特点 服务组件化 每个服务独立开发、部署，有效避免一个服务的修改引起整个系统重新部署。 技术栈灵活 约定通信方式，使得服务本身功能实现对技术要求不再那么敏感。 独立部署 每个微服务独立部署，加快部署速度，方便扩展。 扩展性强 每">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg">
+<meta property="article:published_time" content="2023-11-28T13:45:32.000Z">
+<meta property="article:modified_time" content="2024-05-25T01:06:09.470Z">
+<meta property="article:author" content="阿哲">
+<meta property="article:tag" content="K8S">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="shortcut icon" href="/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="canonical" href="http://liuzhemax.github.io/2023/11/28/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E8%BF%81%E7%A7%BB/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '微服务容器化迁移',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-05-25 09:06:09'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">33</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="阿哲技术之路"><img class="site-icon" src="/medias/%E6%90%AC%E7%A0%96.jpg"/><span class="site-name">阿哲技术之路</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">微服务容器化迁移</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2023-11-28T13:45:32.000Z" title="发表于 2023-11-28 21:45:32">2023-11-28</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-05-25T01:06:09.470Z" title="更新于 2024-05-25 09:06:09">2024-05-25</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/K8S/">K8S</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="微服务容器化迁移"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h2 id="一、从运维角度看微服务">一、从运维角度看微服务</h2>
+<h3 id="单体应用-vs-微服务">单体应用 vs 微服务</h3>
+<p><img src="/images/CF73043D4E92439A8F92CC6B937B6AB3clipboard.png" alt></p>
+<p>特点：</p>
+<ul>
+<li>
+<p>易于部署</p>
+</li>
+<li>
+<p>易于测试</p>
+</li>
+</ul>
+<p>不足：</p>
+<ul>
+<li>
+<p>代码膨胀，难以维护</p>
+</li>
+<li>
+<p>构建、部署成本大</p>
+</li>
+<li>
+<p>新人上手难</p>
+</li>
+</ul>
+<p><img src="/images/97549FF2AF58428EA2A5684C48153052clipboard.png" alt></p>
+<h3 id="微服务特点">微服务特点</h3>
+<p>服务组件化</p>
+<p>每个服务独立开发、部署，有效避免一个服务的修改引起整个系统重新部署。</p>
+<p>技术栈灵活</p>
+<p>约定通信方式，使得服务本身功能实现对技术要求不再那么敏感。</p>
+<p>独立部署</p>
+<p>每个微服务独立部署，加快部署速度，方便扩展。</p>
+<p>扩展性强</p>
+<p>每个微服务可以部署多个，并且有负载均衡能力。</p>
+<p>独立数据</p>
+<p>每个微服务有独立的基本组件，例如数据库、缓存等。</p>
+<h3 id="微服务不足">微服务不足</h3>
+<ul>
+<li>
+<p>沟通成本</p>
+</li>
+<li>
+<p>数据一致性</p>
+</li>
+<li>
+<p>运维成本：部署、监控</p>
+</li>
+<li>
+<p>内部架构复杂性</p>
+</li>
+<li>
+<p>大量服务治理</p>
+</li>
+</ul>
+<h3 id="Java微服务框架">Java微服务框架</h3>
+<ul>
+<li>
+<p>Spring Boot：快速开发微服务的框架</p>
+</li>
+<li>
+<p>Spring Cloud：基于SpringBoot实现的一个完整的微服务解决方案</p>
+</li>
+<li>
+<p>Dubbo：阿里巴巴开源的微服务治理框架</p>
+</li>
+</ul>
+<h2 id="二、在K8s平台部署微服务考虑的问题">二、在K8s平台部署微服务考虑的问题</h2>
+<h3 id="常见微服务架构图">常见微服务架构图</h3>
+<p><img src="/images/56F56B2D53AC4FAB83088615376A5720clipboard.png" alt></p>
+<h3 id="对微服务项目架构理解">对微服务项目架构理解</h3>
+<ul>
+<li>
+<p>微服务间如何通信？REST API，RPC，MQ</p>
+</li>
+<li>
+<p>微服务如何发现彼此？注册中心</p>
+</li>
+<li>
+<p>组件之间怎么个调用关系？</p>
+</li>
+<li>
+<p>哪个服务作为整个网站入口？前后端分离</p>
+</li>
+<li>
+<p>哪些微服务需要对外访问？前端和微服务网关</p>
+</li>
+<li>
+<p>微服务怎么部署？更新？扩容？</p>
+</li>
+<li>
+<p>区分有状态应用与无状态应用</p>
+</li>
+</ul>
+<h3 id="为什么用注册中心系统">为什么用注册中心系统</h3>
+<p>微服务太多面临的问题：</p>
+<ul>
+<li>
+<p>怎么记录一个微服务多个副本接口地址？</p>
+</li>
+<li>
+<p>怎么实现一个微服务多个副本负载均衡？</p>
+</li>
+<li>
+<p>怎么判断一个微服务副本是否可用？</p>
+</li>
+</ul>
+<p>主流注册中心：Eureka，Nacos，Consul</p>
+<p><img src="/images/C5A801E6B7A84C39A42B57A158172029clipboard.png" alt></p>
+<h3 id="在K8s部署项目流程">在K8s部署项目流程</h3>
+<p><img src="/images/4F2E70888DF042E797024352C3D5E5EAclipboard.png" alt></p>
+<h2 id="三、在K8S平台部署Spring-Cloud微服务项目">三、在K8S平台部署Spring Cloud微服务项目</h2>
+<h3 id="容器化微服务项目实施步骤">容器化微服务项目实施步骤</h3>
+<p>具体步骤：</p>
+<p>第一步：熟悉Spring Cloud微服务项目</p>
+<p>第二步：源代码编译构建</p>
+<p>第三步：构建项目镜像并推送到镜像仓库</p>
+<p>第四步：K8s服务编排</p>
+<p>第五步：在K8s中部署Eureka集群（注册中心）和MySQL数据库</p>
+<p>第六步：部署微服务网关服务</p>
+<p>第七步：部署微服务业务程序</p>
+<p>第八步：部署微服务前端</p>
+<p>第九步：微服务对外发布</p>
+<p>第十步：微服务升级与扩容</p>
+<p>第一步：熟悉Spring Cloud微服务项目</p>
+<p><img src="/images/2B032000314E4C80BCA651C8FD2B83D5clipboard.png" alt></p>
+<p><a target="_blank" rel="noopener" href="https://gitee.com/lucky_liuzhe/simple-microservice">https://gitee.com/lucky_liuzhe/simple-microservice</a></p>
+<p>代码分支说明：</p>
+<ul>
+<li>
+<p>dev1 交付代码</p>
+</li>
+<li>
+<p>dev2 增加Dockerfile</p>
+</li>
+<li>
+<p>dev3 增加K8s资源编排</p>
+</li>
+<li>
+<p>dev4 增加APM监控系统</p>
+</li>
+<li>
+<p>master 最终上线</p>
+</li>
+</ul>
+<p><img src="/images/B9386F315D434B56A0406E9DBEE40414clipboard.png" alt></p>
+<p>第二步：源代码编译构建</p>
+<p>Maven项目对象模型(POM)，可以通过一小段描述信息来管理项目的构建，报告和文档的项目管 理工具软件。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install java-1.8.0-openjdk maven -y</span><br><span class="line">修改maven源：https://maven.aliyun.com/mvn/guide</span><br><span class="line">mvn clean package -Dmaven.test.skip=<span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>第三步：构建项目镜像并推送到镜像仓库</p>
+<p><img src="/images/C0AB7281B6324798840833AF5AF4B88Bclipboard.png" alt></p>
+<p>Dockerfile文件更换apk阿里云源</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">链接：https://blog.csdn.net/qq_33657251/article/details/107526842</span><br><span class="line">sed -i <span class="string">&#x27;s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g&#x27;</span> /etc/apk/repositories &amp;&amp; \</span><br><span class="line"><span class="comment">#使用sed工具将字符串dl-cdn.alpinelinux.org替换为mirrors.aliyun.com</span></span><br></pre></td></tr></table></figure>
+<p>第四步：K8s服务编排</p>
+<p><img src="/images/130E9C7374BD421C81F4C4882C1CB93Cclipboard.png" alt></p>
+<p>第五步：在K8s中部署Erureka集群和MySQL数据库</p>
+<p>1.删除Dockerfile中运行的拷贝时区的命令</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">find . -name Dockerfile | xargs -i sed -i <span class="string">&#x27;/RUN/d&#x27;</span> &#123;&#125;</span><br><span class="line">find . -name Dockerfile | xargs -i sed -i <span class="string">&#x27;/ln/d&#x27;</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="/images/3696E1B7014849EF94335658C09A15C6clipboard.png" alt></p>
+<p>2.修改源代码中eureka配置文件：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># cat eureka-service/src/main/resources/application-fat.yml</span></span><br><span class="line">eureka:</span><br><span class="line">  server:</span><br><span class="line">    renewal-percent-threshold: 0.9</span><br><span class="line">    enable-self-preservation: <span class="literal">false</span></span><br><span class="line">    eviction-interval-timer-in-ms: 40000</span><br><span class="line">  instance:</span><br><span class="line">    hostname: 127.0.0.1</span><br><span class="line">    prefer-ip-address: <span class="literal">false</span>     <span class="comment">#使用ip去通信，默认是使用主机名</span></span><br><span class="line">  client:</span><br><span class="line">    register-with-eureka: <span class="literal">true</span></span><br><span class="line">    serviceUrl:</span><br><span class="line">      defaultZone: http://eureka-0.eureka.ms:<span class="variable">$&#123;server.port&#125;</span>/eureka/,http://eureka-1.eureka.ms:<span class="variable">$&#123;server.port&#125;</span>/eureka/,http://eureka-2.eureka.ms:<span class="variable">$&#123;server.port&#125;</span>/eureka/</span><br><span class="line">    fetch-registry: <span class="literal">true</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>prefer-ip-address: false  由于使用statefulset部署默认使用主机名通信，其他微服务使用deployment部署无法使用主机名通信，dns无法解析，所以修改为使用IP去通信。</p>
+<p>Eureka集群节点Pod DNS名称：</p>
+<p><a target="_blank" rel="noopener" href="http://eureka-0.eureka.ms.svc.cluster.local">http://eureka-0.eureka.ms.svc.cluster.local</a></p>
+<p><a target="_blank" rel="noopener" href="http://eureka-1.eureka.ms.svc.cluster.local">http://eureka-1.eureka.ms.svc.cluster.local</a></p>
+<p><a target="_blank" rel="noopener" href="http://eureka-2.eureka.ms.svc.cluster.local">http://eureka-2.eureka.ms.svc.cluster.local</a></p>
+<p>3.修改docker_build.sh 文件</p>
+<p>修改镜像仓库地址，要推送的镜像仓库项目名</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi docker_build.sh </span></span><br><span class="line"><span class="comment">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">docker_registry=192.168.0.14</span><br><span class="line">kubectl create secret docker-registry registry-pull-secret --docker-server=<span class="variable">$docker_registry</span> --docker-username=admin --docker-password=Harbor12345 --docker-email=admin@ctnrs.com -n ms</span><br><span class="line"></span><br><span class="line">service_list=<span class="string">&quot;eureka-service gateway-service order-service product-service stock-service portal-service&quot;</span></span><br><span class="line">service_list=<span class="variable">$&#123;1:-<span class="variable">$&#123;service_list&#125;</span>&#125;</span></span><br><span class="line">work_dir=$(<span class="built_in">dirname</span> <span class="variable">$PWD</span>)</span><br><span class="line">current_dir=<span class="variable">$PWD</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">cd</span> <span class="variable">$work_dir</span></span><br><span class="line">mvn clean package -Dmaven.test.skip=<span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> service <span class="keyword">in</span> <span class="variable">$service_list</span>; <span class="keyword">do</span></span><br><span class="line">   <span class="built_in">cd</span> <span class="variable">$work_dir</span>/<span class="variable">$service</span></span><br><span class="line">   <span class="keyword">if</span> <span class="built_in">ls</span> |grep biz &amp;&gt;/dev/null; <span class="keyword">then</span></span><br><span class="line">      <span class="built_in">cd</span> <span class="variable">$&#123;service&#125;</span>-biz</span><br><span class="line">   <span class="keyword">fi</span></span><br><span class="line">   service=<span class="variable">$&#123;service%-*&#125;</span></span><br><span class="line">   image_name=<span class="variable">$docker_registry</span>/ms/<span class="variable">$&#123;service&#125;</span>:$(<span class="built_in">date</span> +%F-%H-%M-%S)</span><br><span class="line">   docker build -t <span class="variable">$&#123;image_name&#125;</span> .</span><br><span class="line">   docker push <span class="variable">$&#123;image_name&#125;</span></span><br><span class="line">   sed -i -r <span class="string">&quot;s#(image: )(.*)#\1<span class="variable">$image_name</span>#&quot;</span> <span class="variable">$&#123;current_dir&#125;</span>/<span class="variable">$&#123;service&#125;</span>.yaml</span><br><span class="line">   kubectl apply -f <span class="variable">$&#123;current_dir&#125;</span>/<span class="variable">$&#123;service&#125;</span>.yaml</span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>4.创建命名空间并部署eureka服务并启动（记得部署之前要部署ingress控制器）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#创建命名空间</span></span><br><span class="line">kubectl create ns ms</span><br><span class="line"><span class="comment">#启动部署(修改各个微服务yaml文件中的requests，请求资源设置小一点0.2)</span></span><br><span class="line">./docker_build.sh eureka-service</span><br></pre></td></tr></table></figure>
+<p>5.部署MySQL</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#部署MySQL</span></span><br><span class="line">kubectl apply -f mysql.yaml</span><br><span class="line"></span><br><span class="line"><span class="comment">#导入sql文件</span></span><br><span class="line">将源代码里db目录下sql文件拷贝到mysql容器并导入：</span><br><span class="line">kubectl <span class="built_in">cp</span> order.sql mysql-68d6f45844-kc6v4:/ -n ms</span><br><span class="line">kubectl <span class="built_in">cp</span> product.sql mysql-68d6f45844-kc6v4:/ -n ms</span><br><span class="line">kubectl <span class="built_in">cp</span> stock.sql mysql-68d6f45844-kc6v4:/ -n ms</span><br><span class="line">kubectl <span class="built_in">exec</span> -it mysql-68d6f45844-kc6v4 -n ms -- bash</span><br><span class="line"><span class="comment">#mysql -u root -p$MYSQL_ROOT_PASSWORD</span></span><br><span class="line">mysql&gt; create database tb_product;</span><br><span class="line">mysql&gt; use tb_product;</span><br><span class="line">mysql&gt; <span class="built_in">source</span> /product.sql;</span><br><span class="line"></span><br><span class="line">mysql&gt; create database tb_order;</span><br><span class="line">mysql&gt; use tb_order;</span><br><span class="line">mysql&gt; <span class="built_in">source</span> /order.sql;</span><br><span class="line"></span><br><span class="line">mysql&gt; create database tb_stock;</span><br><span class="line">mysql&gt; use tb_stock;</span><br><span class="line">mysql&gt; <span class="built_in">source</span> /stock.sql;</span><br></pre></td></tr></table></figure>
+<p>MySQL Service DNS名称：mysql.ms.svc.cluster.local</p>
+<p>第六步至第九步：在K8s中部署微服务</p>
+<ul>
+<li>
+<p>部署业务程序（product、stock、order）</p>
+</li>
+<li>
+<p>部署网关（gateway）</p>
+</li>
+<li>
+<p>部署前端（portal）</p>
+</li>
+</ul>
+<p>修改product、stock、order连接数据库地址</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi product-service/product-service-biz/src/main/resources/application-fat.yml </span></span><br><span class="line">url: jdbc:mysql://mysql:3306/tb_product?characterEncoding=utf-8</span><br><span class="line"><span class="comment">#其余两个微服务同上操作</span></span><br></pre></td></tr></table></figure>
+<p>启动部署</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#修改各个微服务yaml文件中的requests，请求资源设置小一点0.2（java太吃内存）</span></span><br><span class="line"><span class="built_in">cd</span> k8s/</span><br><span class="line">./docker_build.sh product-service</span><br><span class="line">./docker_build.sh order-service</span><br><span class="line">./docker_build.sh stock-service</span><br><span class="line">./docker_build.sh gateway-service</span><br><span class="line">./docker_build.sh portal-service</span><br></pre></td></tr></table></figure>
+<p>第十步：微服务升级与扩容</p>
+<p>微服务升级：对要升级的微服务进行上述步骤打包镜像:版本，替代运行的镜像</p>
+<p>微服务扩容：对Pod扩容副本数</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl scale deployment product --replicas=2 -n ms </span><br></pre></td></tr></table></figure>
+<h3 id="生产环境踩坑经验分享">生产环境踩坑经验分享</h3>
+<p>Q：限制了容器资源，还经常被杀死？</p>
+<p>A：在JAVA1.9版本之前，是不能自动发现docker设置的 内存限制，随着应用负载起伏就会造成内存使用过大， 超过limits限制，从而触发K8s杀掉该容器。</p>
+<p>解决办法：</p>
+<ul>
+<li>
+<p>手动指定JVM堆内存大小</p>
+</li>
+<li>
+<p>配置JVM自动识别（1.9版本+才支持）-</p>
+</li>
+</ul>
+<p>XX:+UnlockExperimentalVMOptions -</p>
+<p>XX:+UseCGroupMemoryLimitForHeap</p>
+<p><img src="/images/03ABE34358714138A3E1E3B146A3AA20clipboard.png" alt></p>
+<p>Q：滚动更新期间造成流量丢失</p>
+<p>A：滚动更新触发，Pod在删除过程中，有些节点kube-proxy还没来得及同步iptables规则， 从而部分流量请求到Terminating的Pod上，导致请求出错。</p>
+<p>解决办法：配置preStop回调，在容器终止前优雅暂停5秒，给kube-proxy多预留一点时间。</p>
+<p><img src="/images/E8E29475D9EB4E6BA6A1F11B65CE7D2Cclipboard.png" alt></p>
+<p>Q：滚动更新之健康检查重要性</p>
+<p>A：滚动更新是默认发布策略，当配置健康检查时，滚动更新会根据Probe状 态来决定是否继续更新以及是否允许接入流量，这样在整个滚动更新过程中可 保证始终会有可用的Pod存在，达到平滑升级。</p>
+<p><img src="/images/543879804CF04A2EAF15509904A62A9Eclipboard.png" alt></p>
+<h2 id="四、APM监控微服务项目">四、APM监控微服务项目</h2>
+<h3 id="微服务监控需求">微服务监控需求</h3>
+<p>随着微服务架构的流行，服务按照不同的维度进行拆分，一次请求往往需要 涉及到多个服务。这些服务可能不同编程语言开发，不同团队开发，可能部 署很多副本。因此，就需要一些可以帮助理解系统行为、用于分析性能问题 的工具，以便发生故障的时候，能够快速定位和解决问题。“APM系统” 就 在这样的问题背景下产生了。</p>
+<p>APM系统 从整体维度到局部维度展示各项指标，将跨应用的所有调用链性能 信息集中展现，可方便度量整体和局部性能，并且方便找到故障产生的源头， 生产上可极大缩短故障排除时间</p>
+<p><img src="/images/C31EEB76852B48C98F86C18885A56576clipboard.png" alt></p>
+<h3 id="APM监控系统是什么">APM监控系统是什么</h3>
+<p>APM（ApplicationPerformance Management）是一种应用性能监控工具，通过汇聚业务系统各处理 环节的实时数据，分析业务系统各事务处理的交易路径和处理时间，实现对应用的全链路性能监测。</p>
+<p>相比接触的Prometheus、Zabbix这类监控系统，APM系统主要监控对应用程序内部，例如：</p>
+<ul>
+<li>
+<p>请求链路追踪：通过分析服务调用关系，绘制运行时拓扑信息，可视化展示</p>
+</li>
+<li>
+<p>调用情况衡量：各个调用环节的性能分析，例如吞吐量、响应时间、错误次数</p>
+</li>
+<li>
+<p>运行情况反馈：告警，通过调用链结合业务日志快速定位错误信息</p>
+</li>
+</ul>
+<h3 id="APM监控系统选择依据">APM监控系统选择依据</h3>
+<p>APM类监控系统有：Skywalking、Pinpoint、Zipkin</p>
+<p>关于选型，可以从以下方面考虑：</p>
+<p>探针的性能消耗</p>
+<p>APM组件服务的影响应该做到足够小，数据分析要快，性能占用小。</p>
+<p>代码的侵入性</p>
+<p>即也作为业务组件，应当尽可能少入侵或者无入侵其他业务系统，对于使用 方透明，减少开发人员的负担。</p>
+<p>监控维度</p>
+<p>分析的维度尽可能多。</p>
+<p>可扩展性</p>
+<p>一个优秀的调用跟踪系统必须支持分布式部署，具备良好的可扩展性。能够 支持的组件越多当然越好。</p>
+<h3 id="Skywalking介绍">Skywalking介绍</h3>
+<p>Skywalking 是一个分布式应用程序性能监控系统，针对微服务体系结构而设计。</p>
+<p>功能：</p>
+<ul>
+<li>
+<p>多种监控手段。可以通过语言探针和 service mesh 获得监控是数据。</p>
+</li>
+<li>
+<p>多个语言自动探针。包括 Java，.NET Core 和 Node.JS。</p>
+</li>
+<li>
+<p>轻量高效。无需大数据平台，和大量的服务器资源。</p>
+</li>
+<li>
+<p>模块化。UI、存储、集群管理都有多种机制可选。</p>
+</li>
+<li>
+<p>支持告警。</p>
+</li>
+<li>
+<p>优秀的可视化解决方案。</p>
+</li>
+</ul>
+<h3 id="Skywalking架构">Skywalking架构</h3>
+<p><img src="/images/E1BBAA9498D24E019DDE045649A3ADBBclipboard.png" alt></p>
+<p><img src="/images/6926700A02404FB6B29E6B2B5A20ADECclipboard.png" alt></p>
+<h3 id="Skywalking部署">Skywalking部署</h3>
+<p>1、部署ES数据库</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run --name elasticsearch -p 9200:9200 -e <span class="string">&quot;discovery.type=single-node&quot;</span> -d elasticsearch:7.7.0</span><br></pre></td></tr></table></figure>
+<p>2、部署Skywalking OAP</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">软件包下载地址：https://archive.apache.org/dist/skywalking/8.3.0/</span><br><span class="line">yum install java-11-openjdk –y</span><br><span class="line">tar zxvf apache-skywalking-apm-es7-8.3.0.tar.gz</span><br><span class="line"><span class="built_in">cd</span> apache-skywalking-apm-bin-es7/</span><br></pre></td></tr></table></figure>
+<p>指定数据源：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi config/application.yml</span></span><br><span class="line">storage: </span><br><span class="line">    selector: <span class="variable">$&#123;SW_STORAGE:elasticsearch7&#125;</span> <span class="comment">#这里使用elasticsearch7</span></span><br><span class="line">    ...</span><br><span class="line">    elasticsearch7: </span><br><span class="line">        nameSpace: <span class="variable">$&#123;SW_NAMESPACE:&quot;&quot;&#125;</span> </span><br><span class="line">        clusterNodes: <span class="variable">$&#123;SW_STORAGE_ES_CLUSTER_NODES:192.168.0.10:9200&#125;</span> <span class="comment"># 指定ES地址</span></span><br></pre></td></tr></table></figure>
+<p>启动OAP和UI：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./bin/startup.sh</span><br></pre></td></tr></table></figure>
+<p>访问UI：<a target="_blank" rel="noopener" href="http://IP:8080">http://IP:8080</a></p>
+<h3 id="微服务接入Skywalking监控">微服务接入Skywalking监控</h3>
+<p>内置Agent包路径：apache-skywalking-apm-bin-es7/agent/</p>
+<p>启动Java程序以探针方式集成Agent：</p>
+<p>java -jar -javaagent:/skywalking/skywalking-agent.jar=agent.service_name=&lt;项目名称 &gt;,agent.instance_name=&lt;实例名称&gt;,collector.backend_service=:11800 xxx.jar</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#使用dev4分支部署</span></span><br><span class="line"><span class="comment">#注意修改的部分：</span></span><br><span class="line">1.修改每个微服务下的Dockerfile中连接Skywalking服务器地址以及application-fat.yml</span><br><span class="line">中连接MySQL服务器的地址</span><br><span class="line">2.修改docker_build.sh脚本中连接harbor服务器的地址以及推送到镜像仓库的项目名</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="Skywalking-UI使用">Skywalking UI使用</h3>
+<p><img src="/images/F6B490280E3F405986346EF4426185CBclipboard.png" alt></p>
+<ul>
+<li>
+<p>第一栏：不同内容主题的监控面板，应用/数据库/容器等</p>
+</li>
+<li>
+<p>第二栏：操作，包括编辑/导出当前数据/倒入展示数据/不同服务端点筛选展示</p>
+</li>
+<li>
+<p>第三栏：不同纬度展示，服务/实例/端点</p>
+</li>
+</ul>
+<p><img src="/images/9EB6C2B5C2D84DC6A2593C66EE25F3E5clipboard.png" alt></p>
+<p>全局：</p>
+<ul>
+<li>
+<p>Service Load：CPM 每分钟回调次数</p>
+</li>
+<li>
+<p>Slow Services：慢响应服务，单位ms</p>
+</li>
+<li>
+<p>Un-Health Services：不健康的服务，1为满分</p>
+</li>
+<li>
+<p>Slow Endpoints：慢端点，单位ms</p>
+</li>
+<li>
+<p>Global Response Latency：百分比响应延时，不同百分 比的延时时间，单位ms</p>
+</li>
+<li>
+<p>Global Heatmap：服务响应时间热力分布图，根据时间 段内不同响应时间的数量显示颜色深度</p>
+</li>
+<li>
+<p>底部栏：展示数据的时间区间，点击可以调整</p>
+</li>
+</ul>
+<p><img src="/images/CF412AFC16BE4D87891F6104CB7F0F5Aclipboard.png" alt></p>
+<p>Service：</p>
+<ul>
+<li>
+<p>Service Apdex（数字）:当前服务的评分</p>
+</li>
+<li>
+<p>Service Apdex（折线图）：当前服务评分趋势图</p>
+</li>
+<li>
+<p>Service Avg Response Times：服务平均响应时间，单 位ms</p>
+</li>
+<li>
+<p>Service Response Time Percentile：服务响应时间百分 比，单位ms</p>
+</li>
+<li>
+<p>Successful Rate（数字）：请求成功率</p>
+</li>
+<li>
+<p>Successful Rate（折线图）：请求成功率趋势图</p>
+</li>
+<li>
+<p>Servce Load（数字）：每分钟请求数</p>
+</li>
+<li>
+<p>Servce Load（折线图）：每分钟请求数趋势图</p>
+</li>
+<li>
+<p>Servce Instances Load：服务实例的每分钟请求数</p>
+</li>
+<li>
+<p>Slow Service Instance：慢服务实例，单位ms</p>
+</li>
+<li>
+<p>Service Instance Successful Rate：服务实例成功率</p>
+</li>
+</ul>
+<p><img src="/images/C79A0E385FAE42D28182674C1412A8C3clipboard.png" alt></p>
+<p>Instance：</p>
+<ul>
+<li>
+<p>Service Instance Load：当前实例的每分钟请求数</p>
+</li>
+<li>
+<p>Service Instance Successful Rate：当前实例的请求成功率</p>
+</li>
+<li>
+<p>Service Instance Latency：当前实例的响应延时</p>
+</li>
+<li>
+<p>JVM CPU：jvm占用CPU的百分比</p>
+</li>
+<li>
+<p>JVM Memory：JVM堆内存，单位MB</p>
+</li>
+<li>
+<p>JVM GC Time：JVM垃圾回收时间，包含YGC和OGC</p>
+</li>
+<li>
+<p>JVM GC Count：JVM垃圾回收次数，包含YGC和OGC</p>
+</li>
+<li>
+<p>JVM Thread Count：JVM线程统计CLR XX：.NET服务的 指标，类似JVM虚拟机</p>
+</li>
+</ul>
+<p><img src="/images/478535722F1A4126AE64F077CC4E9F29clipboard.png" alt></p>
+<p>Instance：</p>
+<ul>
+<li>
+<p>Endpoint Load in Current Service：每个端点的每分钟请求数</p>
+</li>
+<li>
+<p>Slow Endpoints in Current Service：每个端点的最慢请求时间， 单位ms</p>
+</li>
+<li>
+<p>Successful Rate in Current Service：每个端点的请求成功率</p>
+</li>
+<li>
+<p>Endpoint Load：端点请求数趋势图</p>
+</li>
+<li>
+<p>Endpoint Avg Response Time：端点平均响应时间趋势图</p>
+</li>
+<li>
+<p>Endpoint Response Time Percentile：端口响应时间的百分位数</p>
+</li>
+<li>
+<p>Endpoint Successful Rate：端点请求成功率</p>
+</li>
+</ul>
+<p><img src="/images/2D7C6A7C67D14F698D466688DBBDCF9Fclipboard.png" alt></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io">阿哲</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io/2023/11/28/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E8%BF%81%E7%A7%BB/">http://liuzhemax.github.io/2023/11/28/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E8%BF%81%E7%A7%BB/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://liuzhemax.github.io" target="_blank">阿哲技术之路</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/K8S/">K8S</a></div><div class="post_share"><div class="social-share" data-image="/medias/%E6%90%AC%E7%A0%96.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2023/11/08/ceph%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/" title="Ceph分布式存储"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">Ceph分布式存储</div></div></a></div><div class="next-post pull-right"><a href="/2023/12/15/%E5%9F%BA%E4%BA%8Ejenkins%E6%9E%84%E5%BB%BA%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8F%91%E5%B8%83%E5%B9%B3%E5%8F%B0/" title="基于Jenkins构建微服务发布平台"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">基于Jenkins构建微服务发布平台</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2023/06/10/elk-stack%E6%94%B6%E9%9B%86kubernetes%E5%BA%94%E7%94%A8%E6%97%A5%E5%BF%97/" title="ELK Stack收集Kubernetes应用日志"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-06-10</div><div class="title">ELK Stack收集Kubernetes应用日志</div></div></a></div><div><a href="/2022/07/10/ingress%E6%9C%80%E4%BD%B3%E6%96%B9%E5%BC%8F%E5%AF%B9%E5%A4%96%E6%9A%B4%E9%9C%B2%E5%BA%94%E7%94%A8/" title="Ingress最佳方式对外暴露应用"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-07-10</div><div class="title">Ingress最佳方式对外暴露应用</div></div></a></div><div><a href="/2022/07/14/k8s%E5%AE%89%E5%85%A8%E6%8E%A7%E5%88%B6/" title="K8s安全控制"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-07-14</div><div class="title">K8s安全控制</div></div></a></div><div><a href="/2022/07/15/k8s%E5%BA%94%E7%94%A8%E5%8C%85%E7%AE%A1%E7%90%86%E5%99%A8helm%E5%88%9D%E6%8E%A2/" title="K8s应用包管理器Helm初探"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-07-15</div><div class="title">K8s应用包管理器Helm初探</div></div></a></div><div><a href="/2023/10/11/k8s%E9%9B%86%E7%BE%A4%E7%BD%91%E7%BB%9C%E4%B8%8A/" title="K8s集群网络上"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-10-11</div><div class="title">K8s集群网络上</div></div></a></div><div><a href="/2023/10/21/k8s%E9%9B%86%E7%BE%A4%E7%BD%91%E7%BB%9C%E4%B8%8B/" title="K8s集群网络下"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-10-21</div><div class="title">K8s集群网络下</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">阿哲</div><div class="author-info__description">强大自己是解决问题的唯一办法</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">33</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1437626743@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">分享个人经验总结</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%BB%8E%E8%BF%90%E7%BB%B4%E8%A7%92%E5%BA%A6%E7%9C%8B%E5%BE%AE%E6%9C%8D%E5%8A%A1"><span class="toc-number">1.</span> <span class="toc-text">一、从运维角度看微服务</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8D%95%E4%BD%93%E5%BA%94%E7%94%A8-vs-%E5%BE%AE%E6%9C%8D%E5%8A%A1"><span class="toc-number">1.1.</span> <span class="toc-text">单体应用 vs 微服务</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%89%B9%E7%82%B9"><span class="toc-number">1.2.</span> <span class="toc-text">微服务特点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BE%AE%E6%9C%8D%E5%8A%A1%E4%B8%8D%E8%B6%B3"><span class="toc-number">1.3.</span> <span class="toc-text">微服务不足</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%A1%86%E6%9E%B6"><span class="toc-number">1.4.</span> <span class="toc-text">Java微服务框架</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%9C%A8K8s%E5%B9%B3%E5%8F%B0%E9%83%A8%E7%BD%B2%E5%BE%AE%E6%9C%8D%E5%8A%A1%E8%80%83%E8%99%91%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">2.</span> <span class="toc-text">二、在K8s平台部署微服务考虑的问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B8%B8%E8%A7%81%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE"><span class="toc-number">2.1.</span> <span class="toc-text">常见微服务架构图</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%B9%E5%BE%AE%E6%9C%8D%E5%8A%A1%E9%A1%B9%E7%9B%AE%E6%9E%B6%E6%9E%84%E7%90%86%E8%A7%A3"><span class="toc-number">2.2.</span> <span class="toc-text">对微服务项目架构理解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83%E7%B3%BB%E7%BB%9F"><span class="toc-number">2.3.</span> <span class="toc-text">为什么用注册中心系统</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9C%A8K8s%E9%83%A8%E7%BD%B2%E9%A1%B9%E7%9B%AE%E6%B5%81%E7%A8%8B"><span class="toc-number">2.4.</span> <span class="toc-text">在K8s部署项目流程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%9C%A8K8S%E5%B9%B3%E5%8F%B0%E9%83%A8%E7%BD%B2Spring-Cloud%E5%BE%AE%E6%9C%8D%E5%8A%A1%E9%A1%B9%E7%9B%AE"><span class="toc-number">3.</span> <span class="toc-text">三、在K8S平台部署Spring Cloud微服务项目</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%B9%E5%99%A8%E5%8C%96%E5%BE%AE%E6%9C%8D%E5%8A%A1%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%96%BD%E6%AD%A5%E9%AA%A4"><span class="toc-number">3.1.</span> <span class="toc-text">容器化微服务项目实施步骤</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E8%B8%A9%E5%9D%91%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB"><span class="toc-number">3.2.</span> <span class="toc-text">生产环境踩坑经验分享</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81APM%E7%9B%91%E6%8E%A7%E5%BE%AE%E6%9C%8D%E5%8A%A1%E9%A1%B9%E7%9B%AE"><span class="toc-number">4.</span> <span class="toc-text">四、APM监控微服务项目</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%9B%91%E6%8E%A7%E9%9C%80%E6%B1%82"><span class="toc-number">4.1.</span> <span class="toc-text">微服务监控需求</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#APM%E7%9B%91%E6%8E%A7%E7%B3%BB%E7%BB%9F%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-number">4.2.</span> <span class="toc-text">APM监控系统是什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#APM%E7%9B%91%E6%8E%A7%E7%B3%BB%E7%BB%9F%E9%80%89%E6%8B%A9%E4%BE%9D%E6%8D%AE"><span class="toc-number">4.3.</span> <span class="toc-text">APM监控系统选择依据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Skywalking%E4%BB%8B%E7%BB%8D"><span class="toc-number">4.4.</span> <span class="toc-text">Skywalking介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Skywalking%E6%9E%B6%E6%9E%84"><span class="toc-number">4.5.</span> <span class="toc-text">Skywalking架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Skywalking%E9%83%A8%E7%BD%B2"><span class="toc-number">4.6.</span> <span class="toc-text">Skywalking部署</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%8E%A5%E5%85%A5Skywalking%E7%9B%91%E6%8E%A7"><span class="toc-number">4.7.</span> <span class="toc-text">微服务接入Skywalking监控</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Skywalking-UI%E4%BD%BF%E7%94%A8"><span class="toc-number">4.8.</span> <span class="toc-text">Skywalking UI使用</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/25/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8A/" title="微服务治理istio初探上">微服务治理istio初探上</a><time datetime="2023-12-25T13:45:32.000Z" title="发表于 2023-12-25 21:45:32">2023-12-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/15/%E5%9F%BA%E4%BA%8Ejenkins%E6%9E%84%E5%BB%BA%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8F%91%E5%B8%83%E5%B9%B3%E5%8F%B0/" title="基于Jenkins构建微服务发布平台">基于Jenkins构建微服务发布平台</a><time datetime="2023-12-15T13:45:32.000Z" title="发表于 2023-12-15 21:45:32">2023-12-15</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/11/28/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E8%BF%81%E7%A7%BB/" title="微服务容器化迁移">微服务容器化迁移</a><time datetime="2023-11-28T13:45:32.000Z" title="发表于 2023-11-28 21:45:32">2023-11-28</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/11/08/ceph%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/" title="Ceph分布式存储">Ceph分布式存储</a><time datetime="2023-11-08T13:45:32.000Z" title="发表于 2023-11-08 21:45:32">2023-11-08</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/10/21/k8s%E9%9B%86%E7%BE%A4%E7%BD%91%E7%BB%9C%E4%B8%8B/" title="K8s集群网络下">K8s集群网络下</a><time datetime="2023-10-21T13:45:32.000Z" title="发表于 2023-10-21 21:45:32">2023-10-21</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="footer_custom_text">阿哲技术之路</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.13.0"></script></div></div></body></html>

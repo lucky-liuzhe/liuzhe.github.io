@@ -1,6 +1,420 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Ceph分布式存储</title>
+    <url>/2023/11/08/ceph%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/</url>
+    <content><![CDATA[<h2 id="Ceph概述">Ceph概述</h2>
+<h3 id="Ceph介绍">Ceph介绍</h3>
+<h3 id="Ceph是一个开源的分布式存储系统，具有高扩展性、高性能、高可靠性等特点，提-供良好的性能、可靠性和可扩展性。支持对象存储、块存储和文件系统。-是目前为云平台提供存储的理想方案">Ceph是一个开源的分布式存储系统，具有高扩展性、高性能、高可靠性等特点，提 供良好的性能、可靠性和可扩展性。支持对象存储、块存储和文件系统。 是目前为云平台提供存储的理想方案</h3>
+<p><img src="/images/EDB87B969CC3495B9BFCEF3EDA5467EEclipboard.png" alt></p>
+<h3 id="Ceph架构">Ceph架构</h3>
+<ul>
+<li>
+<p>RBD（RADOS Block Device）：块存储接口</p>
+</li>
+<li>
+<p>RGW（RADOS Gateway））：对象存储网关，接口与S3和Swift兼容</p>
+</li>
+<li>
+<p>CephFS（Ceph File System）：文件级存储接口</p>
+</li>
+<li>
+<p>RADOS（Reliable Autonomic Distributed Object Store）：抽象的 对象存储集群，Ceph核心，实现用户数据分配、故障转移等集群操作</p>
+</li>
+<li>
+<p>MON：集群状态维护，例如OSD是否健康、PG状态等</p>
+</li>
+<li>
+<p>MDS （Metadata Server） ：CephFS服务依赖的元数据服务</p>
+</li>
+<li>
+<p>OSD（Object Storage Daemon）：对象存储设备，主要存储数据</p>
+</li>
+</ul>
+<p><img src="/images/9D2BDF53EFF44536A3658AF85C227324clipboard.png" alt></p>
+<h3 id="Ceph核心概念">Ceph核心概念</h3>
+<p>Pool：存储池，是存储对象的逻辑分区，它规定了数据冗余的类型和对应的副本 分布策略；支持两种类型：副本（replicated）和 纠删码（Erasure Code）</p>
+<p>PG（ placement group）：放置策略组，对象的集合，该集合里的所有对象都 具有相同的放置策略；简单点说就是相同PG内的对象都会放到相同的硬盘上； PG 是ceph的核心概念， 服务端数据均衡和恢复的最小粒度；引入PG这一层其实是为 了更好的分配数据和定位数据。</p>
+<p>右边这张图描述了它们之间的关系：</p>
+<ul>
+<li>
+<p>一个Pool里有很多PG；</p>
+</li>
+<li>
+<p>一个PG里包含一堆对象；一个对象只能属于一个PG；</p>
+</li>
+<li>
+<p>PG属于多个OSD，分布在不同的OSD上；</p>
+</li>
+</ul>
+<p><img src="/images/F12F5EFAC24B45A2ABAB3BFEC92DA2C1clipboard.png" alt></p>
+<h2 id="部署Ceph集群">部署Ceph集群</h2>
+<h3 id="Ceph版本选择">Ceph版本选择</h3>
+<p>Ceph目前最新版本16（P版），市面上应用最广泛的是12（L版）</p>
+<p>参考：<a href="https://docs.ceph.com/en/latest/releases/">https://docs.ceph.com/en/latest/releases/</a></p>
+<p><img src="/images/F43A32B6AD424611B3F3B3EB94111AD8clipboard.png" alt></p>
+<h3 id="Ceph服务器配置推荐">Ceph服务器配置推荐</h3>
+<p><img src="/images/4B0E5F7B935A43249DE36E1F971A8130clipboard.png" alt></p>
+<h3 id="Ceph集群部署规划">Ceph集群部署规划</h3>
+<ul>
+<li>
+<p>ceph-deploy：ceph集群部署节点，负责集群整体部署， 这里复用node1节点，也可以单独找一台服务器作为部署 节点。</p>
+</li>
+<li>
+<p>monitor：Ceph监视管理节点，承担Ceph集群重要的管 理任务，负责集群状态维护，例如存储池副本数、PG状 态、OSD数量等，至少部署1个，一般需要3或5个节点组 建高可用。</p>
+</li>
+<li>
+<p>osd：Ceph存储节点，实际负责数据存储的节点，集群 中至少有3个OSD，不少于默认副本数，每个OSD对应一 块硬盘。</p>
+</li>
+</ul>
+<p><img src="/images/978109F0AA7A42C4AF692F96AD9C49E0clipboard.png" alt></p>
+<p><img src="/images/7C09054CB62A4EC286BD3974E10EDA02clipboard.png" alt></p>
+<h3 id="Ceph集群部署：操作系统初始化">Ceph集群部署：操作系统初始化</h3>
+<p>ps：3台机器全部操作</p>
+<h1>关闭防火墙</h1>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl stop firewalld</span><br><span class="line">systemctl <span class="built_in">disable</span> firewalld</span><br></pre></td></tr></table></figure>
+<h1>关闭selinux</h1>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">sed -i <span class="string">&#x27;s/enforcing/disabled/&#x27;</span> /etc/selinux/config <span class="comment"># 永久，重启生效</span></span><br><span class="line">setenforce 0 <span class="comment"># 临时</span></span><br></pre></td></tr></table></figure>
+<h1>关闭swap</h1>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">swapoff -a <span class="comment"># 临时</span></span><br><span class="line">sed -ri <span class="string">&#x27;s/.*swap.*/#&amp;/&#x27;</span> /etc/fstab <span class="comment"># 永久，重启生效</span></span><br></pre></td></tr></table></figure>
+<h1>根据规划设置主机名</h1>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hostnamectl set-hostname &lt;hostname&gt;</span><br></pre></td></tr></table></figure>
+<h1>在node添加hosts</h1>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> &gt;&gt; /etc/hosts &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">192.168.0.11 ceph-node01</span></span><br><span class="line"><span class="string">192.168.0.12 ceph-node02</span></span><br><span class="line"><span class="string">192.168.0.13 ceph-node03</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+<h1>设置文件描述符</h1>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">ulimit</span> -SHn 102400</span><br><span class="line"><span class="built_in">cat</span> &gt;&gt; /etc/security/limits.conf &lt;&lt; <span class="string">EOF </span></span><br><span class="line"><span class="string">* soft nofile 65535 * hard nofile 65535 </span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+<h1>时间同步</h1>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install ntpdate -y</span><br><span class="line">ntpdate time.windows.com</span><br></pre></td></tr></table></figure>
+<h1>配置SSH免交互认证</h1>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t rsa</span><br><span class="line">ssh-copy-id root@ceph-node01</span><br><span class="line">ssh-copy-id root@ceph-node02</span><br><span class="line">ssh-copy-id root@ceph-node03</span><br></pre></td></tr></table></figure>
+<h3 id="Ceph集群部署">Ceph集群部署</h3>
+<p>Ceph集群部署方式：</p>
+<ul>
+<li>
+<p>yum：常规的部署方式</p>
+</li>
+<li>
+<p>ceph-ansible：官方基于ansible写的自动化部署工具</p>
+</li>
+</ul>
+<p><a href="https://docs.ceph.com/projects/ceph-ansible/en/latest/">https://docs.ceph.com/projects/ceph-ansible/en/latest/</a></p>
+<ul>
+<li>ceph-deploy：ceph提供的简易部署工具，可以非常方便部署ceph集群。（推荐）</li>
+</ul>
+<p><a href="https://docs.ceph.com/projects/ceph-deploy/en/latest/">https://docs.ceph.com/projects/ceph-deploy/en/latest/</a></p>
+<p>Ceph集群部署步骤：</p>
+<p>1、配置阿里云yum仓库 （所有节点安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> &gt; /etc/yum.repos.d/ceph.repo &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">[Ceph]</span></span><br><span class="line"><span class="string">name=Ceph packages for $basearch</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-octopus/el7/\$basearch</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">[Ceph-noarch]</span></span><br><span class="line"><span class="string">name=Ceph noarch packages</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-octopus/el7/noarch</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">[ceph-source]</span></span><br><span class="line"><span class="string">name=Ceph source packages</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-octopus/el7/SRPMS</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+<p>注：如果部署别的版本，将octopus替换为对应版本号即可。</p>
+<p>2、安装ceph-deploy工具 （ceph-deploy节点安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum -y install ceph-deploy    </span><br></pre></td></tr></table></figure>
+<p>3、创建集群  （ceph-deploy节点安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#创建一个my-cluster目录，所有命令在此目录下进行：</span></span><br><span class="line"><span class="built_in">mkdir</span> my-cluster </span><br><span class="line"><span class="built_in">cd</span> my-cluster</span><br><span class="line"><span class="comment">#安装集群缺少的模块</span></span><br><span class="line">yum install epel-release -y     <span class="comment">#所有节点安装</span></span><br><span class="line">yum install python2-pip -y </span><br><span class="line"><span class="comment">#创建一个Ceph集群：</span></span><br><span class="line">ceph-deploy new ceph-node01 ceph-node02 ceph-node03</span><br></pre></td></tr></table></figure>
+<p>4、安装Ceph （ceph-deploy节点安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装Ceph包到指定节点：</span></span><br><span class="line">ceph-deploy install --no-adjust-repos ceph-node01 ceph-node02 ceph-node03</span><br><span class="line"><span class="comment">#注：–no-adjust-repos参数是直接使用本地源，不使用官方默认源</span></span><br></pre></td></tr></table></figure>
+<p>5、部署Monitor服务 （ceph-deploy节点安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#初始化并部署monitor，收集所有密钥：</span></span><br><span class="line">ceph-deploy mon create-initial</span><br><span class="line"><span class="comment">#使用ceph-deploy命令将配置文件和 admin key复制到管理节点和Ceph节点，以便每次执行ceph CLI命令无需 指定monitor地址和 ceph.client.admin.keyring。</span></span><br><span class="line">ceph-deploy admin ceph-node01 ceph-node02 ceph-node03</span><br></pre></td></tr></table></figure>
+<p>6、部署OSD服务并添加硬盘 （ceph-deploy节点安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#创建6个OSD，分别对应每个节点未使用的硬盘：</span></span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node01</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node01</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node02</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node02</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node03</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node03</span><br></pre></td></tr></table></figure>
+<p>7、部署MGR服务（ceph-deploy节点安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-deploy mgr create ceph-node01 ceph-node02 ceph-node03</span><br></pre></td></tr></table></figure>
+<p>注：MGR是Ceph L版本新增加的组件，主要作用是分担和扩展monitor的部分功能，减轻monitor的负担。 建议每台monitor节点都部署一个mgr，以实现相同级别的高可用。</p>
+<p>查看Ceph集群状态：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph -s</span><br></pre></td></tr></table></figure>
+<p><img src="/images/B6B3728400CD4B29B5225EDB4267552Eclipboard.png" alt></p>
+<p>解决办法：(3台节点都操作）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装缺少的模块</span></span><br><span class="line">pip3 install pecan werkzeug</span><br><span class="line"><span class="comment">#禁用安全模式</span></span><br><span class="line">ceph config <span class="built_in">set</span> mon auth_allow_insecure_global_id_reclaim <span class="literal">false</span></span><br><span class="line"><span class="comment">#重启mgr服务</span></span><br><span class="line">systemctl restart ceph-mgr.target</span><br></pre></td></tr></table></figure>
+<p>查看Ceph版本：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph -v</span><br></pre></td></tr></table></figure>
+<h3 id="Ceph集群服务管理">Ceph集群服务管理</h3>
+<p>1、启动所有守护进程</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># systemctl restart ceph.target </span></span><br></pre></td></tr></table></figure>
+<p>2、按类型启动守护进程</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># systemctl restart ceph-osd@id </span></span><br><span class="line"><span class="comment"># systemctl restart ceph-mon.target </span></span><br><span class="line"><span class="comment"># systemctl restart ceph-mds.target </span></span><br><span class="line"><span class="comment"># systemctl restart ceph-mgr.target</span></span><br></pre></td></tr></table></figure>
+<h3 id="Ceph集群常用管理命令">Ceph集群常用管理命令</h3>
+<p><img src="/images/7F1083160E9D463883F3A2931A5768E0clipboard.png" alt></p>
+<h2 id="Ceph存储使用">Ceph存储使用</h2>
+<h3 id="三种存储类型介绍">三种存储类型介绍</h3>
+<p>块存储（RBD）</p>
+<p>优点：存储速度较快</p>
+<p>缺点：不支持共享存储</p>
+<p>应用场景：虚拟机硬盘</p>
+<p>典型设备：硬盘、Raid</p>
+<p>文件存储（CephFS）</p>
+<p>优点：支持共享存储</p>
+<p>缺点：读写速度较慢（需要经过操作系统处理再转为块存储）</p>
+<p>应用场景：文件共享，多台服务器共享使用同一个存储</p>
+<p>典型设备：FTP、NFS</p>
+<p>对象存储（Object）</p>
+<p>优点：具备块存储的读写性能和文件存储的共享特性</p>
+<p>缺点：操作系统不能直接访问，只能通过应用程序级别的API访问</p>
+<p>应用场景：图片存储，视频存储</p>
+<p>典型设备：阿里云OSS，腾讯云COS</p>
+<h3 id="RBD块存储：RBD工作流程">RBD块存储：RBD工作流程</h3>
+<p>1、客户端创建一个pool，并指定pg数量，创建rbd设备并挂载到文件系统；</p>
+<p>2、用户写入数据，ceph进行对数据切块，每个块的大小默认为4M，每个 块名字是object+序号； 3、将每个object通过pg进行副本位置的分配；</p>
+<p>4、pg根据crush算法会寻找3个osd，把这object分别保存在这3个osd上 存储；</p>
+<p>5、osd实际把硬盘格式化为xfs文件系统，object存储在这个文件系统就相 当于存储了一个文件rbd0.object1.file。</p>
+<p><img src="/images/C1F833C8BF1A42C8BB6FF71D4209EC74clipboard.png" alt></p>
+<h3 id="RBD块存储：常用管理命令">RBD块存储：常用管理命令</h3>
+<p><img src="/images/408D7E50905B40F491EBC9D864864D67clipboard.png" alt></p>
+<h3 id="RBD块存储：RBD创建并使用">RBD块存储：RBD创建并使用</h3>
+<p>1、创建存储池</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph osd pool create rbd-pool 128 <span class="comment"># 格式：ceph osd pool create &lt;pool-name&gt; &lt;pg-num&gt;</span></span><br><span class="line">ceph osd pool <span class="built_in">ls</span></span><br></pre></td></tr></table></figure>
+<p>PG数量设置计算公式：PG数量=(OSD数量*100)/副本数（3）</p>
+<p>例如我们的环境：(6*100)/3=200，一般设置是结果向上取2的N次方，所以pool指定的pg数量就是256</p>
+<p>2、指定存储池使用存储类型</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph osd pool application <span class="built_in">enable</span> rbd-pool rbd</span><br></pre></td></tr></table></figure>
+<p>3、创建一个10G的块设备</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd create --size 10240 rbd-pool/image01 <span class="comment"># 格式：rbd create --size &#123;megabytes&#125; &#123;pool-name&#125;/&#123;image-name&#125;</span></span><br></pre></td></tr></table></figure>
+<p>4、查看块设备</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd <span class="built_in">ls</span> rbd-pool</span><br><span class="line">rbd info rbd-pool/image01</span><br></pre></td></tr></table></figure>
+<p>节点本地挂载使用块设备：</p>
+<p>1、映射</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd map rbd-pool/image01</span><br></pre></td></tr></table></figure>
+<p>2、格式化块设备</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mkfs.xfs /dev/rbd0</span><br></pre></td></tr></table></figure>
+<p>3、挂载</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mount /dev/rbd0 /mnt</span><br></pre></td></tr></table></figure>
+<p><img src="/images/864B295E82BE4568AC1FEF86F5C98A98clipboard.png" alt></p>
+<p>4、取消挂载和内核映射</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">umount /mnt</span><br><span class="line">rbd unmap rbd-pool/image01</span><br></pre></td></tr></table></figure>
+<p>远程挂载使用块设备：</p>
+<p>1、拷贝配置文件和秘钥</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> my-cluster/</span><br><span class="line">scp ceph.conf root@192.168.0.14:/etc/ceph/</span><br><span class="line">scp ceph.client.admin.keyring root@192.168.0.14:/etc/ceph/</span><br></pre></td></tr></table></figure>
+<p>2、安装Ceph客户端</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install epel-release -y</span><br><span class="line">scp /etc/yum.repos.d/ceph.repo root@192.168.0.14:/etc/yum.repos.d/</span><br><span class="line">yum -y install ceph-common</span><br></pre></td></tr></table></figure>
+<p>3、剩余操作就与上面一样了</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd create --size 20480 rbd-pool/image02</span><br><span class="line">rbd <span class="built_in">ls</span> rbd-pool</span><br><span class="line">rbd map rbd-pool/image02</span><br><span class="line">rbd map rbd-pool/image02</span><br><span class="line">mkfs.xfs /dev/rbd0</span><br><span class="line">mount /dev/rbd0 /mnt/</span><br><span class="line"><span class="built_in">df</span> -h</span><br><span class="line">umount  /mnt/</span><br><span class="line">rbd unmap rbd-pool/image02</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><img src="/images/7A83483B4F564FFCB93DAB7F16B6B381clipboard.png" alt></p>
+<h3 id="RBD块存储：快照">RBD块存储：快照</h3>
+<p>快照：在某个时间点的副本，当系统出现问题，可以通过恢复快照恢复之前副本状态。</p>
+<p>1、创建快照</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap create rbd-pool/image01@snap01</span><br></pre></td></tr></table></figure>
+<p>2、查看快照</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap list rbd-pool/image01</span><br></pre></td></tr></table></figure>
+<p>3、还原快照</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">umount  /mnt/</span><br><span class="line">rbd unmap rbd-pool/image01</span><br><span class="line">rbd snap rollback rbd-pool/image01@snap01</span><br><span class="line">注：还原快照前需先取消挂载和内核映射，否则会出错</span><br></pre></td></tr></table></figure>
+<p>4、重新映射并挂载验证</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd map rbd-pool/image01</span><br><span class="line">mount /dev/rbd0 /mnt/</span><br></pre></td></tr></table></figure>
+<p>5、删除快照</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap <span class="built_in">rm</span> rbd-pool/image01@snap01</span><br></pre></td></tr></table></figure>
+<p><img src="/images/DCC1F8703F004C94931B35D322DE5913clipboard.png" alt></p>
+<p><img src="/images/5CC3159040964F778A9ECE84B505D823clipboard.png" alt></p>
+<h3 id="RBD块存储：克隆">RBD块存储：克隆</h3>
+<p>克隆：基于指定的块设备克隆出相同的一份出来</p>
+<p>1、创建一个块设备</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd create --size 10240 rbd-pool/image02</span><br></pre></td></tr></table></figure>
+<p>2、创建快照</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap create rbd-pool/image02@snap01</span><br></pre></td></tr></table></figure>
+<p>3、设置快照处于被保护状态</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap protect rbd-pool/image02@snap01</span><br></pre></td></tr></table></figure>
+<p>4、通过快照克隆一个新块设备</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd <span class="built_in">clone</span> rbd-pool/image02@snap01 rbd-pool/image02_clone</span><br><span class="line">rbd info rbd-pool/image02_clone</span><br></pre></td></tr></table></figure>
+<h3 id="5、将克隆的块设备独立于父块设备">5、将克隆的块设备独立于父块设备</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd flatten rbd-pool/image02_clone</span><br></pre></td></tr></table></figure>
+<p>基于上述快照之后的步骤</p>
+<p><img src="/images/780F3B0FA1E14F2D8D83EB2778C7374Aclipboard.png" alt></p>
+<p><img src="/images/44921CAF73254AE79C845AC9FF60312Aclipboard.png" alt></p>
+<p>由于克隆的uuid一致，需要在其他机器上挂载验证克隆的镜像是否可用</p>
+<p><img src="/images/AB395B73E9C44D609201473CCDC0013Fclipboard.png" alt></p>
+<h3 id="CephFS文件系统">CephFS文件系统</h3>
+<p>CephFS 是一个基于 ceph 集群且兼容POSIX标准的文件系统。</p>
+<p>创建 cephfs 文件系统时需要在 ceph 集群中添加 mds 服务，该服务 负责处理 POSIX 文件系统中的 metadata 部分，实际的数据部分交由 ceph 集群中的OSD处理。</p>
+<p>cephfs 支持以内核模块方式加载也支持 fuse 方式加载。无论是内核 模式还是 fuse 模式，都是通过调用 libcephfs 库来实现 cephfs 文件 系统的加载，而 libcephfs 库又调用 librados 库与 ceph 集群进行通 信，从而实现 cephfs 的加载。</p>
+<p><img src="/images/C106DA8250B74E1E9116CE0BEE91F50Dclipboard.png" alt></p>
+<h3 id="CephFS文件系统：部署MDS服务">CephFS文件系统：部署MDS服务</h3>
+<p>部署MDS实例：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-deploy mds create ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph mds <span class="built_in">stat</span> <span class="comment"># 查看MDS节点状态</span></span><br></pre></td></tr></table></figure>
+<h3 id="CephFS文件系统：创建文件系统">CephFS文件系统：创建文件系统</h3>
+<p>1、创建存储池</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph osd pool create cephfs_data &lt;pg_num&gt;</span><br><span class="line">ceph osd pool create cephfs_metadata &lt;pg_num&gt;</span><br><span class="line">ceph fs <span class="built_in">ls</span></span><br></pre></td></tr></table></figure>
+<p>2、创建文件系统</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph fs new cephfs cephfs_metadata cephfs_data <span class="comment"># 格式：ceph fs new &lt;fs_name&gt; &lt;metadata&gt; &lt;data&gt; </span></span><br><span class="line">ceph fs <span class="built_in">ls</span> <span class="comment">#查看创建后的cephfs</span></span><br></pre></td></tr></table></figure>
+<h3 id="CephFS文件系统：挂载并使用">CephFS文件系统：挂载并使用</h3>
+<p>内核模块方式挂载：</p>
+<p>1、安装Ceph客户端 （前面已经安装客户端啦）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install epel-release -y</span><br><span class="line">yum -y install ceph-common</span><br></pre></td></tr></table></figure>
+<p>2、获取账号名与秘钥</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph auth list |grep admin -A1</span><br></pre></td></tr></table></figure>
+<p>3、挂载本地目录</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mount -t ceph 192.168.0.11:6789,192.168.0.12:6789,192.168.0.13:6789:/ /mnt/ -o name=admin,secret=AQDPhU5hxkfUHRAAQUcQHyrXTTJCRmBPONmVzg==</span><br><span class="line"><span class="comment">#或者将密钥指定到文件</span></span><br><span class="line">vim /etc/ceph/admin.secret </span><br><span class="line">mount -t ceph 192.168.0.11:6789,192.168.0.12:6789,192.168.0.13:6789:/ /tmp/ -o name=admin,secretfile=/etc/ceph/admin.secret </span><br></pre></td></tr></table></figure>
+<p>4、取消挂载</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">umount /mnt</span><br></pre></td></tr></table></figure>
+<p>fuse方式挂载：</p>
+<p>1、安装fuse</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y ceph-fuse</span><br></pre></td></tr></table></figure>
+<p>2、挂载本地目录</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-fuse -m 192.168.0.11:6789,192.168.0.12:6789,192.168.0.13:6789 /mnt/</span><br><span class="line"><span class="comment">#这里没有指定密钥是因为它默认读取的是/etc/ceph/ceph.client.admin.keyring </span></span><br><span class="line">[root@localhost ~]<span class="comment"># cat /etc/ceph/ceph.client.admin.keyring </span></span><br><span class="line">[client.admin]</span><br><span class="line">	key = AQDPhU5hxkfUHRAAQUcQHyrXTTJCRmBPONmVzg==</span><br><span class="line">	caps mds = <span class="string">&quot;allow *&quot;</span></span><br><span class="line">	caps mgr = <span class="string">&quot;allow *&quot;</span></span><br><span class="line">	caps mon = <span class="string">&quot;allow *&quot;</span></span><br><span class="line">	caps osd = <span class="string">&quot;allow *&quot;</span></span><br></pre></td></tr></table></figure>
+<p>3、取消卸载</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">fusermount -u /mnt/</span><br></pre></td></tr></table></figure>
+<h3 id="对象存储">对象存储</h3>
+<p>Ceph对象存储不能像RBD、CephFS那样方式访问，它是通 过Restfulapi方式进行访问和使用。兼容S3/Swift接口，由 radosgw组件提供服务。所以需要安装这个服务。</p>
+<p><img src="/images/8AD3A5006168462C82C97E9640613903clipboard.png" alt></p>
+<h3 id="对象存储：部署RGW服务">对象存储：部署RGW服务</h3>
+<p>部署RGW服务：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-deploy rgw create ceph-node01 ceph-node02</span><br></pre></td></tr></table></figure>
+<p>验证访问，RGW默认7480端口，浏览器访问：<a href="http://192.168.31.71:7480">http://192.168.31.71:7480</a></p>
+<p>返回anonymous说明服务正常。</p>
+<h3 id="对象存储：使用">对象存储：使用</h3>
+<p>radosgw-admin 是 RADOS 网关用户管理工具。</p>
+<p>1、创建S3账号</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">radosgw-admin user create --uid=<span class="string">&quot;azhe&quot;</span> --display-name=<span class="string">&quot;azhe&quot;</span></span><br><span class="line">注：记住输出的keys中的access_key和secret_key的值，用于接口访问认证。</span><br><span class="line">如果忘记 也可以通过这个命令查看：radosgw-admin user info --uid=azhe</span><br></pre></td></tr></table></figure>
+<p>2、编写Python脚本测试</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">安装连接boto模块，用于连接S3接口：</span><br><span class="line">pip3 install boto</span><br><span class="line">参考示例：https://docs.ceph.com/en/nautilus/radosgw/s3/python/</span><br></pre></td></tr></table></figure>
+<h2 id="Kubernetes使用Ceph作为Pod存储">Kubernetes使用Ceph作为Pod存储</h2>
+<h3 id="PV与PVC概述">PV与PVC概述</h3>
+<p>PersistentVolume（PV）：持久卷，对外部存储资源创建和使用的抽象， 使得存储作为集群中的资源管理；PV又分为静态供给和动态供给，由于静态 供给需要提前创建一堆PV，维护成本较高，所以企业一般使用动态供给。</p>
+<p>PersistentVolumeClaim（PVC）：持久卷申请，让用户不需要关心具体 的Volume实现细节，只需要定义PVC需要多少磁盘容量即可。</p>
+<p><img src="/images/E6625444C3824E1EA14FE22591E0DE9Cclipboard.png" alt></p>
+<h3 id="ceph-csi供给程序">ceph-csi供给程序</h3>
+<p>ceph-csi是ceph官方维护的PV供给程序，专门用于在 Kubernetes中使用RBD、CephFS为Pod提供存储。</p>
+<p>项目地址：<a href="https://github.com/ceph/ceph-csi">https://github.com/ceph/ceph-csi</a></p>
+<p><img src="/images/1F2BE3EE5A734C83A078D4780336D56Fclipboard.png" alt></p>
+<h3 id="Pod使用RBD块存储">Pod使用RBD块存储</h3>
+<p>关于部署，RBD YAML文件在deploy/rbd/kubernetes目录，课件中YAML改动如下：</p>
+<ul>
+<li>
+<p>全部统一命名空间到ceph-csi</p>
+</li>
+<li>
+<p>将镜像转存到docker hub</p>
+</li>
+<li>
+<p>增加secret.yaml和storageclass.yaml文件</p>
+</li>
+<li>
+<p>将csi-rbdplugin-provisioner.yaml 和 csi-rbdplugin.yaml 中 关于kms配置注释</p>
+</li>
+</ul>
+<p>在使用中，还需要根据自己集群环境修改：</p>
+<ul>
+<li>
+<p>csi-config-map.yaml 修改连接ceph集群信息</p>
+</li>
+<li>
+<p>secret.yaml 修改秘钥</p>
+</li>
+<li>
+<p>storageclass.yaml 修改集群ID和存储池</p>
+</li>
+</ul>
+<h3 id="Pod使用CephFS文件系统">Pod使用CephFS文件系统</h3>
+<p>关于部署，RBD YAML文件在deploy/cephfs/kubernetes目录，课件中YAML改动如下：</p>
+<ul>
+<li>
+<p>全部统一命名空间到ceph-csi-cephfs</p>
+</li>
+<li>
+<p>将镜像转存到docker hub</p>
+</li>
+<li>
+<p>增加secret.yaml和storageclass.yaml文件</p>
+</li>
+<li>
+<p>将csi-rbdplugin-provisioner.yaml 和 csi-rbdplugin.yaml 中 关于kms配置注释</p>
+</li>
+</ul>
+<p>在使用中，还需要根据自己集群环境修改：</p>
+<ul>
+<li>
+<p>csi-config-map.yaml 修改连接ceph集群信息</p>
+</li>
+<li>
+<p>secret.yaml 修改秘钥</p>
+</li>
+<li>
+<p>storageclass.yaml 修改集群ID和文件系统名称</p>
+</li>
+</ul>
+<h3 id="小结">小结</h3>
+<p><img src="/images/FFC5666BFF9B4DACB117A5B0B5F69C5Dclipboard.png" alt></p>
+<p>RBD：</p>
+<p>优点：读写性能好，支持镜像快照、克隆</p>
+<p>缺点：不支持多节点挂载</p>
+<p>适用场景：对读写性能要求高，且无多节点同时读写数据需求的应用，例如数据库</p>
+<p>CephFS：</p>
+<p>优点：支持K8s所有访问模式，支持多节点同时读写数据</p>
+<p>缺点：读写性能一般，延迟时间不稳定</p>
+<p>适用场景：对读写性能要求不高，I/O延迟不敏感的应用，例如文件共享</p>
+<h2 id="Ceph-监控">Ceph 监控</h2>
+<h3 id="Dashboard">Dashboard</h3>
+<p>从L版本开始，Ceph 提供了原生的Dashboard功能，通过Dashboard对Ceph集群状态查看和基本管理。</p>
+<p>使用Dashboard需要在MGR节点安装软件包： yum install ceph-mgr-dashboard –y</p>
+<p>如果是按课程用的O版本会出现下面缺少依赖包提示：</p>
+<p><img src="/images/5659B49493B946FF978BA7211DDC481Aclipboard.png" alt></p>
+<p>原因分析：这是由于从O版本开始，MGR改为Python3编写，而默认库没有这3个模块包，即使单独找包安装也可能 不生效或者安装不上。从社区得知，这是已知问题，建议使用CentOS8系统或者使用cephadm容器化部署Ceph。 或者降低Ceph版本也可以，例如H版本，这个版本还是Python2编写的，不存在缺包问题。</p>
+<p>这里选择降低到H版本，重新部署Ceph集群。</p>
+<p>1、清理Ceph集群环境</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 从远程主机卸载ceph包并清理所有数据</span></span><br><span class="line">ceph-deploy purge ceph-node01 ceph-node02 ceph-node03</span><br><span class="line"><span class="comment"># 清理ceph所有数据（/var/lib/ceph）</span></span><br><span class="line">ceph-deploy purgedata ceph-node01 ceph-node02 ceph-node03</span><br><span class="line"><span class="comment"># 从本地目录移出认证秘钥（my-cluster目录），可选</span></span><br><span class="line">ceph-deploy forgetkeys</span><br><span class="line"><span class="comment"># 彻底清理ceph相关软件包</span></span><br><span class="line">rpm -qa |grep 15.2.13 |xargs -i yum remove &#123;&#125; -y</span><br><span class="line"><span class="comment"># 取消OSD盘创建的LVM逻辑卷映射关系</span></span><br><span class="line">dmsetup info -C |awk <span class="string">&#x27;/ceph/&#123;print $1&#125;&#x27;</span> |xargs -i dmsetup remove &#123;&#125;</span><br><span class="line"><span class="comment"># 清除OSD盘GPT数据结构</span></span><br><span class="line">yum install gdisk -y</span><br><span class="line">sgdisk --zap-all /dev/sdb</span><br></pre></td></tr></table></figure>
+<p>2、与之前部署方式一样</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> &gt; /etc/yum.repos.d/ceph.repo &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">[Ceph]</span></span><br><span class="line"><span class="string">name=Ceph packages for $basearch</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/\$basearch</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">[Ceph-noarch]</span></span><br><span class="line"><span class="string">name=Ceph noarch packages</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/noarch</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">[ceph-source]</span></span><br><span class="line"><span class="string">name=Ceph source packages</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/SRPMS</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum -y install ceph-deploy   </span><br><span class="line"><span class="built_in">mkdir</span> my-cluster </span><br><span class="line"><span class="built_in">cd</span> my-cluster</span><br><span class="line">yum install epel-release -y </span><br><span class="line">yum install python2-pip -y </span><br><span class="line">ceph-deploy new ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph-deploy install --no-adjust-repos ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph-deploy mon create-initial</span><br><span class="line">ceph-deploy admin ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node01</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node01</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node02</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node02</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node03</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node03</span><br><span class="line">ceph-deploy mgr create ceph-node01 ceph-node02 ceph-node03</span><br></pre></td></tr></table></figure>
+<p>3、添加RBD块设备和CephFS文件系统测试</p>
+<p>添加RBD块设备：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph osd pool create rbd-pool 128</span><br><span class="line">ceph osd pool application <span class="built_in">enable</span> rbd-pool rbd</span><br><span class="line">rbd create --size 10240 rbd-pool/image01 </span><br><span class="line">rbd map rbd-pool/image01</span><br><span class="line">mkfs.xfs /dev/rbd0</span><br><span class="line">mount /dev/rbd0 /mnt</span><br></pre></td></tr></table></figure>
+<p>添加CephFS文件系统：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-deploy mds create ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph osd pool create cephfs_data 128</span><br><span class="line">ceph osd pool create cephfs_metadata 128</span><br><span class="line">ceph fs new cephfs cephfs_metadata cephfs_data </span><br><span class="line">mount -t ceph 192.168.0.11:6789,192.168.0.12:6789,192.168.0.13:6789:/ /mnt -o </span><br><span class="line">name=admin,secret=AQBwS9Vgow1+OBAA0eMOK8v5LlU7m+/cg+wIng==</span><br></pre></td></tr></table></figure>
+<p>1、在每个MGR节点安装</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install ceph-mgr-dashboard –y</span><br></pre></td></tr></table></figure>
+<p>2、开启MGR功能</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph mgr module <span class="built_in">enable</span> dashboard</span><br></pre></td></tr></table></figure>
+<p>3、修改默认配置</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph config <span class="built_in">set</span> mgr mgr/dashboard/server_addr 0.0.0.0</span><br><span class="line">ceph config <span class="built_in">set</span> mgr mgr/dashboard/server_port 7000 </span><br><span class="line">ceph config <span class="built_in">set</span> mgr mgr/dashboard/ssl <span class="literal">false</span></span><br></pre></td></tr></table></figure>
+<p>4、创建一个dashboard登录用户名密码</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph dashboard ac-user-create admin administrator -i password.txt</span><br><span class="line">格式：dashboard ac-user-create &lt;username&gt; &#123;&lt;rolename&gt;&#125; &#123;&lt;name&gt;&#125;</span><br></pre></td></tr></table></figure>
+<p>5、查看服务访问方式</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph mgr services</span><br></pre></td></tr></table></figure>
+<p>后面如果修改配置，重启生效：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph mgr module <span class="built_in">disable</span> dashboard</span><br><span class="line">ceph mgr module <span class="built_in">enable</span> dashboard</span><br></pre></td></tr></table></figure>
+<p><img src="/images/60E4C32C13634E9F943183C8B5D8CB53clipboard.png" alt></p>
+<h3 id="Prometheus-Grafana监控Ceph">Prometheus+Grafana监控Ceph</h3>
+<ul>
+<li>Prometheus（普罗米修斯）：容器监控系统。</li>
+</ul>
+<p>官网：<a href="https://prometheus.io">https://prometheus.io</a></p>
+<ul>
+<li>Grafana：是一个开源的度量分析和可视化系统。</li>
+</ul>
+<p>官网：<a href="https://grafana.com/grafana">https://grafana.com/grafana</a></p>
+<p>1、Docker部署Prometheus+Grafana</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo -O /etc/yum.repos.d/docker-ce.repo</span><br><span class="line">yum install docker-ce -y</span><br><span class="line">systemctl start docker</span><br><span class="line">systemctl <span class="built_in">enable</span> docker</span><br><span class="line">docker run -d --name=grafana -p 3000:3000 grafana/grafana</span><br><span class="line">docker run -d --name=prometheus -p 9090:9090 prom/prometheus</span><br></pre></td></tr></table></figure>
+<p>2、启用MGR Prometheus插件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph mgr module <span class="built_in">enable</span> prometheus </span><br><span class="line">curl 127.0.0.1:9283/metrics <span class="comment"># # 测试promtheus指标接口</span></span><br></pre></td></tr></table></figure>
+<p>3、配置Prometheus采集</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -it prometheus sh</span><br><span class="line">vi /etc/prometheus/prometheus.yml</span><br><span class="line">- job_name: <span class="string">&#x27;ceph&#x27;</span> </span><br><span class="line">static_configs: </span><br><span class="line">- targets: [<span class="string">&#x27;192.168.31.71:9283&#x27;</span>] </span><br><span class="line">docker restart prometheus</span><br></pre></td></tr></table></figure>
+<p>4、访问Grafana仪表盘</p>
+<p><a href="http://IP:3000">http://IP:3000</a></p>
+<p>默认用户名密码均为admin</p>
+<ol>
+<li>
+<p>添加Prometheus为数据源：Configuration -&gt; Data sources -&gt; Promethes -&gt; 输入URL <a href="http://IP:9090">http://IP:9090</a></p>
+</li>
+<li>
+<p>导入Ceph监控仪表盘：Dashboards -&gt; Manage -&gt; Import -&gt; 输入仪表盘ID，加载</p>
+</li>
+</ol>
+<ul>
+<li>
+<p>Ceph-Cluster ID：2842</p>
+</li>
+<li>
+<p>Ceph-OSD ID：5336</p>
+</li>
+<li>
+<p>Ceph-Pool ID：5342</p>
+</li>
+</ul>
+<p><img src="/images/708F09AB64F74A36A68B51DD463540CAclipboard.png" alt></p>
+]]></content>
+      <categories>
+        <category>Ceph</category>
+      </categories>
+      <tags>
+        <tag>Ceph</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>ELK Stack收集Kubernetes应用日志</title>
     <url>/2023/06/10/elk-stack%E6%94%B6%E9%9B%86kubernetes%E5%BA%94%E7%94%A8%E6%97%A5%E5%BF%97/</url>
     <content><![CDATA[<h2 id="需求背景">需求背景</h2>
@@ -640,6 +1054,532 @@
       </tags>
   </entry>
   <entry>
+    <title>K8s集群网络上</title>
+    <url>/2023/10/11/k8s%E9%9B%86%E7%BE%A4%E7%BD%91%E7%BB%9C%E4%B8%8A/</url>
+    <content><![CDATA[<h2 id="服务器网络架构">服务器网络架构</h2>
+<p><img src="/images/E636CCF6CF2B42F1A101A9C61AC4878Fclipboard.png" alt></p>
+<ul>
+<li>
+<p>路由器：网络出口</p>
+</li>
+<li>
+<p>核心层：主要完成数据高效转发、链路备份等</p>
+</li>
+<li>
+<p>汇聚层：网络策略、安全、工作站交换机的接 入、VLAN之间通信等功能</p>
+</li>
+<li>
+<p>接入层：工作站的接入</p>
+</li>
+</ul>
+<h2 id="交换技术">交换技术</h2>
+<p><img src="/images/50EFC14312B844A28E30D709A9AE9BE7clipboard.png" alt></p>
+<p>交换机工作在OSI参考模型的第二层，即数据链路层。交换机拥有一条高带宽的背部总线 交换矩阵，在同一时间可进行多个端口对之间的数据传输。</p>
+<p>交换技术分为2层和3层：</p>
+<ul>
+<li>
+<p>2层：主要用于小型局域网，仅支持在数据链路层转发数据，对工作站接入。</p>
+</li>
+<li>
+<p>3层：三层交换技术诞生，最初是为了解决广播域的问题，多年发展，三层交换机已经 成为构建中大型网络的主要力量</p>
+</li>
+</ul>
+<p>广播域</p>
+<p>交换机在转发数据时会先进行广播，这个广播可以发送的区域就是一个广播域。交换机之间对广播帧是透明的，所以 交换机之间组成的网络是一个广播域。路由器的一个接口下的网络是一个广播域，所以路由器可以隔离广播域。</p>
+<p>ARP（地址解析协议）</p>
+<p>发送这个广播帧是由ARP协议实现，ARP是通过IP地址获取物理地址的一个TCP/IP协议。</p>
+<p>三层交换机</p>
+<p>前面讲的二层交换机只工作在数据链路层，路由器则工作在网络层。而功能强大的三层交换机可同时工作在数据链路 层和网络层，并根据 MAC地址或IP地址转发数据包。</p>
+<p>VLAN（Virtual Local Area Network）：虚拟局域网</p>
+<p>VLAN是一种将局域网设备从逻辑上划分成一个个网段。一个VLAN就是一个广播域，VLAN之间的通信是通过第3层 的路由器来完成的。VLAN应用非常广泛，基本上大部分网络项目都会划分vlan。</p>
+<p>VLAN的主要好处：</p>
+<ul>
+<li>
+<p>分割广播域，减少广播风暴影响范围。</p>
+</li>
+<li>
+<p>提高网络安全性，根据不同的部门、用途、应用划分不同网段。</p>
+</li>
+</ul>
+<h2 id="路由技术">路由技术</h2>
+<p>路由器主要分为两个端口类型：LAN口和WAN口</p>
+<p>WAN口：配置公网IP，接入到互联网，转发来自LAN口的IP数据包。</p>
+<p>LAN口：配置内网IP（网关），连接内部交换机。</p>
+<p>路由器是连接两个或多个网络的硬件设备，将从端口上接收的数据包，根据数据包的 目的地址智能转发出去。</p>
+<p>路由器的功能：</p>
+<ul>
+<li>
+<p>路由</p>
+</li>
+<li>
+<p>转发</p>
+</li>
+<li>
+<p>隔离子网</p>
+</li>
+<li>
+<p>隔离广播域</p>
+</li>
+</ul>
+<p>路由器是互联网的枢纽，是连接互联网中各个局域网、广域网的设备，相比交换机来说，路由器的数据转发很复杂， 它会根据目的地址给出一条最优的路径。那么路径信息的来源有两种：</p>
+<p>静态路由：指人工手动指定到目标主机的地址然后记录在路由表中，如果其中某个节点不可用则需要重新指定。</p>
+<p>动态路由：则是路由器根据动态路由协议自动计算出路径永久可用，能实时地适应网络结构的变化。</p>
+<p>常用的动态路由协议：</p>
+<ul>
+<li>
+<p>RIP（ Routing Information Protocol ，路由信息协议）</p>
+</li>
+<li>
+<p>OSPF（Open Shortest Path First，开放式最短路径优先）</p>
+</li>
+<li>
+<p>BGP（Border Gateway Protocol，边界网关协议）</p>
+</li>
+</ul>
+<h2 id="OSI七层模型">OSI七层模型</h2>
+<p>OSI（Open System Interconnection）是国际标准化组织（ISO）制定的一个 用于计算机或通信系统间互联的标准体系，一般称为OSI参考模型或七层模型。</p>
+<p><img src="/images/ADF327DE95DB4C5084D0F3FCAFD2C253clipboard.png" alt></p>
+<p><img src="/images/26D0547A8B474E39B4D5916D7FEF47F2clipboard.png" alt></p>
+<p>TCP（Transmission Control Protocol，传输控制协议），面向连接协议，双方先建立可靠的连接， 再发送数据。适用于传输数据量大，可靠性要求高的应用场景。</p>
+<p>UDP（User Data Protocol，用户数据报协议），面向非连接协议，不与对方建立连接，直接将数 据包发送给对方。适用于一次只传输少量的数据，可靠性要求低的应用场景。相对TCP传输速度快。</p>
+<h2 id="K8s网络模型：-回看Docker容器网络模型">K8s网络模型： 回看Docker容器网络模型</h2>
+<p><img src="/images/CA8CDD48CDFC49049408825D2227E9FEclipboard.png" alt></p>
+<p>Docker网络模型涉及的名词：</p>
+<ul>
+<li>
+<p>网络的命名空间：Linux在网络栈中引入网络命名空间，将独立的网络协议栈隔离到不同的命名空间中，彼此间无法通信； Docker利用这一特性，实现不同容器间的网络隔离。</p>
+</li>
+<li>
+<p>Veth设备对：Veth设备对的引入是为了实现在不同网络命名空间的通信。</p>
+</li>
+<li>
+<p>Iptables/Netfilter：Docker使用Netfilter实现容器网络转发。</p>
+</li>
+<li>
+<p>网桥：网桥是一个二层网络设备，通过网桥可以将Linux支持的不同的端口连接起来，并实现类似交换机那样的多对多的通信。</p>
+</li>
+<li>
+<p>路由：Linux系统包含一个完整的路由功能，当IP层在处理数据发送或转发的时候，会使用路由表来决定发往哪里。</p>
+</li>
+</ul>
+<h2 id="K8s网络模型：Pod网络">K8s网络模型：Pod网络</h2>
+<p><img src="/images/949A3B8EAAB5429BB82ACE90062F3E35clipboard.png" alt></p>
+<p>Pod是K8s最小调度单元，一个Pod由一个容器或多个容器组成，当多个容器时，怎么都用这一个Pod IP？</p>
+<p>实现：k8s会在每个Pod里先启动一个infra container小容器，然后让其他的容器连接进来这个网络命名空间，然后其 他容器看到的网络试图就完全一样了。即网络设备、IP地址、Mac地址等。在Pod的IP地址就是infra container的IP地 址。</p>
+<p>在 Kubernetes 中，每一个 Pod 都有一个真实的 IP 地址，并且每一个 Pod 都可以使用此 IP 地址与 其他 Pod 通信。</p>
+<p>Pod之间通信会有两种情况：</p>
+<ul>
+<li>
+<p>两个Pod在同一个Node上</p>
+</li>
+<li>
+<p>两个Pod在不同Node上</p>
+</li>
+</ul>
+<p>第一种情况：两个Pod在同一个Node上</p>
+<p>同节点Pod之间通信道理与Docker网络一样的，如下图：</p>
+<p><img src="/images/C9E89486F7CA4EE9BE204C905BF5AA73clipboard.png" alt></p>
+<p>1.对 Pod1 来说，eth0 通过虚拟以太网设备 （veth0）连接到 root namespace；</p>
+<p>2.网桥 cbr0 中为 veth0 配置了一个网段。一旦 数据包到达网桥，网桥使用ARP 协议解析出其 正确的目标网段 veth1；</p>
+<p>3.网桥 cbr0 将数据包发送到 veth1；</p>
+<p>4.数据包到达 veth1 时，被直接转发到 Pod2 的 network namespace 中的 eth0 网络设备。</p>
+<p>第二种情况：两个Pod在不同Node上</p>
+<p><img src="/images/8F915E645EB54EEA98D52BE2042CFA1Eclipboard.png" alt></p>
+<p>相比同节点Pod通信，这里源Pod发出的数据包需 要传递到目标节点，但是源Pod并不知道目标Pod 在哪个节点上？</p>
+<p>因此，为了实现容器跨主机通信需求，就需要部署网络组件，这些网络组件都必 须满足如下要求：</p>
+<ul>
+<li>
+<p>一个Pod一个IP</p>
+</li>
+<li>
+<p>所有的 Pod 可以与任何其他 Pod 直接通信</p>
+</li>
+<li>
+<p>所有节点可以与所有 Pod 直接通信</p>
+</li>
+<li>
+<p>Pod 内部获取到的 IP 地址与其他 Pod 或节点与其通信时的 IP 地址是同一个</p>
+</li>
+</ul>
+<p>目前支持的一些K8s网络组件：</p>
+<p><img src="/images/762CAE4691BD42B5A10116EF472228D1clipboard.png" alt></p>
+<p>网络组件说明：<a href="https://kubernetes.io/docs/concepts/cluster-administration/networking/">https://kubernetes.io/docs/concepts/cluster-administration/networking/</a></p>
+<h2 id="K8s网络模型：-CNI（容器网络接口）">K8s网络模型： CNI（容器网络接口）</h2>
+<p>CNI（Container Network Interface，容器网络接口)：是一个容器网络规范，Kubernetes网络采用的就是这个CNI规 范，负责初始化infra容器的网络设备。</p>
+<p>CNI二进制程序默认路径：/opt/cni/bin/</p>
+<p>项目地址：<a href="https://github.com/containernetworking/cni">https://github.com/containernetworking/cni</a></p>
+<p>以Flannel网络组件为例，当部署Flanneld后，会在每台宿主机上生成它对应的CNI配置文件（它其实是一个 ConfigMap），从而告诉Kubernetes要使用 Flannel 作为容器网络方案。</p>
+<p>CNI配置文件默认路径：/etc/cni/net.d</p>
+<p>当 kubelet 组件需要创建 Pod 的时候，先调用dockershim它先创建一个 Infra 容器。然后调用 CNI 插件为 Infra 容器 配置网络。</p>
+<p>这两个路径可在kubelet启动参数中定义：</p>
+<p>–network-plugin=cni</p>
+<p>–cni-conf-dir=/etc/cni/net.d</p>
+<p>–cni-bin-dir=/opt/cni/bin</p>
+<h2 id="K8s网络组件之Flannel">K8s网络组件之Flannel</h2>
+<p>Flannel是CoreOS维护的一个网络组件，Flannel为每个Pod提供全局唯一的IP，Flannel使用ETCD来存储Pod子网与 Node IP之间的关系。flanneld守护进程在每台主机上运行，并负责维护ETCD信息和路由数据包。</p>
+<p>项目地址：<a href="https://github.com/coreos/flannel">https://github.com/coreos/flannel</a></p>
+<p>YAML地址：<a href="https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml">https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml</a></p>
+<h2 id="K8s网络组件之Flannel：部署">K8s网络组件之Flannel：部署</h2>
+<p>部署前有两处可能需要调整：</p>
+<h1>kube-flannel.yml</h1>
+<p><img src="/images/F247FFA929434234902653C0DADDF996clipboard.png" alt></p>
+<p>Network：指定Pod IP分配的网段，与controller-manager配置的保持一样。</p>
+<ul>
+<li>
+<p>–allocate-node-cidrs=true</p>
+</li>
+<li>
+<p>–cluster-cidr=10.244.0.0/16</p>
+</li>
+<li>
+<p>kubeadm部署：/etc/kubernetes/manifests/kube-controller-manager.yaml</p>
+</li>
+<li>
+<p>二进制部署：/opt/kubernetes/cfg/kube-controller-manager.conf</p>
+</li>
+</ul>
+<p>Backend：指定工作模式</p>
+<h2 id="K8s网络组件之Flannel：工作模式">K8s网络组件之Flannel：工作模式</h2>
+<p>Flannel支持多种工作模式：</p>
+<ul>
+<li>
+<p>UDP：最早支持的一种方式，由于性能最差，目前已经弃用。</p>
+</li>
+<li>
+<p>VXLAN：Overlay Network方案，源数据包封装在另一种网络包里面进行路由转发和通信</p>
+</li>
+<li>
+<p>Host-GW：Flannel通过在各个节点上的Agent进程，将容器网络的路由信息写到主机的路由表上，这样一来所有 的主机都有整个容器网络的路由数据了。</p>
+</li>
+<li>
+<p>Directrouting：同时支持VXLAN和Host-GW工作模式</p>
+</li>
+<li>
+<p>公有云VPC：ALIYUN，AWS</p>
+</li>
+</ul>
+<h2 id="K8s网络组件之Flannel：VXLAN模式">K8s网络组件之Flannel：VXLAN模式</h2>
+<p>VXLAN介绍</p>
+<p>VXLAN，即 Virtual Extensible LAN（虚拟可扩展局域网），是 Linux 内核本身就支持的一种网络 虚似化技术。VXLAN 可以完全在内核态实现上述封装和解封装的工作，从而通过与前面相似的“隧 道”机制，构建出覆盖网络（Overlay Network）。</p>
+<p>VXLAN的覆盖网络设计思想：在现有的三层网络之上，覆盖一个二层网络，使得连接在这个VXLAN 二层网络上的主机之间，可以像在同一局域网里通信。</p>
+<p>为了能够在二层网络上打通“隧道” ，VXLAN 会在宿主机上设置一个特殊的网络设备作为“隧道” 的两端。这个设备就叫作 VTEP，即：VXLAN Tunnel End Point（虚拟隧道端点）。</p>
+<p>VTEP设备进行封装和解封装的对象是二层数据帧，这个工作是在Linux内核中完成的。</p>
+<p>Flannel工作逻辑图如下：</p>
+<p><img src="/images/78BFAAAF1E504AA1ADAC3BA1D40ED482clipboard.png" alt></p>
+<p>如果Pod 1访问Pod 2，源地址10.244.1.10，目的地址10.244.2.10 ，数据包传输流程如下：</p>
+<p>1.容器路由：容器根据路由表，将数据包发送下一跳10.244.1.1，从eth0网卡出。可以使用ip route命令查看路由表</p>
+<p><img src="/images/CDCC5B1CD9DF416B8992A7AA90D5410Bclipboard.png" alt></p>
+<p>2.主机路由：数据包进入到宿主机虚拟网卡cni0，根据路由表转发到flannel.1虚拟网卡，也就是来到了隧道的入口。 10.244.2.0/24 via 10.244.2.0 dev flannel.1 onlink # 凡是发往10.244.2.0/24网段的数据包，都需要经过flannel.1设备发出，并且下一跳是10.244.2.0， 即Node2 VTEP设备flannel.1。</p>
+<p><img src="/images/DF7FE5B950AA4556867A3EFE53782999clipboard.png" alt></p>
+<p><img src="/images/943B2A691FFD4AA68C1ED405E264A507clipboard.png" alt></p>
+<p>3.VXLAN封装：而这些VTEP设备之间组成一个二层网络，但是二层网络必须要知道目的MAC地址，那这个MAC地址从哪获取到呢？其实在flanneld进 程启动后，就会自动添加其他节点ARP记录，可以通过ip neigh show dev flannel.1命令查看。</p>
+<p><img src="/images/589E4F3D29B9452F8BB2ABA112DF9C1Aclipboard.png" alt></p>
+<p>4.二次封包：知道了目的MAC地址，Linux内核就可以进行二层封包了。但是，对于宿主机网络来说这个二层帧并不能在宿主机二层网络里传输。所以接 下来，Linux内核还要把这个数据帧进一步封装成为宿主机网络的一个普通数据帧，好让它载着内部数据帧，通过宿主机的ens33网卡进行传输。 数据格式如下图：</p>
+<p><img src="/images/C067F3160882498A90BC1C6B50FEEE54clipboard.png" alt></p>
+<p>5.封装到UDP包发出去：在封装成宿主机网络可传输的数据帧时，还缺少目标宿主机MAC地址，也就是说这个UDP包该发给哪台宿主机呢？ flanneld进程也维护着一个叫做FDB的转发数据库，可以通过bridge fdb show dev flannel.1命令查看。可以看到，上面用的对方flannel.1的MAC地址 对应宿主机IP，也就是UDP要发往的目的地。所以使用这个目的IP与MAC地址进行封装。</p>
+<p><img src="/images/E1CC9578BB0D46389B0E1BA236732BA1clipboard.png" alt></p>
+<p>6.数据包到达目的宿主机：接下来，就是宿主机与宿主机之间通信了，数据包从Node1的ens33网卡发出去，Node2接收到数据包，解封装发现是VXLAN 数据包，把它交给flannel.1设备。flannel.1设备则会进一步拆包，取出原始IP包（源容器IP和目标容器IP），通过cni0网桥二层转发给容器。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#抓包分析</span></span><br><span class="line">tcpdump -i flannel.1 -nn  <span class="comment">#-i 的作用是指定监听哪个网卡</span></span><br><span class="line">tcpdump udp  -i ens33 -nn   <span class="comment">#-nn 不进行端口名称的转换</span></span><br></pre></td></tr></table></figure>
+<p>Tcpdump抓包指南之关键字的使用</p>
+<p>1.类型关键字：  host，net，port</p>
+<p>2.传输关键字：src，dst</p>
+<p>3.协议关键字：tcp,udp,http,arp,ftp</p>
+<p><img src="/images/D9885550172242E19DB576B68EE98223clipboard.png" alt></p>
+<h2 id="K8s网络组件之Flannel：HOST-GW模式">K8s网络组件之Flannel：HOST-GW模式</h2>
+<p>host-gw模式相比vxlan简单了许多，直接添加路由，将目的主机当做网关，直接路由原始封包。</p>
+<p><img src="/images/7ED7AC6E90B8450DBD7D700ED9B7E23Bclipboard.png" alt></p>
+<p>修改配置文件：</p>
+<h1>kube-flannel.yml</h1>
+<p><img src="/images/7A61D71570864075886347EE1BE20CABclipboard.png" alt></p>
+<p>当你设置flannel使用host-gw模式，flanneld会在宿主机上创建节点的路由表：</p>
+<p><img src="/images/F5367A99B1774053B1DC2D1B5E6635D4clipboard.png" alt></p>
+<p>目的 IP 地址属于 10.244.2.0/24 网段的 IP 包，应该经过本机的 eth33 设备发出去（即：dev ens33）；并且，它下一跳地址是 192.168.0.13（即：via 192.168.0.13）。</p>
+<p>一旦配置了下一跳地址，那么接下来，当 IP 包从网络层进入链路层封装成帧的时候，ens33 设备就会使用下一跳地址对应的 MAC 地址，作为该数据帧的目的 MAC 地址。</p>
+<p><img src="/images/259307CC1DDA432BB2E44D87AC13D024clipboard.png" alt></p>
+<p>而 Node 2 的内核网络栈从二层数据帧里拿到 IP 包后，会“看到”这个 IP 包的目的 IP 地址是 10.244.2.10，即 container-2 的 IP 地址。这时候，根据 Node 2 上的路由表，该目的地址会匹配到第五条路由规则（也就是 10.244.2.0 对应的路由规则），从而 进入 cni0 网桥，进而进入到 container-2 当中。</p>
+<p><img src="/images/D0F71BED5D54494D81D9FA3BDEDB6702clipboard.png" alt></p>
+<p>可见，数据包是封装成帧发送出去的，会使用路由表的下一跳来设置目的MAC地址，会经过二层网络到达目的节点，因此，hostgw模式必须要求集群宿主机之间二层连通。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#抓包分析</span></span><br><span class="line">tracepath 10.244.1.3</span><br><span class="line">tcpdump -i ens33 -nn dst 10.244.2.4</span><br></pre></td></tr></table></figure>
+<p><img src="/images/11FFDE2820754EC0AC00FF78C33FF2DDclipboard.png" alt></p>
+<h2 id="K8s网络组件之Flannel：小结">K8s网络组件之Flannel：小结</h2>
+<p>VXLAN特点：</p>
+<ul>
+<li>
+<p>先进行二层帧封装，再通过宿主机网络封装，解封装也一样，所以增加性能开销</p>
+</li>
+<li>
+<p>对宿主机网络要求低，只要三层网络可达</p>
+</li>
+</ul>
+<p>Host-GW特点：</p>
+<ul>
+<li>
+<p>直接路由转发，性能损失很小</p>
+</li>
+<li>
+<p>对宿主机网络要求二层可达</p>
+</li>
+</ul>
+<p>卸载flnnel</p>
+<p><a href="https://blog.csdn.net/weixin_34409741/article/details/92513036">https://blog.csdn.net/weixin_34409741/article/details/92513036</a></p>
+<p>学习：<a href="https://edu.51cto.com/center/course/lesson/index?id=532871">https://edu.51cto.com/center/course/lesson/index?id=532871</a></p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>K8s集群网络下</title>
+    <url>/2023/10/21/k8s%E9%9B%86%E7%BE%A4%E7%BD%91%E7%BB%9C%E4%B8%8B/</url>
+    <content><![CDATA[<h2 id="K8s网络组件之Calico">K8s网络组件之Calico</h2>
+<p>Calico是一个纯三层的数据中心网络方案，Calico支持广泛的平台，包括Kubernetes、OpenStack等。 Calico 在每一个计算节点利用 Linux Kernel 实现了一个高效的虚拟路由器（ vRouter） 来负责数据转发， 而每个 vRouter 通过 BGP 协议负责把自己上运行的 workload 的路由信息向整个 Calico 网络内传播。 此外，Calico 项目还实现了 Kubernetes 网络策略，提供ACL功能。</p>
+<p>实际上，Calico项目提供的网络解决方案，与Flannel的host-gw模式几乎一样。也就是说，Calico也是基于 路由表实现容器数据包转发，但不同于Flannel使用flanneld进程来维护路由信息的做法，而Calico项目使用 BGP协议来自动维护整个集群的路由信息。</p>
+<p>BGP英文全称是Border Gateway Protocol，即边界网关协议，它是一种自治系统间的动态路由发现协议， 与其他 BGP 系统交换网络可达信息。</p>
+<h2 id="K8s网络组件之Calico：BGP介绍">K8s网络组件之Calico：BGP介绍</h2>
+<p><img src="/images/B827CF15481445E89E1D1034D29041CDclipboard.png" alt></p>
+<p>在这个图中，有两个自治系统（autonomous system，简称为AS）：AS 1 和 AS 2。</p>
+<p>在互联网中，一个自治系统(AS)是一个有权自主地决定在本系统中应采用何种路由协议的小型单位。这 个网络单位可以是一个简单的网络也可以是一个由一个或多个普通的网络管理员来控制的网络群体，它 是一个单独的可管理的网络单元（例如一所大学，一个企业或者一个公司个体）。一个自治系统有时也 被称为是一个路由选择域（routing domain）。一个自治系统将会分配一个全局的唯一的16位号码， 有时我们把这个号码叫做自治系统号（ASN）。</p>
+<p>在正常情况下，自治系统之间不会有任何来往。如果两个自治系统里的主机，要通过 IP 地址直接进行通 信，我们就必须使用路由器把这两个自治系统连接起来。BGP协议就是让他们互联的一种方式。</p>
+<p><img src="/images/7C6041A0731C48E8871D77AE1A19C384clipboard.png" alt></p>
+<p>在了解了 BGP 之后，Calico 项目的架构就非常容易理解了，</p>
+<p>Calico主要由三个部分组成：</p>
+<ul>
+<li>
+<p>Felix：以DaemonSet方式部署，运行在每一个Node节点上， 主要负责维护宿主机上路由规则以及ACL规则。</p>
+</li>
+<li>
+<p>BGP Client（BIRD）：主要负责把 Felix 写入 Kernel 的路 由信息分发到集群 Calico 网络。</p>
+</li>
+<li>
+<p>Etcd：分布式键值存储，保存Calico的策略和网络配置状态。</p>
+</li>
+<li>
+<p>calicoctl：命令行管理Calico。</p>
+</li>
+</ul>
+<h2 id="K8s网络组件之Calico：部署">K8s网络组件之Calico：部署</h2>
+<p>Calico存储有两种方式：</p>
+<ul>
+<li>数据存储在etcd</li>
+</ul>
+<p><a href="https://docs.projectcalico.org/v3.9/manifests/calico-etcd.yaml">https://docs.projectcalico.org/v3.9/manifests/calico-etcd.yaml</a></p>
+<ul>
+<li>数据存储在Kubernetes API Datastore服务中</li>
+</ul>
+<p><a href="https://docs.projectcalico.org/manifests/calico.yaml">https://docs.projectcalico.org/manifests/calico.yaml</a></p>
+<p>数据存储在etcd中还需要修改yaml：</p>
+<ul>
+<li>配置连接etcd地址，如果使用https，还需要配置证书。（ConfigMap和Secret位置）</li>
+</ul>
+<p><img src="/images/58A4C504154C42139DB62DBB35DC626Aclipboard.png" alt></p>
+<p><img src="/images/4C6D98958A53495A8A2C599B4FCEE2A7clipboard.png" alt></p>
+<p>根据实际网络规划修改Pod CIDR（CALICOIPV4POOLCIDR）（两种方式都需要修改）</p>
+<p>部署：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># kubectl apply -f calico.yaml</span></span><br><span class="line"><span class="comment"># kubectl get pods -n kube-system</span></span><br></pre></td></tr></table></figure>
+<h2 id="K8s网络组件之Calico：管理工具">K8s网络组件之Calico：管理工具</h2>
+<p>calicoctl工具用于管理calico，可通过命令行读取、创建、更新和删除 Calico 的存储对象。</p>
+<p>项目地址：<a href="https://github.com/projectcalico/calicoctl">https://github.com/projectcalico/calicoctl</a></p>
+<p>calicoctl 在使用过程中，需要从配置文件中读取 Calico 对象存储地址等信息。默认配置文件路 径 /etc/calico/calicoctl.cfg</p>
+<p>方式1（基于ectd存储）：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#使用calicoctl命令</span></span><br><span class="line"><span class="built_in">chmod</span> +x calicoctl </span><br><span class="line"><span class="built_in">mv</span> calicoctl /usr/bin/</span><br><span class="line"><span class="comment">#配置calicoctl配置文件</span></span><br><span class="line"><span class="built_in">mkdir</span> /etc/calico</span><br><span class="line"><span class="comment">#vi /etc/calico/calicoctl.cfg</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: CalicoAPIConfig</span><br><span class="line">metadata:</span><br><span class="line">spec:</span><br><span class="line">  datastoreType: <span class="string">&quot;etcdv3&quot;</span></span><br><span class="line">  etcdEndpoints:</span><br><span class="line">  <span class="string">&quot;https://192.168.0.11:2379,https://192.168.0.12:2379,https://192.168.0.13:2379&quot;</span></span><br><span class="line">  etcdKeyFile: <span class="string">&quot;/opt/etcd/ssl/server-key.pem&quot;</span></span><br><span class="line">  etcdCertFile: <span class="string">&quot;/opt/etcd/ssl/server.pem&quot;</span></span><br><span class="line">  etcdCACertFile: <span class="string">&quot;/opt/etcd/ssl/ca.pem&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>方式2（基于kubernetes API Datastore存储）：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#配置calicoctl配置文件</span></span><br><span class="line"><span class="built_in">mkdir</span> /etc/calico</span><br><span class="line"><span class="comment">#vi /etc/calico/calicoctl.cfg</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: CalicoAPIConfig</span><br><span class="line">metadata:</span><br><span class="line">spec:</span><br><span class="line">  datastoreType: <span class="string">&quot;kubernetes&quot;</span>     <span class="comment">#数据存储类型</span></span><br><span class="line">  kubeconfig: <span class="string">&quot;/root/.kube/config&quot;</span>   </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>查看Calico状态：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl node status</span><br><span class="line">calicoctl get node</span><br><span class="line">calicoctl get ippool -o wide</span><br></pre></td></tr></table></figure>
+<p><img src="/images/E8B277C4EF1843DA8D20EAFF4D60A844clipboard.png" alt></p>
+<h2 id="K8s网络组件之Calico：工作模式">K8s网络组件之Calico：工作模式</h2>
+<p>Calico工作模式：</p>
+<ul>
+<li>
+<p>IPIP：Overlay Network方案，源数据包封装在宿主机网络包里进行转发和通信。（默认）</p>
+</li>
+<li>
+<p>BGP：基于路由转发，每个节点通过BGP协议同步路由表，写到宿主机。 （值设置Never）</p>
+</li>
+<li>
+<p>CrossSubnet：同时支持BGP和IPIP，即根据子网选择转发方式。</p>
+</li>
+</ul>
+<p>通过调整参数改变工作模式：</p>
+<ul>
+<li>
+<p>name: CALICO_IPV4POOL_IPIP</p>
+<p>value: “Always”</p>
+</li>
+</ul>
+<h2 id="K8s网络组件之Calico：IPIP工作模式">K8s网络组件之Calico：IPIP工作模式</h2>
+<p>IPIP模式：采用Linux IPIP隧道技术实现的数据包封装与转发。</p>
+<p>IP 隧道（IP tunneling）是将一个IP报文封装在另一个IP报文的技术，Linux系统内核实现的</p>
+<p>IP隧道技术主要有三种：IPIP、GRE、SIT。</p>
+<p><img src="/images/5A9BDD04F43240559B4915A1115A732Dclipboard.png" alt></p>
+<p>Pod 1 访问 Pod 2 大致流程如下：</p>
+<ol>
+<li>
+<p>数据包（原始数据包）从容器出去到达宿主机，宿主机根据路由表发送到tunl0设备（IP隧道设备）</p>
+</li>
+<li>
+<p>Linux内核IPIP驱动将原始数据包封装在宿主机网络的IP包中（新的IP包目的地之是原IP包的下一跳地 址，即192.168.31.63）。</p>
+</li>
+<li>
+<p>数据包根据宿主机网络到达Node2；</p>
+</li>
+<li>
+<p>Node2收到数据包后，使用IPIP驱动进行解包，从中拿到原始数据包；</p>
+</li>
+<li>
+<p>然后根据路由规则，根据路由规则将数据包转发给cali设备，从而到达容器2。</p>
+</li>
+</ol>
+<h2 id="K8s网络组件之Calico：BGP工作模式">K8s网络组件之Calico：BGP工作模式</h2>
+<p>BGP模式：基于路由转发，每个节点通过BGP协议同步路由 表，将每个宿主机当做路由器，实现数据包转发。</p>
+<p>calicoctl工具修改为BGP模式：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl get ippool -o yaml &gt;ippool.yaml</span><br><span class="line">vi ippool.yaml </span><br></pre></td></tr></table></figure>
+<p><img src="/images/BE93E537DA2644D08C62BA6ADE103640clipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl apply -f ippool.yaml </span><br><span class="line">calicoctl get ippool -o wide</span><br></pre></td></tr></table></figure>
+<p><img src="/images/6713FFDDE2824151A31B4C4AB3D27349clipboard.png" alt></p>
+<p><img src="/images/713BC2D00F444CF1B0A30B74B6D6ADF0clipboard.png" alt></p>
+<p>Pod 1 访问 Pod 2 大致流程如下：</p>
+<ol>
+<li>
+<p>数据包从容器出去到达宿主机；</p>
+</li>
+<li>
+<p>宿主机根据路由规则，将数据包转发给下一跳（网关）；</p>
+</li>
+<li>
+<p>到达Node2，根据路由规则将数据包转发给cali设备，从而到达容器2。</p>
+</li>
+</ol>
+<h2 id="K8s网络组件之Calico：Route-Reflector-模式（RR）">K8s网络组件之Calico：Route Reflector 模式（RR）</h2>
+<p>Calico 维护的网络在默认是（Node-to-Node Mesh）全互联模式，Calico集群中的节点之间都会相互建立连接，用于路由 交换。但是随着集群规模的扩大，mesh模式将形成一个巨大服务网格，连接数成倍增加，就会产生性能问题。</p>
+<p>这时就需要使用 Route Reflector（路由器反射）模式解决这个问题。</p>
+<p><img src="/images/9944A097E9DA43589BB46BAA9FDE8705clipboard.png" alt></p>
+<p><img src="/images/ADAFF9FA70284DD0B24FD4106D012B12clipboard.png" alt></p>
+<p>确定一个或多个Calico节点充当路由反射器，集中分发路由，让其 他节点从这个RR节点获取路由信息。</p>
+<p>具体步骤如下：</p>
+<p>1、关闭 node-to-node模式</p>
+<p>添加 default BGP配置，调整 nodeToNodeMeshEnabled和asNumber：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#ASN号可以通过获取</span></span><br><span class="line">calicoctl get nodes --output=wide</span><br><span class="line"></span><br><span class="line"><span class="comment">#vi bgpconfig.yaml</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: BGPConfiguration</span><br><span class="line">metadata:</span><br><span class="line">  name: default</span><br><span class="line">spec:</span><br><span class="line">  logSeverityScreen: Info</span><br><span class="line">  nodeToNodeMeshEnabled: <span class="literal">false</span></span><br><span class="line">  asNumber: 64512</span><br><span class="line"></span><br><span class="line"><span class="comment">#应用配置</span></span><br><span class="line">calicoctl apply -f bgpconfig.yaml </span><br><span class="line">calicoctl get bgpconfig</span><br></pre></td></tr></table></figure>
+<p>2、配置指定节点充当路由反射器</p>
+<p>为方便让BGPPeer轻松选择节点，通过标签选择器匹配。 给路由器反射器节点打标签：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#kubectl label node k8s-node2 route-reflector=true</span></span><br></pre></td></tr></table></figure>
+<p>然后配置路由器反射器节点routeReflectorClusterID</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#calicoctl get node k8s-node2 -o yaml &gt; rr-node.yaml</span></span><br><span class="line"><span class="comment">#vi rr-node.yaml </span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: Node</span><br><span class="line">metadata:</span><br><span class="line">  annotations:</span><br><span class="line">    projectcalico.org/kube-labels: <span class="string">&#x27;&#123;&quot;beta.kubernetes.io/arch&quot;:&quot;amd64&quot;,&quot;beta.kubernetes.io/os&quot;:&quot;linux&quot;,&quot;kubernetes.io/arch&quot;:&quot;amd64&quot;,&quot;kubernetes.io/hostname&quot;:&quot;k8s-node2&quot;,&quot;kubernetes.io/os&quot;:&quot;linux&quot;,&quot;route-reflector&quot;:&quot;true&quot;&#125;&#x27;</span></span><br><span class="line">  creationTimestamp: 2021-03-08T03:28:34Z</span><br><span class="line">  labels:</span><br><span class="line">    beta.kubernetes.io/arch: amd64</span><br><span class="line">    beta.kubernetes.io/os: linux</span><br><span class="line">    kubernetes.io/arch: amd64</span><br><span class="line">    kubernetes.io/hostname: k8s-node2</span><br><span class="line">    kubernetes.io/os: linux</span><br><span class="line">    route-reflector: <span class="string">&quot;true&quot;</span></span><br><span class="line">  name: k8s-node2</span><br><span class="line">  resourceVersion: <span class="string">&quot;53597&quot;</span></span><br><span class="line">  uid: ffc15f57-d624-4003-a3bc-77cb78232f6a</span><br><span class="line">spec:</span><br><span class="line">  bgp:</span><br><span class="line">    ipv4Address: 192.168.1.13/24</span><br><span class="line">    routeReflectorClusterID: 244.0.0.1 <span class="comment"># 添加集群ID 要唯一</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#calicoctl apply -f rr-node.yaml </span></span><br></pre></td></tr></table></figure>
+<h2 id="3、使用标签选择器将路由反射器节点与其他非路由反射器节点配置为对等">3、使用标签选择器将路由反射器节点与其他非路由反射器节点配置为对等</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi bgppeer.yaml</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: BGPPeer</span><br><span class="line">metadata:</span><br><span class="line">  name: peer-with-route-reflectors</span><br><span class="line">spec:</span><br><span class="line">  nodeSelector: all()</span><br><span class="line">  peerSelector: route-reflector == <span class="string">&#x27;true&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#calicoctl apply -f bgppeer.yaml </span></span><br><span class="line"><span class="comment">#calicoctl node status   查看节点的BGP连接状态：</span></span><br><span class="line"><span class="comment">#calicoctl get bgppeer</span></span><br><span class="line"><span class="comment">#ss -anpt |grep EST |grep 179</span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/B22931364F2B416D996CA61EBCEA7013clipboard.png" alt></p>
+<p>配置多个节点充当路由反射器</p>
+<p>1.给路由器反射器节点打标签：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl label node k8s-node1 route-reflector=<span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>然后配置路由器反射器节点routeReflectorClusterID：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl get node k8s-node1 -o yaml &gt; rr-node.yaml</span><br><span class="line"><span class="comment">#vi rr-node.yaml</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: Node</span><br><span class="line">metadata:</span><br><span class="line">  annotations:</span><br><span class="line">    projectcalico.org/kube-labels: <span class="string">&#x27;&#123;&quot;beta.kubernetes.io/arch&quot;:&quot;amd64&quot;,&quot;beta.kubernetes.io/os&quot;:&quot;linux&quot;,&quot;kubernetes.io/arch&quot;:&quot;amd64&quot;,&quot;kubernetes.io/hostname&quot;:&quot;k8s-node1&quot;,&quot;kubernetes.io/os&quot;:&quot;linux&quot;,&quot;route-reflector&quot;:&quot;true&quot;&#125;&#x27;</span></span><br><span class="line">  creationTimestamp: 2021-03-08T03:28:33Z</span><br><span class="line">  labels:</span><br><span class="line">    beta.kubernetes.io/arch: amd64</span><br><span class="line">    beta.kubernetes.io/os: linux</span><br><span class="line">    kubernetes.io/arch: amd64</span><br><span class="line">    kubernetes.io/hostname: k8s-node1</span><br><span class="line">    kubernetes.io/os: linux</span><br><span class="line">    route-reflector: <span class="string">&quot;true&quot;</span></span><br><span class="line">  name: k8s-node1</span><br><span class="line">  resourceVersion: <span class="string">&quot;60365&quot;</span></span><br><span class="line">  uid: 47632c58-5dac-44d0-941d-abf772048cc4</span><br><span class="line">spec:</span><br><span class="line">  bgp:</span><br><span class="line">    ipv4Address: 192.168.1.12/24</span><br><span class="line">    routeReflectorClusterID: 244.0.0.2  <span class="comment"># 添加集群ID，要唯一</span></span><br><span class="line">    </span><br><span class="line"><span class="comment"># calicoctl apply -f rr-node.yam</span></span><br></pre></td></tr></table></figure>
+<p>2.重新应用bgppeer.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl delete -f bgppeer.yaml </span><br><span class="line">calicoctl apply -f bgppeer.yaml</span><br><span class="line">calicoctl node status</span><br></pre></td></tr></table></figure>
+<p><img src="/images/0885EF19E4D24FE5998D0FCD2F90A0A0clipboard.png" alt></p>
+<p><img src="/images/C220687577084968908D41C5CD8E9F3Fclipboard.png" alt></p>
+<h2 id="小结">小结</h2>
+<p><img src="/images/676EE94556D9494C85C7765856BE3E7Bclipboard.png" alt></p>
+<p>网络性能：首选路由方案  flannel组件的hostGW和calico的BGP</p>
+<p>集群规划：100+建议calico</p>
+<p>网络限制：不能跑BGP</p>
+<p>是否需要网络策略？</p>
+<p>VXLAN和IPIP模式：</p>
+<p>优势：只要你的集群节点之间互相能通信就行，不管你宿主机走的是二层还是三层。</p>
+<p>缺点：先进行二层帧封装，再通过宿主机网络封装，解封装也一样，所以增加性能开销</p>
+<p>HostGW和BGP模式：</p>
+<p>优势：由于走的是宿主机网络路由，性能开销小</p>
+<p>缺点：对宿主机网络要求二层可达，想要实现宿主机之前跨网段通信，需要同步宿主机路由信息到上层路由器。flannel需要手动同步，calico使用BGP动态路由发现协议自动同步，只要上层路由支持BGP协议。</p>
+<h2 id="办公网络与K8s网络互通方案">办公网络与K8s网络互通方案</h2>
+<p>网络需求：</p>
+<ul>
+<li>
+<p>办公网络与Pod网络不通。在微服务架构下，开发人员希望在办公电脑能 直接连接K8s中注册中心调试；</p>
+</li>
+<li>
+<p>办公网络与Service网络不通。在测试环境运行的mysql、redis等需要通过 nodeport暴露，维护成本大；</p>
+</li>
+<li>
+<p>现有虚拟机业务访问K8s上的业务。</p>
+</li>
+</ul>
+<p>解决方案：打通办公网络与K8s网络</p>
+<p><img src="/images/0E59C28B367A4A76921B50CA20B67F59clipboard.png" alt></p>
+<p>方案一：在办公室网络上层路由器添加一条静态路由条目，目标网段是容器网络（10.244.0.0）下一跳地址设置为某个node节点IP，从路由器的一个接口出，到达node节点上后，配置iptables规则源网段是办公室网段IP（192.168.0.0）转发到pod网段IP（10.244.0.0），还有源网段是办公室网段IP转发到service网段IP（10.96.0.0/12）。</p>
+<p>方案二：服务器的上层核心交换机和k8s集群的上层路由反射器通过BGP协议相互学习对方的路由，从而实现路由的互通。</p>
+<h2 id="网络策略概述">网络策略概述</h2>
+<p>网络策略（Network Policy），用于限制Pod出入流量，提供Pod级别和Namespace级别网络访问控制。 一些应用场景：</p>
+<ul>
+<li>
+<p>应用程序间的访问控制。例如微服务A允许访问微服务B，微服务C不能访问微服务A</p>
+</li>
+<li>
+<p>开发环境命名空间不能访问测试环境命名空间Pod</p>
+</li>
+<li>
+<p>当Pod暴露到外部时，需要做Pod白名单</p>
+</li>
+<li>
+<p>多租户网络环境隔离</p>
+</li>
+</ul>
+<p>Pod网络入口方向隔离：</p>
+<ul>
+<li>
+<p>基于Pod级网络隔离：只允许特定对象访问Pod（使用标签定义），允许白名单上的IP地址或者IP段访问Pod</p>
+</li>
+<li>
+<p>基于Namespace级网络隔离：多个命名空间，A和B命名空间Pod完全隔离。</p>
+</li>
+</ul>
+<p>Pod网络出口方向隔离：</p>
+<ul>
+<li>
+<p>拒绝某个Namespace上所有Pod访问外部</p>
+</li>
+<li>
+<p>基于目的IP的网络隔离：只允许Pod访问白名单上的IP地址或者IP段</p>
+</li>
+<li>
+<p>基于目标端口的网络隔离：只允许Pod访问白名单上的端口</p>
+</li>
+</ul>
+<p><img src="/images/D45782348B0D40C39F526C0B7297606Fclipboard.png" alt></p>
+<p>podSelector：目标Pod，根据标签选择</p>
+<p>policyTypes：策略类型，指定策略用于入站、出站流量。</p>
+<p>Ingress：from是可以访问的白名单，可以来自于IP段、命名空间、 Pod标签等，ports是可以访问的端口。</p>
+<p>Egress：这个Pod组可以访问外部的IP段和端口。</p>
+<h2 id="案例：对项目Pod出入流量访问控制">案例：对项目Pod出入流量访问控制</h2>
+<p>需求1：将default命名空间携带app=web标签的Pod隔离，只允 许default命名空间携带run=client1标签的Pod访问80端口。</p>
+<p>准备测试环境：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create deployment web --image=nginx</span><br><span class="line">kubectl run client1 --image=busybox -- <span class="built_in">sleep</span> 36000</span><br><span class="line">kubectl run client2 --image=busybox -- <span class="built_in">sleep</span> 36000</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi np.yaml</span></span><br><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: NetworkPolicy</span><br><span class="line">metadata:</span><br><span class="line">  name: test-network-policy</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  podSelector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web</span><br><span class="line">  policyTypes:</span><br><span class="line">  - Ingress</span><br><span class="line">  ingress:</span><br><span class="line">  - from:</span><br><span class="line">    - podSelector:</span><br><span class="line">        matchLabels:</span><br><span class="line">          run: client1</span><br><span class="line">    ports:</span><br><span class="line">    - protocol: TCP</span><br><span class="line">      port: 80</span><br><span class="line"></span><br><span class="line"><span class="comment">#kubectl apply -f np.yaml </span></span><br></pre></td></tr></table></figure>
+<p>验证结果：client1pod可以下载web的首页，client2pod不可以下载web的首页</p>
+<p>需求2：default命名空间下所有pod可以互相访问，也可以访问其 他命名空间Pod，但其他命名空间不能访问default命名空间Pod。</p>
+<ul>
+<li>
+<p>podSelector: {}：如果未配置，默认所有Pod</p>
+</li>
+<li>
+<p>from.podSelector: {} : 如果未配置，默认不允许</p>
+</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl run client3 --image=busybox -n azhe -- <span class="built_in">sleep</span> 36000</span><br><span class="line"><span class="comment">#vi np2.yaml </span></span><br><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: NetworkPolicy</span><br><span class="line">metadata:</span><br><span class="line">  name: deny-from-other-namespaces</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  podSelector: &#123;&#125;</span><br><span class="line">  policyTypes:</span><br><span class="line">  - Ingress</span><br><span class="line">  ingress:</span><br><span class="line">  - from:</span><br><span class="line">    - podSelector: &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">#kubectl apply -f np2.yaml</span></span><br></pre></td></tr></table></figure>
+<p>验证结果：azhe命名空间下的client3pod不可以访问default命名空间下的pod，但default命名空间下的pod可以访问azhe命名空间下的pod。</p>
+<h2 id="网络策略实现流程">网络策略实现流程</h2>
+<p><img src="/images/D06CDA70F2FC4AF984902BCCA9DC0D48clipboard.png" alt></p>
+<p>当我们创建一个网络策略，也就是apply 一个yaml文件，它会提交到apiserver，policy controller控制器（calico-kube-controllers）里面的进程会实时监听apiserver上的网络策略，拿到之后会通知它的agent（也就是运行在每个节点上calico pod（calico-node）来取我拿到的网络策略，然后在本地运行，calico-node利用iptables创建相应的网络规则。</p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>kubectl命令行管理工具</title>
     <url>/2022/06/12/kubectl%E5%91%BD%E4%BB%A4%E8%A1%8C%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/</url>
     <content><![CDATA[<h2 id="kubeconfig配置文件">kubeconfig配置文件</h2>
@@ -740,6 +1680,252 @@
       </tags>
   </entry>
   <entry>
+    <title>Kubernetes 弹性伸缩</title>
+    <url>/2023/08/20/kubernetes%E5%BC%B9%E6%80%A7%E4%BC%B8%E7%BC%A9/</url>
+    <content><![CDATA[<h2 id="弹性伸缩概述">弹性伸缩概述</h2>
+<p>从传统意义上，弹性伸缩主要解决的问题是容量规划与实际负载的矛盾。</p>
+<p>蓝色水位线表示集群资源容量随着负载的增加不断扩容，红色曲线表示集群资源实际负载变化。</p>
+<p>弹性伸缩就是要解决当实际负载增大，而集群资源容量没来得及反应的问题。</p>
+<p><img src="/images/BB1A0303527447A88DC9326D3AA0D49Cclipboard.png" alt></p>
+<h2 id="Kubernetes弹性伸缩布局">Kubernetes弹性伸缩布局</h2>
+<p>在Kubernetes平台中，资源分为两个维度：</p>
+<ul>
+<li>
+<p>Node级别：K8s将多台服务器抽象一个集群资源池，每个Node提供这些资源</p>
+</li>
+<li>
+<p>Pod级别：Pod是K8s最小部署单元，运行实际的应用程序，使用request和limit为Pod配额</p>
+</li>
+</ul>
+<p>因此，K8s实现弹性伸缩也是这两个级别，当Node资源充裕情况下，Pod可任意弹性，当不足情况下需要弹性增加节 点来扩容资源池。</p>
+<p>针对Pod负载：当Pod资源不足时，使用HPA（Horizontal Pod Autoscaler）自动增加Pod副本数量</p>
+<p>针对Node负载：当集群资源池不足时，使用CA（Cluster Autoscaler）自动增加Node</p>
+<h2 id="Node自动扩容-缩容">Node自动扩容/缩容</h2>
+<p>Node弹性伸缩有两种方案：</p>
+<ul>
+<li>Cluster Autoscaler：是一个自动调整Kubernetes集群大小的组件，需要与公有云一起使用，例如AWS、Azure、Aliyun</li>
+</ul>
+<p>项目地址： <a href="https://github.com/kubernetes/autoscaler">https://github.com/kubernetes/autoscaler</a></p>
+<ul>
+<li>自研发：根据Node监控指标或者Pod调度状态判断是否增加Node，需要一定开发成本</li>
+</ul>
+<h2 id="Node自动扩容-缩容：实现思路">Node自动扩容/缩容：实现思路</h2>
+<p><img src="/images/30B60E47CD814092B76494C3BDB798ECclipboard.png" alt></p>
+<h2 id="Node自动扩容-缩容：-Cluster-Autoscaler">Node自动扩容/缩容： Cluster Autoscaler</h2>
+<p>Cluster Autoscaler支持的云提供商：</p>
+<ul>
+<li>
+<p>阿里云：<a href="https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/alicloud/README.md">https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/alicloud/README.md</a></p>
+</li>
+<li>
+<p>AWS：<a href="https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md">https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md</a></p>
+</li>
+<li>
+<p>Azure：<a href="https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/azure/README.md">https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/azure/README.md</a></p>
+</li>
+<li>
+<p>GCE：<a href="https://kubernetes.io/docs/concepts/cluster-administration/cluster-management/">https://kubernetes.io/docs/concepts/cluster-administration/cluster-management/</a></p>
+</li>
+<li>
+<p>GKE：<a href="https://cloud.google.com/container-engine/docs/cluster-autoscaler">https://cloud.google.com/container-engine/docs/cluster-autoscaler</a></p>
+</li>
+</ul>
+<h2 id="Node自动扩容-缩容：-自研发">Node自动扩容/缩容： 自研发</h2>
+<p>当集群资源不足时，触发新增Node大概思路：</p>
+<ol>
+<li>
+<p>申请一台服务器</p>
+</li>
+<li>
+<p>调用Ansible脚本部署Node组件并自动加入集群</p>
+</li>
+<li>
+<p>检查服务是否可用，加入监控</p>
+</li>
+<li>
+<p>完成Node扩容，接收新Pod</p>
+</li>
+</ol>
+<p><img src="/images/CB1FCD583CEB442281E88BE448982FA2clipboard.png" alt></p>
+<p>自动增加Node：<a href="https://gitee.com/lucky_liuzhe/ansible-install-k8s-v1.20">https://gitee.com/lucky_liuzhe/ansible-install-k8s-v1.20</a></p>
+<p>自动减少Node：</p>
+<p>如果你想从Kubernetes集群中删除节点，正确流程如下：</p>
+<p>1、获取节点列表</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get node</span><br></pre></td></tr></table></figure>
+<p>2、设置不可调度</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl cordon k8s-node3</span><br></pre></td></tr></table></figure>
+<p><img src="/images/FFFAEE57CF3F44C6A1C5F7212C52C438clipboard.png" alt></p>
+<p>3、驱逐节点上的Pod</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl drain k8s-node3 --ignore-daemonsets </span><br></pre></td></tr></table></figure>
+<p><img src="/images/FF9E2B69D83F4F0FB47B6300C49E24A6clipboard.png" alt></p>
+<p>4、移除节点</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl delete nodes k8s-node3</span><br></pre></td></tr></table></figure>
+<p><img src="/images/16117269F4D44E79A1418F0E78971E2Fclipboard.png" alt></p>
+<h2 id="Pod自动扩容-缩容：HPA介绍">Pod自动扩容/缩容：HPA介绍</h2>
+<p>Horizontal Pod Autoscaler（HPA，Pod水平自动伸缩）：根据资源利用率或者自定义指 标自动调整Deployment的Pod副本数量，提供应用并发。HPA不适于无法缩放的对象，例 如DaemonSet。</p>
+<p><img src="/images/D5F24F5FED2A423F996908F125DED50Aclipboard.png" alt></p>
+<h2 id="Pod自动扩容-缩容：HPA基本工作原理">Pod自动扩容/缩容：HPA基本工作原理</h2>
+<p>Kubernetes 中的 Metrics Server 持续采集所有 Pod 副本的指标数据。HPA 控制器通过 Metrics Server 的 API（聚合 API）获取这些数据，基于用户定义的扩缩容规则进行计算，得到目标 Pod 副本 数量。当目标 Pod 副本数量与当前副本数量不同时，HPA 控制器就向 Pod 的Deployment控制器发起 scale 操作，调整 Pod 的副本数量，完成扩缩容操作。</p>
+<p><img src="/images/60E86E6523694505B69AF566B7F07302clipboard.png" alt></p>
+<h2 id="Pod自动扩容-缩容：使用HPA前提条件">Pod自动扩容/缩容：使用HPA前提条件</h2>
+<p>使用HPA，确保满足以下条件：</p>
+<p>启用Kubernetes API聚合层</p>
+<p>相应的API已注册：</p>
+<ul>
+<li>
+<p>对于资源指标（例如CPU、内存），<a href="http://xn--metrics-oc6k644gls6c.k8s.io">将使用metrics.k8s.io</a> API，一般由metrics-server提供。</p>
+</li>
+<li>
+<p>对于自定义指标（例如QPS），<a href="http://xn--custom-vt9i986frw5c.metrics.k8s.io">将使用custom.metrics.k8s.io</a> API，由相关适配器（Adapter）服务提供。</p>
+</li>
+</ul>
+<p>已知适配器列表：<a href="https://github.com/kubernetes/metrics/blob/master/IMPLEMENTATIONS.md#custom-metrics-api">https://github.com/kubernetes/metrics/blob/master/IMPLEMENTATIONS.md#custom-metrics-api</a></p>
+<p>Kubernetes API聚合层：</p>
+<p>在 Kubernetes 1.7 版本引入了聚合层，允许第三方应用程序通过将自己注册到 kube-apiserver上，仍然通过 API Server 的 HTTP URL 对新的 API 进行访问和 操作。为了实现这个机制，Kubernetes 在 kube-apiserver 服务中引入了一个 API 聚合层（API Aggregation Layer），用于将扩展 API 的访问请求转发到用 户服务的功能。</p>
+<p><img src="/images/9718B972CAF34241AD0F965085648A7Eclipboard.png" alt></p>
+<p>启用聚合层：</p>
+<p>如果你使用kubeadm部署的，默认已开启。</p>
+<p>如果 你使用二进制方式部署的话，需要在kubeAPIServer中添加启动参数，增加以下配置：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi /opt/kubernetes/cfg/kube-apiserver.conf</span></span><br><span class="line">...</span><br><span class="line">--requestheader-client-ca-file=/opt/kubernetes/ssl/ca.pem \</span><br><span class="line">--proxy-client-cert-file=/opt/kubernetes/ssl/server.pem \</span><br><span class="line">--proxy-client-key-file=/opt/kubernetes/ssl/server-key.pem \</span><br><span class="line">--requestheader-allowed-names=kubernetes \</span><br><span class="line">--requestheader-extra-headers-prefix=X-Remote-Extra- \</span><br><span class="line">--requestheader-group-headers=X-Remote-Group \</span><br><span class="line">--requestheader-username-headers=X-Remote-User \</span><br><span class="line">--enable-aggregator-routing=<span class="literal">true</span> \</span><br><span class="line">...</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><img src="/images/642AB396EAB54FB7B1354114EAF2EC5Bclipboard.png" alt></p>
+<h2 id="Pod自动扩容-缩容：基于资源指标">Pod自动扩容/缩容：基于资源指标</h2>
+<p>Metrics Server：是一个数据聚合器，从kubelet收集资源指标，并通 过Metrics API在Kubernetes apiserver暴露，以供HPA使用。</p>
+<p>项目地址：<a href="https://github.com/kubernetes-sigs/metrics-server">https://github.com/kubernetes-sigs/metrics-server</a></p>
+<p>Metrics Server部署：</p>
+<p>wget <a href="https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml">https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi components.yaml </span></span><br><span class="line">...</span><br><span class="line">      containers:</span><br><span class="line">      - args:</span><br><span class="line">        - --cert-dir=/tmp</span><br><span class="line">        - --secure-port=4443</span><br><span class="line">        - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname</span><br><span class="line">        - --kubelet-use-node-status-port</span><br><span class="line">        - --kubelet-insecure-tls</span><br><span class="line">        image: lizhenliang/metrics-server:v0.4.1</span><br><span class="line">...</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>kubelet-insecure-tls：不验证kubelet提供的https证书</p>
+<p>测试：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get apiservices |grep metrics</span><br><span class="line">kubectl get --raw /apis/metrics.k8s.io/v1beta1/nodes</span><br><span class="line">kubectl get --raw /apis/metrics.k8s.io/v1beta1/pods</span><br></pre></td></tr></table></figure>
+<p>也可以使用kubectl top访问Metrics API：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl top node <span class="comment">#查看Node资源消耗</span></span><br><span class="line">kubectl top pod <span class="comment">#查看Pod资源消耗</span></span><br></pre></td></tr></table></figure>
+<p>如果能正常显示资源消耗说明Metrics Server服务工作正常。</p>
+<p>kubectl top ——&gt;apiserver——&gt;metrics-server——&gt;kubelet(cadivosr)——&gt;pod</p>
+<p>1、部署应用</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create deployment web --image=nginx --dry-run=client -o yaml &gt; deployment.yaml</span><br><span class="line">kubectl expose deployment web --port=80 --target-port=80 --dry-run=client -o yaml &gt; service.yaml</span><br></pre></td></tr></table></figure>
+<p>注意：修改yaml，增加resources.requests.cpu</p>
+<p>2、创建HPA</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl autoscale deployment web --min=2 --max=10 --cpu-percent=80</span><br><span class="line">kubectl get hpa</span><br></pre></td></tr></table></figure>
+<p>说明：为名为web的deployment创建一个HPA对象，目标CPU使用率为80%，副本数量配置为2到10之间。</p>
+<p><img src="/images/029910BC61E7421F83E9C9FC86A91439clipboard.png" alt></p>
+<p>3、压测</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install httpd-tools</span><br><span class="line">ab -n 300000 -c 1000 http://10.0.0.236/index.html  <span class="comment"># 总30w请求，并发1000</span></span><br></pre></td></tr></table></figure>
+<p>4、观察扩容状态</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get hpa</span><br><span class="line">kubectl get pod</span><br></pre></td></tr></table></figure>
+<p><img src="/images/975D6546371D43BF9540211C04A9F1EEclipboard.png" alt></p>
+<h2 id="Pod自动扩容-缩容：冷却周期">Pod自动扩容/缩容：冷却周期</h2>
+<p>在弹性伸缩中，冷却周期是不能逃避的一个话题， 由于评估的度量标准是动态特性，副本的数量可能会不断波动， 造成丢失流量，所以不应该在任意时间扩容和缩容。</p>
+<p>在 HPA 中，为缓解该问题，默认有一定控制：</p>
+<ul>
+<li>
+<p>–horizontal-pod-autoscaler-downscale-delay ：当前操作完成后等待多次时间才能执行缩容操作，默认5分钟</p>
+</li>
+<li>
+<p>–horizontal-pod-autoscaler-upscale-delay ：当前操作完成后等待多长时间才能执行扩容操作，默认3分钟</p>
+</li>
+</ul>
+<p>可以通过调整kube-controller-manager组件启动参数调整。</p>
+<h2 id="Pod自动扩容-缩容：基于自定义指标">Pod自动扩容/缩容：基于自定义指标</h2>
+<p>为满足更多的需求，HPA也支持自定义指标，例如QPS、5xx错误状态码等，实现自定义指标由autoscaling/v2版本提供，而 v2版本又分为beta1和beta2两个版本。</p>
+<p>这两个版本的区别是 autoscaling/v1beta1支持了 ：</p>
+<ul>
+<li>
+<p>Resource Metrics（资源指标）</p>
+</li>
+<li>
+<p>Custom Metrics（自定义指标）</p>
+</li>
+</ul>
+<p>而在 autoscaling/v2beta2的版本中额外增加了External Metrics（扩展指标）的支持。</p>
+<p>对于自定义指标（例如QPS），<a href="http://xn--custom-vt9i986frw5c.metrics.k8s.io">将使用custom.metrics.k8s.io</a> API，由相关适配器（Adapter）服务提供。</p>
+<p>已知适配器列表：<a href="https://github.com/kubernetes/metrics/blob/master/IMPLEMENTATIONS.md#custom-metrics-api">https://github.com/kubernetes/metrics/blob/master/IMPLEMENTATIONS.md#custom-metrics-api</a></p>
+<p><img src="/images/4354F6CA800D467C96B6FE51DF0EA02Cclipboard.png" alt></p>
+<p>假设我们有一个网站，想基于每秒接收到的HTTP请求对其Pod进行 自动缩放，实现HPA大概步骤：</p>
+<p>1、部署Prometheus</p>
+<p>2、对应用暴露指标，部署应用，并让Prometheus采集暴露的指标</p>
+<p>3、部署Prometheus Adapter</p>
+<p>4、为指定HPA配置Prometheus Adapter</p>
+<p>5、创建HPA</p>
+<p>6、压测、验证</p>
+<p>Prometheus（普罗米修斯）是一个开源的监控系统，在Kubernetes平台得到广泛应用。</p>
+<p><img src="/images/076AE4A02CD644FE8C97441AA06AFE02clipboard.png" alt></p>
+<p>1、部署Prometheus</p>
+<p><a href="/attachments/B7E7DFAB30904CC8BFF8A51848CC571Aprometheus.zip">prometheus.zip</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f .</span><br><span class="line">prometheus-deployment.yaml <span class="comment"># 部署Prometheus</span></span><br><span class="line">prometheus-configmap.yaml <span class="comment"># Prometheus配置文件，主要配置基于Kubernetes服务发现</span></span><br><span class="line">prometheus-rules.yaml <span class="comment"># Prometheus告警规则</span></span><br></pre></td></tr></table></figure>
+<p>访问地址：<a href="http://NodeIP:30090">http://NodeIP:30090</a></p>
+<p><img src="/images/FCA892D84C824901A612C96B7D44F38Aclipboard.png" alt></p>
+<p>2、对应用暴露指标，部署应用，并让Prometheus采集暴露的指标。</p>
+<p>在做这步之前先了解下Prometheus如何监控应用的。</p>
+<p>如果要想监控，前提是能获取被监控端指标数据，并且这个数据格式必须遵 循Prometheus数据模型，这样才能识别和采集，一般使用exporter提供监 控指标数据。但对于自己开发的项目，是需要自己实现类似于exporter的指 标采集程序。</p>
+<p>exporter列表：<a href="https://prometheus.io/docs/instrumenting/exporters">https://prometheus.io/docs/instrumenting/exporters</a></p>
+<p><img src="/images/2BA1364BE5C14304AE57EE4F4F29D42Cclipboard.png" alt></p>
+<p>先模拟自己开发一个网站，采用Python Flask Web框架，写两个页面：</p>
+<ul>
+<li>
+<p>/ 首页</p>
+</li>
+<li>
+<p>/metrics 指标</p>
+</li>
+</ul>
+<p>然后使用Dockefile制作成镜像并部署到Kubernetes平台。</p>
+<p><a href="/attachments/0EAFCBECFD4F42879075E1CE8990D2EFmetrics-app.zip">metrics-app.zip</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f metrics-flask-app.yaml  <span class="comment">#部署应用对外暴露指标并声明让prometheus采集</span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/9A74475680A24C1C995BEFA1F54AE871clipboard.png" alt></p>
+<p>由于我们Prometheus配置了基于Kubernetes服务发现，会自动采集Pod暴露的指标：</p>
+<p><img src="/images/27BB787CAD964355930CCEE95858D3ADclipboard.png" alt></p>
+<p><img src="/images/46A280BD5F6D4A5C9E2F14B0BC21A847clipboard.png" alt></p>
+<p>3、部署Prometheus Adapter</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f prometheus-adapter.yaml</span><br></pre></td></tr></table></figure>
+<p>验证是否正常工作：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get apiservices |grep custom</span><br><span class="line">kubectl get --raw <span class="string">&quot;/apis/custom.metrics.k8s.io/v1beta1&quot;</span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/06B921886DCB4A22AA557A870DDE2C52clipboard.png" alt></p>
+<p>4、为指定HPA配置Prometheus Adapter</p>
+<p>增加一段配置，增加完后删除adapter pod重建生效。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi prometheus-adapter.yaml</span></span><br><span class="line">data:</span><br><span class="line">  config.yaml: |</span><br><span class="line">    rules:</span><br><span class="line">    - seriesQuery: <span class="string">&#x27;request_count_total&#123;app=&quot;flask-app&quot;&#125;&#x27;</span></span><br><span class="line">      resources:</span><br><span class="line">        overrides:</span><br><span class="line">          kubernetes_namespace: &#123;resource: <span class="string">&quot;namespace&quot;</span>&#125;</span><br><span class="line">          kubernetes_pod_name: &#123;resource: <span class="string">&quot;pod&quot;</span>&#125;</span><br><span class="line">      name:</span><br><span class="line">        matches: <span class="string">&quot;request_count_total&quot;</span></span><br><span class="line">        as: <span class="string">&quot;qps&quot;</span></span><br><span class="line">      metricsQuery: <span class="string">&#x27;sum(rate(&lt;&lt;.Series&gt;&gt;&#123;&lt;&lt;.LabelMatchers&gt;&gt;&#125;[2m])) by (&lt;&lt;.GroupBy&gt;&gt;)&#x27;</span></span><br><span class="line">    - seriesQuery: <span class="string">&#x27;&#123;__name__=~&quot;^container_.*&quot;,container!=&quot;POD&quot;,namespace!=&quot;&quot;,pod!=&quot;&quot;&#125;&#x27;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>配置描述：</p>
+<ul>
+<li>
+<p>seriesQuery：Prometheus查询语句，查询应用系列指标。</p>
+</li>
+<li>
+<p>resources：Kubernetes资源标签映射到Prometheus标签。</p>
+</li>
+<li>
+<p>name：将Prometheus指标名称在自定义指标API中重命名， matches正则匹配，as指定新名称。</p>
+</li>
+<li>
+<p>metricsQuery：一个Go模板，对调用自定义指标API转换为 Prometheus查询语句。</p>
+</li>
+</ul>
+<p>Adapter向Prometheus查询语句最终是：</p>
+<p>sum(rate(request_count_total{app=“flask-app”, kubernetes_namespace=“default”}[2m])) by (kubernetes_pod_name)</p>
+<p>由于HTTP请求统计是累计的，对HPA自动缩放不是特别有用，因此将其转为速率指标。 这条语句意思是：查询每个Pod在2分钟内访问速率，即QPS（每秒查询率）</p>
+<p><img src="/images/288324F062F64096A5BFA295B30E2468clipboard.png" alt></p>
+<p>向自定义指标API访问：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get --raw <span class="string">&quot;/apis/custom.metrics.k8s.io/v1beta1/namespaces/default/pods/*/qps&quot;</span></span><br></pre></td></tr></table></figure>
+<p>如果配置没问题，会返回JSON数据，注意里面的value字段，HPA控制器会拿这个值计算然后比对阈值。这个值单位是m，表示 毫秒，千分之一，例如值为500m是每秒0.5个请求，10000m是每秒10个请求（并发）。</p>
+<p><img src="/images/00740B593E1C42479ADA61F0D40FE0D5clipboard.png" alt></p>
+<p>进一步模拟验证：</p>
+<p><img src="/images/7870750D339B47298292D035876488DFclipboard.png" alt></p>
+<p>对比请求的数据：</p>
+<p><img src="/images/7F9CDC8EA0524B878823B38929B98518clipboard.png" alt></p>
+<p><img src="/images/DB3C8D8A632D42498A58BFF087C23C93clipboard.png" alt></p>
+<p>5、创建HPA</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi hpa-v2-qps.yaml</span></span><br><span class="line"></span><br><span class="line">apiVersion: autoscaling/v2beta2</span><br><span class="line">kind: HorizontalPodAutoscaler</span><br><span class="line">metadata:</span><br><span class="line">  name: metrics-flask-app</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  minReplicas: 1</span><br><span class="line">  maxReplicas: 10</span><br><span class="line">  scaleTargetRef:</span><br><span class="line">    apiVersion: apps/v1</span><br><span class="line">    kind: Deployment</span><br><span class="line">    name: metrics-flask-app</span><br><span class="line">  metrics:</span><br><span class="line">  - <span class="built_in">type</span>: Pods</span><br><span class="line">    pods:</span><br><span class="line">      metric:</span><br><span class="line">        name: qps</span><br><span class="line">      target:</span><br><span class="line">        <span class="built_in">type</span>: AverageValue</span><br><span class="line">        averageValue: 10000m    <span class="comment"># 所有Pod平均值为10000m触发扩容，即每秒10个请求</span></span><br><span class="line"> </span><br></pre></td></tr></table></figure>
+<p>每秒超过10个请求进行扩容pod操作</p>
+<p><img src="/images/5FFECCEDFB4849D69DBC010EBCD3C5B6clipboard.png" alt></p>
+<p><img src="/images/65CA2980E64B4AAAA8068141195E0F98clipboard.png" alt></p>
+<p><img src="/images/B0473BE0FE72441380AB7ED8F85B7C8Eclipboard.png" alt></p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Kubernetes核心概念</title>
     <url>/2022/06/10/kubernetes%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/</url>
     <content><![CDATA[<h2 id="有了Docker，为什么还用Kubernetes？">有了Docker，为什么还用Kubernetes？</h2>
@@ -802,6 +1988,266 @@
 <p>在Node节点上实现Pod网络代理，维护网络规则和四层负载均衡工作。</p>
 <p>docker或rocket</p>
 <p>容器引擎，运行容器。</p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>kubernetes运维管理</title>
+    <url>/2023/08/10/kubernetes%E8%BF%90%E7%BB%B4%E7%AE%A1%E7%90%86/</url>
+    <content><![CDATA[<h2 id="Kubernetes-容器云平台技术方案">Kubernetes 容器云平台技术方案</h2>
+<p><img src="/images/BE0CAF453EFC4A9C9A313378AEEBB235clipboard.png" alt></p>
+<h3 id="Kubernetes-容器云平台技术方案：存储">Kubernetes 容器云平台技术方案：存储</h3>
+<p>Ceph是一个高性能的分布式存储系统，提供对象存 储、块存储和文件存储功能，可存储海量数据。 角色：Pod数据持久化存储</p>
+<p><img src="/images/0529DD2E898E451381DDB87446AA14A4clipboard.png" alt></p>
+<h3 id="Kubernetes-容器云平台技术方案：网络">Kubernetes 容器云平台技术方案：网络</h3>
+<p>Calico是一个纯三层的数据中心网络方案，Calico支 持广泛的平台，包括Kubernetes、OpenStack等。 Calico 在每一个计算节点利用 Linux Kernel 实现了 一个高效的虚拟路由器（ vRouter） 来负责数据转发， 而每个 vRouter 通过 BGP 协议负责把自己上运行的 workload 的路由信息向整个 Calico 网络内传播。 此外，Calico 项目还实现了 Kubernetes 网络策略， 提供ACL功能。</p>
+<p><img src="/images/FAFC458BFE1740C2A0E4F06C3CEEFC18clipboard.png" alt></p>
+<h3 id="Kubernetes-容器云平台技术方案：监控">Kubernetes 容器云平台技术方案：监控</h3>
+<p>Prometheus是SoundCloud开源的一款监控 系统。它的实现参考了Google内部的监控系 统，并支持在Kubernetes自动发现被监控端。 是目前Kubernetes监控首选方案。</p>
+<p><img src="/images/92B46314509743E0A2952DAC8E4BA734clipboard.png" alt></p>
+<p>Pod</p>
+<p>kubelet的节点使用cAdvisor提供的metrics接口获取该节点所有 Pod和容器相关的性能指标数据。 指标接口：<a href="https://NodeIP:10250/metrics/cadvisor">https://NodeIP:10250/metrics/cadvisor</a></p>
+<p>Node</p>
+<p>使用node_exporter收集器采集节点资源利用率。</p>
+<p>项目地址：<a href="https://github.com/prometheus/node_exporter">https://github.com/prometheus/node_exporter</a></p>
+<p>K8s资源对象</p>
+<p>kube-state-metrics采集了k8s中各种资源对象的状态信息。 项目地址：<a href="https://github.com/kubernetes/kube-state-metrics">https://github.com/kubernetes/kube-state-metrics</a></p>
+<p><img src="/images/1376CD2E30B54811A8BA135E48D6576Eclipboard.png" alt></p>
+<h3 id="Kubernetes-容器云平台技术方案：日志">Kubernetes 容器云平台技术方案：日志</h3>
+<p>ELK 是三个开源软件的缩写，提供一套完整的企业级日 志平台解决方案。</p>
+<p>分别是：</p>
+<ul>
+<li>
+<p>Elasticsearch：搜索、分析和存储数据</p>
+</li>
+<li>
+<p>Logstash ：采集日志、格式化、过滤，最后将数据 推送到Elasticsearch存储</p>
+</li>
+<li>
+<p>Kibana：数据可视化</p>
+</li>
+<li>
+<p>Beats ：集合了多种单一用途数据采集器，用于实 现从边缘机器向 Logstash 和 Elasticsearch 发送数 据。里面应用最多的是Filebeat，是一个轻量级日 志采集器。</p>
+</li>
+</ul>
+<p><img src="/images/A49093752EEA4E17AEA2BBB45BF27EA4clipboard.png" alt></p>
+<p><img src="/images/9180EE3332F14900A846D466D0E82B3Bclipboard.png" alt></p>
+<h3 id="Kubernetes-容器云平台技术方案：CI-CD">Kubernetes 容器云平台技术方案：CI/CD</h3>
+<p><img src="/images/3DBD05C59B9F4131934A279BD2D2DF4Fclipboard.png" alt></p>
+<h3 id="其他事项">其他事项</h3>
+<ul>
+<li>
+<p>选择物理机还是虚拟机？</p>
+</li>
+<li>
+<p>Linux操作系统选哪个好</p>
+</li>
+<li>
+<p>内核是否需要升级？</p>
+</li>
+<li>
+<p>使用命名空间隔离环境</p>
+</li>
+<li>
+<p>使用RBAC分配权限</p>
+</li>
+<li>
+<p>对于应用者来说，K8s编排和应用学习成本大，应平台化操作</p>
+</li>
+</ul>
+<h2 id="自动化部署-Kubernetes-集群">自动化部署 Kubernetes 集群</h2>
+<p>有哪些自动化部署工具？</p>
+<p>kubeadm</p>
+<p><a href="https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm/">https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm/</a></p>
+<p>kops</p>
+<p><a href="https://kubernetes.io/docs/setup/production-environment/tools/kops/">https://kubernetes.io/docs/setup/production-environment/tools/kops/</a></p>
+<p><a href="https://github.com/kubernetes/kops">https://github.com/kubernetes/kops</a></p>
+<p>kubespray</p>
+<p><a href="https://kubernetes.io/docs/setup/production-environment/tools/kubespray/">https://kubernetes.io/docs/setup/production-environment/tools/kubespray/</a></p>
+<p><a href="https://github.com/kubernetes-sigs/kubespray">https://github.com/kubernetes-sigs/kubespray</a></p>
+<p>Ansible Playbook自动化部署K8s集群：<a href="https://gitee.com/lucky_liuzhe/ansible-install-k8s">https://gitee.com/lucky_liuzhe/ansible-install-k8s</a></p>
+<p>为什么自己造轮子？</p>
+<ul>
+<li>
+<p>进一步熟悉k8s</p>
+</li>
+<li>
+<p>方便部署</p>
+</li>
+<li>
+<p>更易于维护</p>
+</li>
+</ul>
+<h2 id="Kubernetes-高可用方案">Kubernetes 高可用方案</h2>
+<ul>
+<li>
+<p>Etcd高可用</p>
+</li>
+<li>
+<p>kube-apiserver高可用</p>
+</li>
+<li>
+<p>kube-controller-manager与kube-scheduler高可用</p>
+</li>
+<li>
+<p>CoreDNS高可用</p>
+</li>
+</ul>
+<p><img src="/images/5E920104DEDB44FB82D5CEDAD0EEECD9clipboard.png" alt></p>
+<h2 id="Kubernetes-数据库-Etcd-备份与恢复">Kubernetes 数据库 Etcd 备份与恢复</h2>
+<p>Kubernetes 使用 Etcd 数据库实时存储集群中的数据，安全起见，一定要备份！</p>
+<p>kubeadm部署方式：</p>
+<p>备份：</p>
+<p>1.安装etcdctl命令</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum -y install etcd （里面包含ectdctl客户端命令）</span><br></pre></td></tr></table></figure>
+<p>2.备份</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ETCDCTL_API=3 etcdctl \</span><br><span class="line">snapshot save snap.db \</span><br><span class="line">--endpoints=https://127.0.0.1:2379 \</span><br><span class="line">--cacert=/etc/kubernetes/pki/etcd/ca.crt \</span><br><span class="line">--cert=/etc/kubernetes/pki/etcd/server.crt \</span><br><span class="line">--key=/etc/kubernetes/pki/etcd/server.key </span><br></pre></td></tr></table></figure>
+<p>恢复：</p>
+<p>1、先暂停kube-apiserver和etcd容器</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">mv</span> /etc/kubernetes/manifests /etc/kubernetes/manifests.bak</span><br><span class="line"><span class="built_in">mv</span> /var/lib/etcd/ /var/lib/etcd.bak</span><br></pre></td></tr></table></figure>
+<p>2、恢复</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ETCDCTL_API=3 etcdctl \</span><br><span class="line">snapshot restore snap.db \</span><br><span class="line">--data-dir=/var/lib/etcd</span><br></pre></td></tr></table></figure>
+<p>3、启动kube-apiserver和etcd容器</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">mv</span> /etc/kubernetes/manifests.bak /etc/kubernetes/manifests</span><br></pre></td></tr></table></figure>
+<p>二进制部署方式：</p>
+<p>备份：</p>
+<p>1.备份</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ETCDCTL_API=3 /opt/etcd/bin/etcdctl \</span><br><span class="line">snapshot save snap.db \</span><br><span class="line">--endpoints=https://192.168.0.11:2379 \</span><br><span class="line">--cacert=/opt/etcd/ssl/ca.pem \</span><br><span class="line">--cert=/opt/etcd/ssl/server.pem \</span><br><span class="line">--key=/opt/etcd/ssl/server-key.pem</span><br></pre></td></tr></table></figure>
+<p>2.拷贝备份数据到另两个etcd节点</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">scp snap.db root@192.168.0.12:~</span><br><span class="line">scp snap.db root@192.168.0.13:~</span><br></pre></td></tr></table></figure>
+<p>恢复：</p>
+<p>1、先暂停kube-apiserver和etcd</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#所有master节点操作</span></span><br><span class="line">systemctl stop kube-apiserver</span><br><span class="line"><span class="comment">#所有etcd节点操作</span></span><br><span class="line">systemctl stop etcd</span><br><span class="line"><span class="built_in">mv</span> /var/lib/etcd/default.etcd /var/lib/etcd/default.etcd.bak</span><br></pre></td></tr></table></figure>
+<p>2、在每个节点上恢复</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ETCDCTL_API=3 /opt/etcd/bin/etcdctl snapshot restore snap.db \</span><br><span class="line">--name etcd-1 \</span><br><span class="line">--initial-cluster=<span class="string">&quot;etcd-1=https://192.168.0.11:2380,etcd2=https://192.168.0.12:2380,etcd-3=https://192.168.0.13:2380&quot;</span> \</span><br><span class="line">--initial-cluster-token=etcd-cluster \</span><br><span class="line">--initial-advertise-peer-urls=https://192.168.0.11:2380 \</span><br><span class="line">--data-dir=/var/lib/etcd/default.etcd</span><br><span class="line"></span><br><span class="line">ETCDCTL_API=3 /opt/etcd/bin/etcdctl snapshot restore snap.db \</span><br><span class="line">--name etcd-2 \</span><br><span class="line">--initial-cluster=<span class="string">&quot;etcd-1=https://192.168.0.11:2380,etcd2=https://192.168.0.12:2380,etcd-3=https://192.168.0.13:2380&quot;</span> \</span><br><span class="line">--initial-cluster-token=etcd-cluster \</span><br><span class="line">--initial-advertise-peer-urls=https://192.168.0.12:2380 \</span><br><span class="line">--data-dir=/var/lib/etcd/default.etcd</span><br><span class="line"></span><br><span class="line">ETCDCTL_API=3 /opt/etcd/bin/etcdctl snapshot restore snap.db \</span><br><span class="line">--name etcd-3 \</span><br><span class="line">--initial-cluster=<span class="string">&quot;etcd-1=https://192.168.0.11:2380,etcd2=https://192.168.0.12:2380,etcd-3=https://192.168.0.13:2380&quot;</span> \</span><br><span class="line">--initial-cluster-token=etcd-cluster \</span><br><span class="line">--initial-advertise-peer-urls=https://192.168.0.13:2380 \</span><br><span class="line">--data-dir=/var/lib/etcd/default.etcd</span><br></pre></td></tr></table></figure>
+<p>3、启动kube-apiserver和etcd</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#所有master节点操作</span></span><br><span class="line">systemctl start kube-apiserver</span><br><span class="line"><span class="comment">#所有etcd节点操作</span></span><br><span class="line">systemctl start etcd</span><br></pre></td></tr></table></figure>
+<h2 id="Kubelet-证书自动续签">Kubelet 证书自动续签</h2>
+<p>K8s证书一般分为两套：K8s组件（apiserver）和Etcd</p>
+<p>假如按角色来分，证书分为管理节点和工作节点。</p>
+<ul>
+<li>
+<p>管理节点：如果是kubeadm部署则自动生成，如果是二进制部署一般由cfssl或者openssl生成。</p>
+</li>
+<li>
+<p>工作节点：工作节点主要是指kubelet连接apiserver所需的客户端证书，这个证书由controller-manager组件自动颁发，默认 是一年，如果到期，kubelet将无法使用过期的证书连接apiserver，从而导致无法正常工作，日志会给出证书过期错误（x509: certificate has expired or is not yet valid）</p>
+</li>
+</ul>
+<p><img src="/images/51C5DE0AF4B14580AEC12BE6F0FC0DF0clipboard.png" alt></p>
+<p>管理节点：</p>
+<ul>
+<li>
+<p>kube-apiserver  （本地访问apiserver:127.0.0.1:8080 远端访问apiserver:IP:6443）</p>
+</li>
+<li>
+<p>controller-manager  （可单独部署到其他机器）</p>
+</li>
+<li>
+<p>scheduler  （可单独部署到其他机器）</p>
+</li>
+</ul>
+<p>工作节点：</p>
+<ul>
+<li>
+<p>kubelet</p>
+</li>
+<li>
+<p>kube-proxy</p>
+</li>
+</ul>
+<p>#查看证书有效期</p>
+<p>kubeadm alpha certs check-expiration</p>
+<p>kubeadm:</p>
+<p>管理节点：kubeadm alpha certs renew 或者升级k8s版本 kubeadm upgrade</p>
+<p><a href="https://kubernetes.io/zh/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/">https://kubernetes.io/zh/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/</a></p>
+<p>工作节点：</p>
+<p>1、配置kube-controller-manager组件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vim /etc/kubernetes/manifests/kube-controller-manager.yaml </span></span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - <span class="built_in">command</span>:</span><br><span class="line">    - kube-controller-manager</span><br><span class="line">    - --experimental-cluster-signing-duration=87600h0m0s</span><br><span class="line">    - --feature-gates=RotateKubeletServerCertificate=<span class="literal">true</span></span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+<p>添加上述两个参数：</p>
+<ul>
+<li>
+<p>experimental-cluster-signing-duration=87600h0m0s 为kubelet客户端证书颁发有效期10年</p>
+</li>
+<li>
+<p>feature-gates=RotateKubeletServerCertificate=true 启用server证书颁发</p>
+</li>
+</ul>
+<p>配置完成后，重建pod使之生效：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl delete pod kube-controller-manager-k8s-master -n kube-system</span><br></pre></td></tr></table></figure>
+<p>2、配置kubelet组件</p>
+<p>默认kubelet证书轮转已启用：</p>
+<h1>vi /var/lib/kubelet/config.yaml</h1>
+<p><img src="/images/67162AA145D94B059DEB71CB8C2ED2D5clipboard.png" alt></p>
+<p>3、测试</p>
+<p>找一台节点测试，先查看现有客户端证书有效期：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> /var/lib/kubelet/pki/</span><br><span class="line">openssl x509 -<span class="keyword">in</span> kubelet-client-current.pem -noout -dates</span><br></pre></td></tr></table></figure>
+<p><img src="/images/38E535415D414FF997BAC641D66C24BFclipboard.png" alt></p>
+<p>修改服务器时间，模拟证书即将到期：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">date</span> -s <span class="string">&quot;2022-2-1&quot;</span></span><br><span class="line">systemctl restart kubelet.service </span><br></pre></td></tr></table></figure>
+<p>再查看证书有效期，可以看到已经是十年：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">openssl x509 -<span class="keyword">in</span> kubelet-client-current.pem -noout -dates </span><br></pre></td></tr></table></figure>
+<p><img src="/images/E513AA60AB32434D92095C3AE79C57BFclipboard.png" alt></p>
+<p>二进制：</p>
+<p>管理节点：证书自管理</p>
+<p>工作节点：</p>
+<p>找一台节点查看：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># cd /opt/kubernetes/ssl</span></span><br><span class="line"><span class="comment"># openssl x509 -in kubelet-client-current.pem -noout -dates</span></span><br><span class="line">notBefore=Aug 8 15:54:54 2020 GMT </span><br><span class="line">notAfter=Aug 7 07:38:00 2025 GMT</span><br><span class="line"><span class="comment"># openssl x509 -in /opt/kubernetes/ssl/ca.pem -noout -dates</span></span><br></pre></td></tr></table></figure>
+<p>配置了默认是5年，所以在5年之前不会出现证书过期的问题</p>
+<h2 id="Kubernetes-集群常见故障排查思路">Kubernetes 集群常见故障排查思路</h2>
+<p>先区分部署方式：</p>
+<p>1、kubeadm 除kubelet外，其他组件均采用静态Pod启动</p>
+<p>2、二进制 所有组件均采用systemd管理</p>
+<p>集群部署类问题：</p>
+<ul>
+<li>
+<p>网络不通</p>
+</li>
+<li>
+<p>启动失败，一般配置文件或者依赖服务</p>
+</li>
+<li>
+<p>平台不兼容</p>
+</li>
+</ul>
+<p>应用部署类问题：</p>
+<ul>
+<li>
+<p>查看资源详情：kubectl describe TYPE/NAME</p>
+</li>
+<li>
+<p>查看容器日志：kubectl logs TYPE/NAME [-c CONTAINER]</p>
+</li>
+<li>
+<p>进入容器中：kubectl exec POD [-c CONTAINER] – COMMAND [args…]</p>
+</li>
+</ul>
+<p>网络类问题，一般指无法在集群内部或者外部访问应用：</p>
+<ul>
+<li>
+<p>Pod正常工作吗？</p>
+</li>
+<li>
+<p>Service是否关联Pod？</p>
+</li>
+<li>
+<p>Service指定target-port端口是否正确？</p>
+</li>
+<li>
+<p>如果用名称访问，DNS是否正常工作？</p>
+</li>
+<li>
+<p>kube-proxy正常工作吗？是否正常写iptables规则？</p>
+</li>
+<li>
+<p>CNI网络插件是否正常工作？</p>
+</li>
+</ul>
+<p><img src="/images/B85247E5D1CA45FDBB878F0943B22CC4clipboard.png" alt></p>
 ]]></content>
       <categories>
         <category>K8S</category>
@@ -1472,6 +2918,262 @@
       </tags>
   </entry>
   <entry>
+    <title>基于Jenkins构建微服务发布平台</title>
+    <url>/2023/12/15/%E5%9F%BA%E4%BA%8Ejenkins%E6%9E%84%E5%BB%BA%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8F%91%E5%B8%83%E5%B9%B3%E5%8F%B0/</url>
+    <content><![CDATA[<h2 id="发布流程设计">发布流程设计</h2>
+<p><img src="/images/B2F7E8D287EA48A3925A323A7330F159clipboard.png" alt></p>
+<h2 id="准备基础环境：Harbor、Gitlab、Jenkins">准备基础环境：Harbor、Gitlab、Jenkins</h2>
+<h3 id="Harbor镜像仓库">Harbor镜像仓库</h3>
+<p>项目地址：<a href="https://github.com/goharbor/harbor">https://github.com/goharbor/harbor</a></p>
+<p>1.安装docker与docker-compose</p>
+<p>2.解压离线包部署</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># tar zxvf harbor-offline-installer-v2.0.0.tgz</span></span><br><span class="line"><span class="comment"># cd harbor</span></span><br><span class="line"><span class="comment"># cp harbor.yml.tmpl harbor.yml</span></span><br><span class="line"><span class="comment"># vi harbor.yml</span></span><br><span class="line">hostname: 192.168.0.14</span><br><span class="line">https:   <span class="comment"># 先注释https相关配置</span></span><br><span class="line">harbor_admin_password: Harbor12345</span><br><span class="line"><span class="comment"># ./prepare</span></span><br><span class="line"><span class="comment"># ./install.sh --with-chartmuseum</span></span><br><span class="line"><span class="comment"># docker-compose ps</span></span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>在Jenkins主机配置Docker可信任，如果是HTTPS需要拷贝证书</li>
+</ol>
+<p>由于habor未配置https，还需要在docker配置可信任。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># cat /etc/docker/daemon.json </span></span><br><span class="line">&#123;<span class="string">&quot;registry-mirrors&quot;</span>: [<span class="string">&quot;https://b9pmyelo.mirror.aliyuncs.com&quot;</span>],</span><br><span class="line">  <span class="string">&quot;insecure-registries&quot;</span>: [<span class="string">&quot;192.168.0.12&quot;</span>]</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment"># systemctl restart docker</span></span><br></pre></td></tr></table></figure>
+<h3 id="Gitlab代码仓库">Gitlab代码仓库</h3>
+<p>在Gitlab创建一个项目，然后提交微服务项目代码。</p>
+<p>如果没有Gitlab可以使用Docker启动一个：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> /opt/gitlab </span><br><span class="line">GITLAB_HOME=/opt/gitlab <span class="comment"># 数据持久化目录</span></span><br><span class="line">docker run --detach \</span><br><span class="line">--publish 443:443 \</span><br><span class="line">--publish 88:80 \</span><br><span class="line">--publish 2222:22 \</span><br><span class="line">--name gitlab \</span><br><span class="line">--restart always \</span><br><span class="line">--volume <span class="variable">$GITLAB_HOME</span>/config:/etc/gitlab \</span><br><span class="line">--volume <span class="variable">$GITLAB_HOME</span>/logs:/var/log/gitlab \</span><br><span class="line">--volume <span class="variable">$GITLAB_HOME</span>/data:/var/opt/gitlab \</span><br><span class="line">gitlab/gitlab-ce:latest</span><br></pre></td></tr></table></figure>
+<p>访问地址：<a href="http://IP:88">http://IP:88</a></p>
+<p>初次会先设置管理员密码 ，然后登陆，默认管理员用户名 root，密码就是刚设置的。</p>
+<p><img src="/images/8A7782825408485B8DA8EE01B54B7C6Fclipboard.png" alt></p>
+<h3 id="Jenkins-发布系统">Jenkins 发布系统</h3>
+<p><img src="/images/8500E07205C24CC18CCB45F93929FA11clipboard.png" alt></p>
+<p>Jenkins是一款开源 CI&amp;CD 系统，用于自动化各种任务，包括构建、测试和部署。</p>
+<p>Jenkins官方提供了镜像：<a href="https://hub.docker.com/r/jenkins/jenkins">https://hub.docker.com/r/jenkins/jenkins</a></p>
+<p>使用Deployment来部署这个镜像，会暴露两个端口：8080 Web访问端口，50000 Slave通 信端口，容器启动后Jenkins数据存储在/var/jenkins_home目录，所以需要将该目录使用 PV持久化存储。</p>
+<p>配置PV持久化存储：</p>
+<p>1、部署NFS共享服务器</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装nfs安装包（每个k8s节点都要安装）</span></span><br><span class="line">yum install nfs-utils</span><br></pre></td></tr></table></figure>
+<p>2、找一个节点作为NFS共享存储服务器</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#创建nfs共享目录</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /ifs/kubernetes/jenkins-data</span><br><span class="line"><span class="comment">#修改nfs配置文件</span></span><br><span class="line">vim /etc/exports</span><br><span class="line">/ifs/kubernetes 192.168.0.0/24(rw,no_root_squash)</span><br><span class="line"><span class="comment">#启动nfs并加入开机自启</span></span><br><span class="line">systemctl start nfs</span><br><span class="line">systemctl <span class="built_in">enable</span> nfs</span><br><span class="line"><span class="comment">#在别的节点验证是否能挂载成功</span></span><br><span class="line">mount -t nfs 192.168.0.13:/ifs/kubernetes /mnt/</span><br><span class="line">umount /mnt/</span><br></pre></td></tr></table></figure>
+<p>3、为Jenkins准备PV</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi pv.yaml</span></span><br><span class="line"></span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: PersistentVolume</span><br><span class="line">metadata:</span><br><span class="line">  name: pv0001</span><br><span class="line">spec:</span><br><span class="line">  capacity:</span><br><span class="line">    storage: 5Gi</span><br><span class="line">  accessModes: [<span class="string">&quot;ReadWriteOnce&quot;</span>]</span><br><span class="line">  nfs:</span><br><span class="line">    path: /ifs/kubernetes/jenkins-data</span><br><span class="line">    server: 192.168.0.13</span><br><span class="line">    </span><br><span class="line"><span class="comment">#kubectl apply -f pv.yaml</span></span><br></pre></td></tr></table></figure>
+<p>在k8s中部署jenkins</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f jenkins.yml </span><br></pre></td></tr></table></figure>
+<p>先安装后面所需的插件：</p>
+<p>Jenkins下载插件默认服务器在国外，会比较慢，建议修改国内源：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"> <span class="comment"># 进入到nfs共享目录</span></span><br><span class="line"><span class="built_in">cd</span> /ifs/kubernetes/jenkins-data</span><br><span class="line">sed -i <span class="string">&#x27;s/https:\/\/updates.jenkins.io\/download/https:\/\/mirrors.tuna.tsinghua.edu.cn\/jenkins/g&#x27;</span> default.json </span><br><span class="line">sed -i <span class="string">&#x27;s/http:\/\/www.google.com/https:\/\/www.baidu.com/g&#x27;</span> default.json</span><br><span class="line"></span><br><span class="line"><span class="comment"># 删除pod重建，pod名称改成你实际的</span></span><br><span class="line">kubectl delete pod jenkins-d58f4db66-9cthj -n ops</span><br></pre></td></tr></table></figure>
+<p>管理Jenkins-&gt;系统配置–&gt;管理插件–&gt;分别搜索Git Parameter/Git/Pipeline/kubernetes/Config File Provider， 选中点击安装。</p>
+<ul>
+<li>
+<p>Git：拉取代码</p>
+</li>
+<li>
+<p>Git Parameter：Git参数化构建</p>
+</li>
+<li>
+<p>Pipeline：流水线</p>
+</li>
+<li>
+<p>kubernetes：连接Kubernetes动态创建Slave代理</p>
+</li>
+<li>
+<p>Config File Provider：存储配置文件</p>
+</li>
+<li>
+<p>Extended Choice Parameter：扩展选择框参数，支持多选</p>
+</li>
+</ul>
+<h2 id="Jenkins在K8s中动态创建代理">Jenkins在K8s中动态创建代理</h2>
+<h3 id="Jenkins主从架构介绍">Jenkins主从架构介绍</h3>
+<p><img src="/images/7F27157BF99A4F6B8BF5BCDE5C165B64clipboard.png" alt></p>
+<p>Jenkins Master/Slave架构，Master（Jenkins本身）提供Web页面 让用户来管理项目和从节点（Slave），项目任务可以运行在Master 本机或者分配到从节点运行，一个Master可以关联多个Slave，这样 好处是可以让Slave分担Master工作压力和隔离构建环境。</p>
+<p><img src="/images/EB9F74AB19714BC68A48BF040F27BAFAclipboard.png" alt></p>
+<p>当触发Jenkins任务时，Jenkins会调用Kubernetes API 创建Slave Pod，Pod启动后会连接Jenkins，接受任务 并处理。</p>
+<h3 id="Kubernetes插件配置">Kubernetes插件配置</h3>
+<p>Kubernetes插件：用于Jenkins在Kubernetes集群中运行动态代理</p>
+<p>插件介绍：<a href="https://github.com/jenkinsci/kubernetes-plugin">https://github.com/jenkinsci/kubernetes-plugin</a></p>
+<p>配置插件：管理Jenkins-&gt;管理Nodes和云-&gt;管理云-&gt;添加Kubernetes</p>
+<p><img src="/images/64DF0CDB13A542678BB863158428C832clipboard.png" alt></p>
+<h3 id="自定义Jenkins-Slave镜像">自定义Jenkins Slave镜像</h3>
+<p><img src="/images/2306CE36027E44559E61F897D61DC8C4clipboard.png" alt></p>
+<p><a href="/attachments/2F46856C2A2540D8A87DCF2C081ADF24jenkins-slave.zip">jenkins-slave.zip</a></p>
+<p>构建salve镜像</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">unzip jenkins-slave.zip </span><br><span class="line"><span class="built_in">cd</span> jenkins-slave/</span><br></pre></td></tr></table></figure>
+<p>课件目录里涉及六个文件：</p>
+<ul>
+<li>
+<p>Dockerfile：构建镜像</p>
+</li>
+<li>
+<p>jenkins-slave：shell脚本启动slave.jar，下载地址：<a href="https://github.com/jenkinsci/docker-jnlpslave/blob/master/jenkins-slave">https://github.com/jenkinsci/docker-jnlpslave/blob/master/jenkins-slave</a></p>
+</li>
+<li>
+<p>settings.xml：修改maven官方源为阿里云源</p>
+</li>
+<li>
+<p>slave.jar：agent程序，接受master下发的任务，下载地址:<a href="http://jenkinsip">http://jenkinsip</a>:port/jnlpJars/slave.jar</p>
+</li>
+<li>
+<p>helm和kubectl客户端工具</p>
+</li>
+</ul>
+<p>构建并推送到镜像仓库：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker build -t 192.168.0.14/library/jenkins-slave-jdk:1.8 .</span><br><span class="line">docker push 192.168.0.14/library/jenkins-slave-jdk:1.8</span><br></pre></td></tr></table></figure>
+<p><img src="/images/4F2E0C1FDB52491EB084D555FB5714DCclipboard.png" alt></p>
+<h3 id="测试主从架构是否正常">测试主从架构是否正常</h3>
+<p>新建项目-&gt;流水线-&gt;Pipeline脚本（可生成示例）</p>
+<p><img src="/images/3164AADF3CAF40CFA508FCC5C9C1495Aclipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">pipeline &#123;</span><br><span class="line">    agent &#123;</span><br><span class="line">        kubernetes &#123;</span><br><span class="line">            label <span class="string">&quot;jenkins-slave&quot;</span></span><br><span class="line">            yaml <span class="string">&#x27;&#x27;</span><span class="string">&#x27;</span></span><br><span class="line"><span class="string">apiVersion: v1</span></span><br><span class="line"><span class="string">kind: Pod</span></span><br><span class="line"><span class="string">metadata:</span></span><br><span class="line"><span class="string">  name: jenkins-slave</span></span><br><span class="line"><span class="string">spec:</span></span><br><span class="line"><span class="string">  containers:</span></span><br><span class="line"><span class="string">  - name: jnlp</span></span><br><span class="line"><span class="string">    image: &quot;192.168.0.14/library/jenkins-slave-jdk:1.8&quot;</span></span><br><span class="line"><span class="string">&#x27;</span><span class="string">&#x27;&#x27;</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    stages &#123;</span><br><span class="line">        stage(<span class="string">&#x27;Main&#x27;</span>) &#123;</span><br><span class="line">            steps &#123;</span><br><span class="line">                sh <span class="string">&#x27;hostname&#x27;</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="Jenkins-Pipeline流水线">Jenkins Pipeline流水线</h2>
+<h3 id="Jenkins-Pipeline-介绍">Jenkins Pipeline 介绍</h3>
+<p>Jenkins Pipeline是一套运行工作流框架，将原本独立运行单个或者多个节点的任 务链接起来，实现单个任务难以完成的复杂流程编排和可视化。</p>
+<ul>
+<li>
+<p>Jenkins Pipeline是一套插件，支持在Jenkins中实现持续集成和持续交付；</p>
+</li>
+<li>
+<p>Pipeline通过特定语法对简单到复杂的传输管道进行建模；</p>
+</li>
+<li>
+<p>Jenkins Pipeline的定义被写入一个文本文件，称为Jenkinsfile。</p>
+</li>
+</ul>
+<p><img src="/images/7A0E7C80DA0F49268AE4F87D00FE7796clipboard.png" alt></p>
+<h3 id="Jenkins-Pipeline-语法">Jenkins Pipeline 语法</h3>
+<p><img src="/images/6922CBDC75314869BF4EC5D6B8B586CCclipboard.png" alt></p>
+<h3 id="Jenkins-Pipeline-示例">Jenkins Pipeline 示例</h3>
+<ul>
+<li>
+<p>Stages 是 Pipeline 中最主要的组成部分，Jenkins 将会按照 Stages 中描述的顺序 从上往下的执行。</p>
+</li>
+<li>
+<p>Stage：阶段，一个 Pipeline 可以划分为若干个 Stage，每个 Stage 代表一组操作， 比如：Build、Test、Deploy</p>
+</li>
+<li>
+<p>Steps：步骤，Steps 是最基本的操作单元，可以是打印一句话，也可以是构建一 个 Docker 镜像，由各类 Jenkins 插件提供，比如命令：sh ‘mvn’，就相当于我 们平时 shell 终端中执行 mvn命令一样。</p>
+</li>
+</ul>
+<p><img src="/images/D039E5F0FBA7457D81054CA87A761043clipboard.png" alt></p>
+<h2 id="流水线自动发布微服务项目">流水线自动发布微服务项目</h2>
+<h3 id="发布需求">发布需求</h3>
+<p>在将微服务项目自动化部署到K8s平台会有这些需求：</p>
+<ul>
+<li>
+<p>尽量完全自动化部署，无需过多人工干预</p>
+</li>
+<li>
+<p>可以选择升级某个、某些微服务</p>
+</li>
+<li>
+<p>在部署、升级微服务时，可对微服务某些特性做配置，例如命名 空间、副本数量</p>
+</li>
+</ul>
+<p><img src="/images/C157478FA8444B3C8BC50AB432519AC3clipboard.png" alt></p>
+<p><img src="/images/F8769BAA03AA41BCAF7F8A7FBE101D13clipboard.png" alt></p>
+<h3 id="实现思路">实现思路</h3>
+<p>Pipeline编写思路：</p>
+<p>在微服务架构中，会涉及几个、几十个微服务，如果每个服务都创建一个item，势必 给运维维护成本增加很大，因此需要编写一个通用Pipeline脚本，将这些微服务部署 差异化部分使用Jenkins参数化，人工交互确认发布的微服务、环境配置等。 但这只是解决用户交互层面，在K8s实际部署项目用YAML创建对应资源，现在问题是 如何接收用户交互参数，自动化生成YAML文件，这就会用到Helm完成YAML文件高 效复用和微服务部署。</p>
+<p>部署一个微服务项目，每个微服务的差异化部分在哪里？</p>
+<ul>
+<li>
+<p>服务名称</p>
+</li>
+<li>
+<p>代码版本</p>
+</li>
+<li>
+<p>镜像</p>
+</li>
+<li>
+<p>端口</p>
+</li>
+<li>
+<p>副本数</p>
+</li>
+<li>
+<p>标签</p>
+</li>
+<li>
+<p>域名</p>
+</li>
+</ul>
+<p><img src="/images/41CB808D432741CEADC62C7EC31B02CFclipboard.png" alt></p>
+<p><img src="/images/5725CE9936DC44278AB0F3D50A9C0043clipboard.png" alt></p>
+<h3 id="编写Pipeline流水线脚本">编写Pipeline流水线脚本</h3>
+<p>对于课件中的Pipeline脚本，重点修改这几个变量：</p>
+<p><img src="/images/BBB9C34FC8074B8B8F2A8593A0D069D9clipboard.png" alt></p>
+<p>1、将harbor认证和gitlab认证保存到Jenkins凭据</p>
+<p>管理Jenkins-&gt;安全–&gt;管理凭据-&gt;Jnekins-&gt;添加凭据-&gt;Username with password</p>
+<p>分别添加连接gitlab和harbor的用户名到Jenkins凭据，然后获取该凭据ID替换到脚本中docker_registry_auth和git_auth变量的值。</p>
+<p><img src="/images/1038F7245A06447F8D9087E37A05849Bclipboard.png" alt></p>
+<p>2、将kubeconfig存储在Jenkins，用于slave镜像里kubectl连接k8s集群</p>
+<p>管理Jenkins-&gt; Managed files-&gt;Add-&gt;Custom file -&gt;Content字段内容是kubeconfig（kubeadm部署k8s默认路径在master节点 /root/.kube/config，如果你是二进制部署，需要自己生成，参考下面），然后复制ID替换上述脚本中k8s_auth变量的值。</p>
+<p>说明：将kubectl、helm工具封装到Slave镜像中，并通过Config File Provider插件存储连接K8s集群的kubeconfig认证文件，然后挂载到 Slave容器中，这样就能用kubectl apply deploy.yaml --kubeconfig=config管理K8s应用了，为提高安全性，kubeconfig文件可分配权限。</p>
+<p><img src="/images/8E0858A3DE2A4C5B8F819C098461D101clipboard.png" alt></p>
+<p>3.上传 helm chart包到镜像仓库</p>
+<p><a href="/attachments/0D60374F19514E8F9EE6A7B512555D72ms-0.1.0.tgz">ms-0.1.0.tgz</a></p>
+<p><img src="/images/22F701F84D6D4280B76FE0E49F0002F6clipboard.png" alt></p>
+<p>创建命名空间并部署eureka和MySQL服务（记得还要部署ingress控制器）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create namespace ms</span><br><span class="line">kubectl apply -f mysql.yaml</span><br><span class="line"><span class="comment">#启动部署(修改eureka-service微服务yaml文件中的requests，请求资源设置小一点0.2)</span></span><br><span class="line">./docker_build.sh eureka-service</span><br><span class="line">kubectl apply -f ingress-controller.yaml </span><br></pre></td></tr></table></figure>
+<p>jenkinsfile</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env groovy</span></span><br><span class="line">// 所需插件: Git Parameter/Git/Pipeline/Config File Provider/kubernetes/Extended Choice Parameter</span><br><span class="line">// 公共</span><br><span class="line">def registry = <span class="string">&quot;192.168.0.14&quot;</span></span><br><span class="line">// 项目</span><br><span class="line">def project = <span class="string">&quot;microservice&quot;</span></span><br><span class="line">def git_url = <span class="string">&quot;http://192.168.0.14:88/root/k8s-microservice.git&quot;</span></span><br><span class="line">def gateway_domain_name = <span class="string">&quot;gateway.ctnrs.com&quot;</span></span><br><span class="line">def portal_domain_name = <span class="string">&quot;portal.ctnrs.com&quot;</span></span><br><span class="line">// 认证</span><br><span class="line">def image_pull_secret = <span class="string">&quot;registry-pull-secret&quot;</span></span><br><span class="line">def harbor_auth = <span class="string">&quot;dc8877f5-3238-407f-a9fb-96932501a9b0&quot;</span></span><br><span class="line">def git_auth = <span class="string">&quot;8d022667-0d69-4e5c-a6f8-6d0ac532f596&quot;</span></span><br><span class="line">// ConfigFileProvider ID</span><br><span class="line">def k8s_auth = <span class="string">&quot;cf3c93bc-dc97-4305-8379-53a669a2b2b7&quot;</span></span><br><span class="line"></span><br><span class="line">pipeline &#123;</span><br><span class="line">  agent &#123;</span><br><span class="line">    kubernetes &#123;</span><br><span class="line">        label <span class="string">&quot;jenkins-slave&quot;</span></span><br><span class="line">        yaml <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">apiVersion: v1</span></span><br><span class="line"><span class="string">kind: Pod</span></span><br><span class="line"><span class="string">metadata:</span></span><br><span class="line"><span class="string">  name: jenkins-slave</span></span><br><span class="line"><span class="string">spec:</span></span><br><span class="line"><span class="string">  containers:</span></span><br><span class="line"><span class="string">  - name: jnlp</span></span><br><span class="line"><span class="string">    image: &quot;</span><span class="variable">$&#123;registry&#125;</span>/library/jenkins-slave-jdk:1.8<span class="string">&quot;</span></span><br><span class="line"><span class="string">    imagePullPolicy: Always</span></span><br><span class="line"><span class="string">    volumeMounts:</span></span><br><span class="line"><span class="string">      - name: docker-cmd</span></span><br><span class="line"><span class="string">        mountPath: /usr/bin/docker</span></span><br><span class="line"><span class="string">      - name: docker-sock</span></span><br><span class="line"><span class="string">        mountPath: /var/run/docker.sock</span></span><br><span class="line"><span class="string">      - name: maven-cache</span></span><br><span class="line"><span class="string">        mountPath: /root/.m2</span></span><br><span class="line"><span class="string">  volumes:</span></span><br><span class="line"><span class="string">    - name: docker-cmd</span></span><br><span class="line"><span class="string">      hostPath:</span></span><br><span class="line"><span class="string">        path: /usr/bin/docker</span></span><br><span class="line"><span class="string">    - name: docker-sock</span></span><br><span class="line"><span class="string">      hostPath:</span></span><br><span class="line"><span class="string">        path: /var/run/docker.sock</span></span><br><span class="line"><span class="string">    - name: maven-cache</span></span><br><span class="line"><span class="string">      hostPath:</span></span><br><span class="line"><span class="string">        path: /tmp/m2</span></span><br><span class="line"><span class="string">&quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">        &#125;</span><br><span class="line">      </span><br><span class="line">      &#125;</span><br><span class="line">    parameters &#123;</span><br><span class="line">        gitParameter branch: <span class="string">&#x27;&#x27;</span>, branchFilter: <span class="string">&#x27;.*&#x27;</span>, defaultValue: <span class="string">&#x27;origin/master&#x27;</span>, description: <span class="string">&#x27;选择发布的分支&#x27;</span>, name: <span class="string">&#x27;Branch&#x27;</span>, quickFilterEnabled: <span class="literal">false</span>, selectedValue: <span class="string">&#x27;NONE&#x27;</span>, sortMode: <span class="string">&#x27;NONE&#x27;</span>, tagFilter: <span class="string">&#x27;*&#x27;</span>, <span class="built_in">type</span>: <span class="string">&#x27;PT_BRANCH&#x27;</span>        </span><br><span class="line">        extendedChoice defaultValue: <span class="string">&#x27;none&#x27;</span>, description: <span class="string">&#x27;选择发布的微服务&#x27;</span>, \</span><br><span class="line">          multiSelectDelimiter: <span class="string">&#x27;,&#x27;</span>, name: <span class="string">&#x27;Service&#x27;</span>, <span class="built_in">type</span>: <span class="string">&#x27;PT_CHECKBOX&#x27;</span>, \</span><br><span class="line">          value: <span class="string">&#x27;gateway-service:9999,portal-service:8080,product-service:8010,order-service:8020,stock-service:8030&#x27;</span></span><br><span class="line">        choice (choices: [<span class="string">&#x27;ms&#x27;</span>, <span class="string">&#x27;demo&#x27;</span>], description: <span class="string">&#x27;部署模板&#x27;</span>, name: <span class="string">&#x27;Template&#x27;</span>)</span><br><span class="line">        choice (choices: [<span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;3&#x27;</span>, <span class="string">&#x27;5&#x27;</span>, <span class="string">&#x27;7&#x27;</span>], description: <span class="string">&#x27;副本数&#x27;</span>, name: <span class="string">&#x27;ReplicaCount&#x27;</span>)</span><br><span class="line">        choice (choices: [<span class="string">&#x27;ms&#x27;</span>], description: <span class="string">&#x27;命名空间&#x27;</span>, name: <span class="string">&#x27;Namespace&#x27;</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    stages &#123;</span><br><span class="line">        stage(<span class="string">&#x27;拉取代码&#x27;</span>)&#123;</span><br><span class="line">            steps &#123;</span><br><span class="line">                checkout([<span class="variable">$class</span>: <span class="string">&#x27;GitSCM&#x27;</span>, </span><br><span class="line">                branches: [[name: <span class="string">&quot;<span class="variable">$&#123;params.Branch&#125;</span>&quot;</span>]], </span><br><span class="line">                extensions: [], </span><br><span class="line">                userRemoteConfigs: [[credentialsId: <span class="string">&quot;<span class="variable">$&#123;git_auth&#125;</span>&quot;</span>, url: <span class="string">&quot;<span class="variable">$&#123;git_url&#125;</span>&quot;</span>]]</span><br><span class="line">                ])</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        stage(<span class="string">&#x27;代码编译&#x27;</span>) &#123;</span><br><span class="line">            // 编译指定服务</span><br><span class="line">            steps &#123;</span><br><span class="line">                sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">                  mvn clean package -Dmaven.test.skip=true</span></span><br><span class="line"><span class="string">                &quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        stage(<span class="string">&#x27;构建镜像&#x27;</span>) &#123;</span><br><span class="line">          steps &#123;</span><br><span class="line">              withCredentials([usernamePassword(credentialsId: <span class="string">&quot;<span class="variable">$&#123;harbor_auth&#125;</span>&quot;</span>, passwordVariable: <span class="string">&#x27;password&#x27;</span>, usernameVariable: <span class="string">&#x27;username&#x27;</span>)]) &#123;</span><br><span class="line">                sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">                 docker login -u <span class="variable">$&#123;username&#125;</span> -p &#x27;<span class="variable">$&#123;password&#125;</span>&#x27; <span class="variable">$&#123;registry&#125;</span></span></span><br><span class="line"><span class="string">                 for service in \$(echo <span class="variable">$&#123;Service&#125;</span> |sed &#x27;s/,/ /g&#x27;); do</span></span><br><span class="line"><span class="string">                    service_name=\$&#123;service%:*&#125;</span></span><br><span class="line"><span class="string">                    image_name=<span class="variable">$&#123;registry&#125;</span>/<span class="variable">$&#123;project&#125;</span>/\$&#123;service_name&#125;:<span class="variable">$&#123;BUILD_NUMBER&#125;</span></span></span><br><span class="line"><span class="string">                    cd \$&#123;service_name&#125;</span></span><br><span class="line"><span class="string">                    if ls |grep biz &amp;&gt;/dev/null; then</span></span><br><span class="line"><span class="string">                        cd \$&#123;service_name&#125;-biz</span></span><br><span class="line"><span class="string">                    fi</span></span><br><span class="line"><span class="string">                    docker build -t \$&#123;image_name&#125; .</span></span><br><span class="line"><span class="string">                    docker push \$&#123;image_name&#125;</span></span><br><span class="line"><span class="string">                    cd <span class="variable">$&#123;WORKSPACE&#125;</span></span></span><br><span class="line"><span class="string">                  done</span></span><br><span class="line"><span class="string">                &quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">                configFileProvider([configFile(fileId: <span class="string">&quot;<span class="variable">$&#123;k8s_auth&#125;</span>&quot;</span>, targetLocation: <span class="string">&quot;admin.kubeconfig&quot;</span>)])&#123;</span><br><span class="line">                    sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">                    # 添加镜像拉取认证</span></span><br><span class="line"><span class="string">                    kubectl create secret docker-registry <span class="variable">$&#123;image_pull_secret&#125;</span> --docker-username=<span class="variable">$&#123;username&#125;</span> --docker-password=<span class="variable">$&#123;password&#125;</span> --docker-server=<span class="variable">$&#123;registry&#125;</span> -n <span class="variable">$&#123;Namespace&#125;</span> --kubeconfig admin.kubeconfig |true</span></span><br><span class="line"><span class="string">                    # 添加私有chart仓库</span></span><br><span class="line"><span class="string">                    helm repo add  --username <span class="variable">$&#123;username&#125;</span> --password <span class="variable">$&#123;password&#125;</span> myrepo http://<span class="variable">$&#123;registry&#125;</span>/chartrepo/<span class="variable">$&#123;project&#125;</span></span></span><br><span class="line"><span class="string">                    &quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">                &#125;</span><br><span class="line">              &#125;</span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        stage(<span class="string">&#x27;Helm部署到K8S&#x27;</span>) &#123;</span><br><span class="line">          steps &#123;</span><br><span class="line">              sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">              common_args=&quot;</span>-n <span class="variable">$&#123;Namespace&#125;</span> --kubeconfig admin.kubeconfig<span class="string">&quot;</span></span><br><span class="line"><span class="string">              </span></span><br><span class="line"><span class="string">              for service in  \$(echo <span class="variable">$&#123;Service&#125;</span> |sed &#x27;s/,/ /g&#x27;); do</span></span><br><span class="line"><span class="string">                service_name=\$&#123;service%:*&#125;</span></span><br><span class="line"><span class="string">                service_port=\$&#123;service#*:&#125;</span></span><br><span class="line"><span class="string">                image=<span class="variable">$&#123;registry&#125;</span>/<span class="variable">$&#123;project&#125;</span>/\$&#123;service_name&#125;</span></span><br><span class="line"><span class="string">                tag=<span class="variable">$&#123;BUILD_NUMBER&#125;</span></span></span><br><span class="line"><span class="string">                helm_args=&quot;</span>\<span class="variable">$&#123;service_name&#125;</span> --<span class="built_in">set</span> image.repository=\<span class="variable">$&#123;image&#125;</span> --<span class="built_in">set</span> image.tag=\<span class="variable">$&#123;tag&#125;</span> --<span class="built_in">set</span> replicaCount=<span class="variable">$&#123;replicaCount&#125;</span> --<span class="built_in">set</span> imagePullSecrets[0].name=<span class="variable">$&#123;image_pull_secret&#125;</span> --<span class="built_in">set</span> service.targetPort=\<span class="variable">$&#123;service_port&#125;</span> myrepo/<span class="variable">$&#123;Template&#125;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                # 判断是否为新部署</span></span><br><span class="line"><span class="string">                if helm history \$&#123;service_name&#125; \$&#123;common_args&#125; &amp;&gt;/dev/null;then</span></span><br><span class="line"><span class="string">                  action=upgrade</span></span><br><span class="line"><span class="string">                else</span></span><br><span class="line"><span class="string">                  action=install</span></span><br><span class="line"><span class="string">                fi</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                # 针对服务启用ingress</span></span><br><span class="line"><span class="string">                if [ \$&#123;service_name&#125; == &quot;</span>gateway-service<span class="string">&quot; ]; then</span></span><br><span class="line"><span class="string">                  helm \$&#123;action&#125; \$&#123;helm_args&#125; \</span></span><br><span class="line"><span class="string">                  --set ingress.enabled=true \</span></span><br><span class="line"><span class="string">                  --set ingress.host=<span class="variable">$&#123;gateway_domain_name&#125;</span> \</span></span><br><span class="line"><span class="string">                   \$&#123;common_args&#125;</span></span><br><span class="line"><span class="string">                elif [ \$&#123;service_name&#125; == &quot;</span>portal-service<span class="string">&quot; ]; then</span></span><br><span class="line"><span class="string">                  helm \$&#123;action&#125; \$&#123;helm_args&#125; \</span></span><br><span class="line"><span class="string">                  --set ingress.enabled=true \</span></span><br><span class="line"><span class="string">                  --set ingress.host=<span class="variable">$&#123;portal_domain_name&#125;</span> \</span></span><br><span class="line"><span class="string">                   \$&#123;common_args&#125;</span></span><br><span class="line"><span class="string">                else</span></span><br><span class="line"><span class="string">                  helm \$&#123;action&#125; \$&#123;helm_args&#125; \$&#123;common_args&#125;</span></span><br><span class="line"><span class="string">                fi</span></span><br><span class="line"><span class="string">              done</span></span><br><span class="line"><span class="string">              # 查看Pod状态</span></span><br><span class="line"><span class="string">              sleep 10</span></span><br><span class="line"><span class="string">              kubectl get pods \$&#123;common_args&#125;</span></span><br><span class="line"><span class="string">              &quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最终效果图：</p>
+<p><img src="/images/2C996A5FE9374972B3F1C34D6C139C33clipboard.png" alt></p>
+<h3 id="流水线脚本与源代码一起版本管理">流水线脚本与源代码一起版本管理</h3>
+<p>Jenkinsfile文件建议与源代码一起版本管理，实现流水线即 代码（Pipeline as Code）。</p>
+<p>这样做的好处：</p>
+<ul>
+<li>
+<p>自动为所有分支创建流水线脚本</p>
+</li>
+<li>
+<p>方便流水线代码复查、追踪、迭代</p>
+</li>
+<li>
+<p>可被项目成员查看和编辑</p>
+</li>
+</ul>
+<p><img src="/images/1CB58EC278494B95B4CF18806EC80C36clipboard.png" alt></p>
+<p><img src="/images/857EAC3742DE4C009FB7B571FB68F768clipboard.png" alt></p>
+<h2 id="小结">小结</h2>
+<p>使用Jenkins的插件</p>
+<ul>
+<li>
+<p>Git &amp; gitParameter</p>
+</li>
+<li>
+<p>Kubernetes</p>
+</li>
+<li>
+<p>Pipeline</p>
+</li>
+<li>
+<p>Config File Provider</p>
+</li>
+<li>
+<p>Extended Choice Parameter</p>
+</li>
+</ul>
+<p>CI/CD环境特点</p>
+<ul>
+<li>
+<p>Slave弹性伸缩</p>
+</li>
+<li>
+<p>基于镜像隔离构建环境</p>
+</li>
+<li>
+<p>流水线发布，易维护</p>
+</li>
+</ul>
+<p>Jenkins参数化构建可帮助你完成更复杂环境CI/CD</p>
+<p>回滚思路：</p>
+<p>1.使用kubectl rollout ,将资源名称和命名空间等参数化传入</p>
+<p>2.每次发布记录发布的镜像版本写到一个历史文件中，Extended choice Parameter从历史文件中作为选择项</p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>基于Jenkins构建持续集成（CI）平台</title>
     <url>/2023/07/10/%E5%9F%BA%E4%BA%8Ejenkins%E6%9E%84%E5%BB%BA%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90ci%E5%B9%B3%E5%8F%B0/</url>
     <content><![CDATA[<h2 id="发布流程">发布流程</h2>
@@ -1952,6 +3654,891 @@
 <p><img src="/images/E705E25E66D840228B054BA469DE8828clipboard.png" alt></p>
 <p><img src="/images/8FC4E782A0F040F3A6A2F40F0581134Fclipboard.png" alt></p>
 <p><img src="/images/57136FADCE894FA7BF380678271AD152clipboard.png" alt></p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>微服务容器化迁移</title>
+    <url>/2023/11/28/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E8%BF%81%E7%A7%BB/</url>
+    <content><![CDATA[<h2 id="一、从运维角度看微服务">一、从运维角度看微服务</h2>
+<h3 id="单体应用-vs-微服务">单体应用 vs 微服务</h3>
+<p><img src="/images/CF73043D4E92439A8F92CC6B937B6AB3clipboard.png" alt></p>
+<p>特点：</p>
+<ul>
+<li>
+<p>易于部署</p>
+</li>
+<li>
+<p>易于测试</p>
+</li>
+</ul>
+<p>不足：</p>
+<ul>
+<li>
+<p>代码膨胀，难以维护</p>
+</li>
+<li>
+<p>构建、部署成本大</p>
+</li>
+<li>
+<p>新人上手难</p>
+</li>
+</ul>
+<p><img src="/images/97549FF2AF58428EA2A5684C48153052clipboard.png" alt></p>
+<h3 id="微服务特点">微服务特点</h3>
+<p>服务组件化</p>
+<p>每个服务独立开发、部署，有效避免一个服务的修改引起整个系统重新部署。</p>
+<p>技术栈灵活</p>
+<p>约定通信方式，使得服务本身功能实现对技术要求不再那么敏感。</p>
+<p>独立部署</p>
+<p>每个微服务独立部署，加快部署速度，方便扩展。</p>
+<p>扩展性强</p>
+<p>每个微服务可以部署多个，并且有负载均衡能力。</p>
+<p>独立数据</p>
+<p>每个微服务有独立的基本组件，例如数据库、缓存等。</p>
+<h3 id="微服务不足">微服务不足</h3>
+<ul>
+<li>
+<p>沟通成本</p>
+</li>
+<li>
+<p>数据一致性</p>
+</li>
+<li>
+<p>运维成本：部署、监控</p>
+</li>
+<li>
+<p>内部架构复杂性</p>
+</li>
+<li>
+<p>大量服务治理</p>
+</li>
+</ul>
+<h3 id="Java微服务框架">Java微服务框架</h3>
+<ul>
+<li>
+<p>Spring Boot：快速开发微服务的框架</p>
+</li>
+<li>
+<p>Spring Cloud：基于SpringBoot实现的一个完整的微服务解决方案</p>
+</li>
+<li>
+<p>Dubbo：阿里巴巴开源的微服务治理框架</p>
+</li>
+</ul>
+<h2 id="二、在K8s平台部署微服务考虑的问题">二、在K8s平台部署微服务考虑的问题</h2>
+<h3 id="常见微服务架构图">常见微服务架构图</h3>
+<p><img src="/images/56F56B2D53AC4FAB83088615376A5720clipboard.png" alt></p>
+<h3 id="对微服务项目架构理解">对微服务项目架构理解</h3>
+<ul>
+<li>
+<p>微服务间如何通信？REST API，RPC，MQ</p>
+</li>
+<li>
+<p>微服务如何发现彼此？注册中心</p>
+</li>
+<li>
+<p>组件之间怎么个调用关系？</p>
+</li>
+<li>
+<p>哪个服务作为整个网站入口？前后端分离</p>
+</li>
+<li>
+<p>哪些微服务需要对外访问？前端和微服务网关</p>
+</li>
+<li>
+<p>微服务怎么部署？更新？扩容？</p>
+</li>
+<li>
+<p>区分有状态应用与无状态应用</p>
+</li>
+</ul>
+<h3 id="为什么用注册中心系统">为什么用注册中心系统</h3>
+<p>微服务太多面临的问题：</p>
+<ul>
+<li>
+<p>怎么记录一个微服务多个副本接口地址？</p>
+</li>
+<li>
+<p>怎么实现一个微服务多个副本负载均衡？</p>
+</li>
+<li>
+<p>怎么判断一个微服务副本是否可用？</p>
+</li>
+</ul>
+<p>主流注册中心：Eureka，Nacos，Consul</p>
+<p><img src="/images/C5A801E6B7A84C39A42B57A158172029clipboard.png" alt></p>
+<h3 id="在K8s部署项目流程">在K8s部署项目流程</h3>
+<p><img src="/images/4F2E70888DF042E797024352C3D5E5EAclipboard.png" alt></p>
+<h2 id="三、在K8S平台部署Spring-Cloud微服务项目">三、在K8S平台部署Spring Cloud微服务项目</h2>
+<h3 id="容器化微服务项目实施步骤">容器化微服务项目实施步骤</h3>
+<p>具体步骤：</p>
+<p>第一步：熟悉Spring Cloud微服务项目</p>
+<p>第二步：源代码编译构建</p>
+<p>第三步：构建项目镜像并推送到镜像仓库</p>
+<p>第四步：K8s服务编排</p>
+<p>第五步：在K8s中部署Eureka集群（注册中心）和MySQL数据库</p>
+<p>第六步：部署微服务网关服务</p>
+<p>第七步：部署微服务业务程序</p>
+<p>第八步：部署微服务前端</p>
+<p>第九步：微服务对外发布</p>
+<p>第十步：微服务升级与扩容</p>
+<p>第一步：熟悉Spring Cloud微服务项目</p>
+<p><img src="/images/2B032000314E4C80BCA651C8FD2B83D5clipboard.png" alt></p>
+<p><a href="https://gitee.com/lucky_liuzhe/simple-microservice">https://gitee.com/lucky_liuzhe/simple-microservice</a></p>
+<p>代码分支说明：</p>
+<ul>
+<li>
+<p>dev1 交付代码</p>
+</li>
+<li>
+<p>dev2 增加Dockerfile</p>
+</li>
+<li>
+<p>dev3 增加K8s资源编排</p>
+</li>
+<li>
+<p>dev4 增加APM监控系统</p>
+</li>
+<li>
+<p>master 最终上线</p>
+</li>
+</ul>
+<p><img src="/images/B9386F315D434B56A0406E9DBEE40414clipboard.png" alt></p>
+<p>第二步：源代码编译构建</p>
+<p>Maven项目对象模型(POM)，可以通过一小段描述信息来管理项目的构建，报告和文档的项目管 理工具软件。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install java-1.8.0-openjdk maven -y</span><br><span class="line">修改maven源：https://maven.aliyun.com/mvn/guide</span><br><span class="line">mvn clean package -Dmaven.test.skip=<span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>第三步：构建项目镜像并推送到镜像仓库</p>
+<p><img src="/images/C0AB7281B6324798840833AF5AF4B88Bclipboard.png" alt></p>
+<p>Dockerfile文件更换apk阿里云源</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">链接：https://blog.csdn.net/qq_33657251/article/details/107526842</span><br><span class="line">sed -i <span class="string">&#x27;s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g&#x27;</span> /etc/apk/repositories &amp;&amp; \</span><br><span class="line"><span class="comment">#使用sed工具将字符串dl-cdn.alpinelinux.org替换为mirrors.aliyun.com</span></span><br></pre></td></tr></table></figure>
+<p>第四步：K8s服务编排</p>
+<p><img src="/images/130E9C7374BD421C81F4C4882C1CB93Cclipboard.png" alt></p>
+<p>第五步：在K8s中部署Erureka集群和MySQL数据库</p>
+<p>1.删除Dockerfile中运行的拷贝时区的命令</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">find . -name Dockerfile | xargs -i sed -i <span class="string">&#x27;/RUN/d&#x27;</span> &#123;&#125;</span><br><span class="line">find . -name Dockerfile | xargs -i sed -i <span class="string">&#x27;/ln/d&#x27;</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="/images/3696E1B7014849EF94335658C09A15C6clipboard.png" alt></p>
+<p>2.修改源代码中eureka配置文件：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># cat eureka-service/src/main/resources/application-fat.yml</span></span><br><span class="line">eureka:</span><br><span class="line">  server:</span><br><span class="line">    renewal-percent-threshold: 0.9</span><br><span class="line">    enable-self-preservation: <span class="literal">false</span></span><br><span class="line">    eviction-interval-timer-in-ms: 40000</span><br><span class="line">  instance:</span><br><span class="line">    hostname: 127.0.0.1</span><br><span class="line">    prefer-ip-address: <span class="literal">false</span>     <span class="comment">#使用ip去通信，默认是使用主机名</span></span><br><span class="line">  client:</span><br><span class="line">    register-with-eureka: <span class="literal">true</span></span><br><span class="line">    serviceUrl:</span><br><span class="line">      defaultZone: http://eureka-0.eureka.ms:<span class="variable">$&#123;server.port&#125;</span>/eureka/,http://eureka-1.eureka.ms:<span class="variable">$&#123;server.port&#125;</span>/eureka/,http://eureka-2.eureka.ms:<span class="variable">$&#123;server.port&#125;</span>/eureka/</span><br><span class="line">    fetch-registry: <span class="literal">true</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>prefer-ip-address: false  由于使用statefulset部署默认使用主机名通信，其他微服务使用deployment部署无法使用主机名通信，dns无法解析，所以修改为使用IP去通信。</p>
+<p>Eureka集群节点Pod DNS名称：</p>
+<p><a href="http://eureka-0.eureka.ms.svc.cluster.local">http://eureka-0.eureka.ms.svc.cluster.local</a></p>
+<p><a href="http://eureka-1.eureka.ms.svc.cluster.local">http://eureka-1.eureka.ms.svc.cluster.local</a></p>
+<p><a href="http://eureka-2.eureka.ms.svc.cluster.local">http://eureka-2.eureka.ms.svc.cluster.local</a></p>
+<p>3.修改docker_build.sh 文件</p>
+<p>修改镜像仓库地址，要推送的镜像仓库项目名</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi docker_build.sh </span></span><br><span class="line"><span class="comment">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">docker_registry=192.168.0.14</span><br><span class="line">kubectl create secret docker-registry registry-pull-secret --docker-server=<span class="variable">$docker_registry</span> --docker-username=admin --docker-password=Harbor12345 --docker-email=admin@ctnrs.com -n ms</span><br><span class="line"></span><br><span class="line">service_list=<span class="string">&quot;eureka-service gateway-service order-service product-service stock-service portal-service&quot;</span></span><br><span class="line">service_list=<span class="variable">$&#123;1:-<span class="variable">$&#123;service_list&#125;</span>&#125;</span></span><br><span class="line">work_dir=$(<span class="built_in">dirname</span> <span class="variable">$PWD</span>)</span><br><span class="line">current_dir=<span class="variable">$PWD</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">cd</span> <span class="variable">$work_dir</span></span><br><span class="line">mvn clean package -Dmaven.test.skip=<span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> service <span class="keyword">in</span> <span class="variable">$service_list</span>; <span class="keyword">do</span></span><br><span class="line">   <span class="built_in">cd</span> <span class="variable">$work_dir</span>/<span class="variable">$service</span></span><br><span class="line">   <span class="keyword">if</span> <span class="built_in">ls</span> |grep biz &amp;&gt;/dev/null; <span class="keyword">then</span></span><br><span class="line">      <span class="built_in">cd</span> <span class="variable">$&#123;service&#125;</span>-biz</span><br><span class="line">   <span class="keyword">fi</span></span><br><span class="line">   service=<span class="variable">$&#123;service%-*&#125;</span></span><br><span class="line">   image_name=<span class="variable">$docker_registry</span>/ms/<span class="variable">$&#123;service&#125;</span>:$(<span class="built_in">date</span> +%F-%H-%M-%S)</span><br><span class="line">   docker build -t <span class="variable">$&#123;image_name&#125;</span> .</span><br><span class="line">   docker push <span class="variable">$&#123;image_name&#125;</span></span><br><span class="line">   sed -i -r <span class="string">&quot;s#(image: )(.*)#\1<span class="variable">$image_name</span>#&quot;</span> <span class="variable">$&#123;current_dir&#125;</span>/<span class="variable">$&#123;service&#125;</span>.yaml</span><br><span class="line">   kubectl apply -f <span class="variable">$&#123;current_dir&#125;</span>/<span class="variable">$&#123;service&#125;</span>.yaml</span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>4.创建命名空间并部署eureka服务并启动（记得部署之前要部署ingress控制器）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#创建命名空间</span></span><br><span class="line">kubectl create ns ms</span><br><span class="line"><span class="comment">#启动部署(修改各个微服务yaml文件中的requests，请求资源设置小一点0.2)</span></span><br><span class="line">./docker_build.sh eureka-service</span><br></pre></td></tr></table></figure>
+<p>5.部署MySQL</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#部署MySQL</span></span><br><span class="line">kubectl apply -f mysql.yaml</span><br><span class="line"></span><br><span class="line"><span class="comment">#导入sql文件</span></span><br><span class="line">将源代码里db目录下sql文件拷贝到mysql容器并导入：</span><br><span class="line">kubectl <span class="built_in">cp</span> order.sql mysql-68d6f45844-kc6v4:/ -n ms</span><br><span class="line">kubectl <span class="built_in">cp</span> product.sql mysql-68d6f45844-kc6v4:/ -n ms</span><br><span class="line">kubectl <span class="built_in">cp</span> stock.sql mysql-68d6f45844-kc6v4:/ -n ms</span><br><span class="line">kubectl <span class="built_in">exec</span> -it mysql-68d6f45844-kc6v4 -n ms -- bash</span><br><span class="line"><span class="comment">#mysql -u root -p$MYSQL_ROOT_PASSWORD</span></span><br><span class="line">mysql&gt; create database tb_product;</span><br><span class="line">mysql&gt; use tb_product;</span><br><span class="line">mysql&gt; <span class="built_in">source</span> /product.sql;</span><br><span class="line"></span><br><span class="line">mysql&gt; create database tb_order;</span><br><span class="line">mysql&gt; use tb_order;</span><br><span class="line">mysql&gt; <span class="built_in">source</span> /order.sql;</span><br><span class="line"></span><br><span class="line">mysql&gt; create database tb_stock;</span><br><span class="line">mysql&gt; use tb_stock;</span><br><span class="line">mysql&gt; <span class="built_in">source</span> /stock.sql;</span><br></pre></td></tr></table></figure>
+<p>MySQL Service DNS名称：mysql.ms.svc.cluster.local</p>
+<p>第六步至第九步：在K8s中部署微服务</p>
+<ul>
+<li>
+<p>部署业务程序（product、stock、order）</p>
+</li>
+<li>
+<p>部署网关（gateway）</p>
+</li>
+<li>
+<p>部署前端（portal）</p>
+</li>
+</ul>
+<p>修改product、stock、order连接数据库地址</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi product-service/product-service-biz/src/main/resources/application-fat.yml </span></span><br><span class="line">url: jdbc:mysql://mysql:3306/tb_product?characterEncoding=utf-8</span><br><span class="line"><span class="comment">#其余两个微服务同上操作</span></span><br></pre></td></tr></table></figure>
+<p>启动部署</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#修改各个微服务yaml文件中的requests，请求资源设置小一点0.2（java太吃内存）</span></span><br><span class="line"><span class="built_in">cd</span> k8s/</span><br><span class="line">./docker_build.sh product-service</span><br><span class="line">./docker_build.sh order-service</span><br><span class="line">./docker_build.sh stock-service</span><br><span class="line">./docker_build.sh gateway-service</span><br><span class="line">./docker_build.sh portal-service</span><br></pre></td></tr></table></figure>
+<p>第十步：微服务升级与扩容</p>
+<p>微服务升级：对要升级的微服务进行上述步骤打包镜像:版本，替代运行的镜像</p>
+<p>微服务扩容：对Pod扩容副本数</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl scale deployment product --replicas=2 -n ms </span><br></pre></td></tr></table></figure>
+<h3 id="生产环境踩坑经验分享">生产环境踩坑经验分享</h3>
+<p>Q：限制了容器资源，还经常被杀死？</p>
+<p>A：在JAVA1.9版本之前，是不能自动发现docker设置的 内存限制，随着应用负载起伏就会造成内存使用过大， 超过limits限制，从而触发K8s杀掉该容器。</p>
+<p>解决办法：</p>
+<ul>
+<li>
+<p>手动指定JVM堆内存大小</p>
+</li>
+<li>
+<p>配置JVM自动识别（1.9版本+才支持）-</p>
+</li>
+</ul>
+<p>XX:+UnlockExperimentalVMOptions -</p>
+<p>XX:+UseCGroupMemoryLimitForHeap</p>
+<p><img src="/images/03ABE34358714138A3E1E3B146A3AA20clipboard.png" alt></p>
+<p>Q：滚动更新期间造成流量丢失</p>
+<p>A：滚动更新触发，Pod在删除过程中，有些节点kube-proxy还没来得及同步iptables规则， 从而部分流量请求到Terminating的Pod上，导致请求出错。</p>
+<p>解决办法：配置preStop回调，在容器终止前优雅暂停5秒，给kube-proxy多预留一点时间。</p>
+<p><img src="/images/E8E29475D9EB4E6BA6A1F11B65CE7D2Cclipboard.png" alt></p>
+<p>Q：滚动更新之健康检查重要性</p>
+<p>A：滚动更新是默认发布策略，当配置健康检查时，滚动更新会根据Probe状 态来决定是否继续更新以及是否允许接入流量，这样在整个滚动更新过程中可 保证始终会有可用的Pod存在，达到平滑升级。</p>
+<p><img src="/images/543879804CF04A2EAF15509904A62A9Eclipboard.png" alt></p>
+<h2 id="四、APM监控微服务项目">四、APM监控微服务项目</h2>
+<h3 id="微服务监控需求">微服务监控需求</h3>
+<p>随着微服务架构的流行，服务按照不同的维度进行拆分，一次请求往往需要 涉及到多个服务。这些服务可能不同编程语言开发，不同团队开发，可能部 署很多副本。因此，就需要一些可以帮助理解系统行为、用于分析性能问题 的工具，以便发生故障的时候，能够快速定位和解决问题。“APM系统” 就 在这样的问题背景下产生了。</p>
+<p>APM系统 从整体维度到局部维度展示各项指标，将跨应用的所有调用链性能 信息集中展现，可方便度量整体和局部性能，并且方便找到故障产生的源头， 生产上可极大缩短故障排除时间</p>
+<p><img src="/images/C31EEB76852B48C98F86C18885A56576clipboard.png" alt></p>
+<h3 id="APM监控系统是什么">APM监控系统是什么</h3>
+<p>APM（ApplicationPerformance Management）是一种应用性能监控工具，通过汇聚业务系统各处理 环节的实时数据，分析业务系统各事务处理的交易路径和处理时间，实现对应用的全链路性能监测。</p>
+<p>相比接触的Prometheus、Zabbix这类监控系统，APM系统主要监控对应用程序内部，例如：</p>
+<ul>
+<li>
+<p>请求链路追踪：通过分析服务调用关系，绘制运行时拓扑信息，可视化展示</p>
+</li>
+<li>
+<p>调用情况衡量：各个调用环节的性能分析，例如吞吐量、响应时间、错误次数</p>
+</li>
+<li>
+<p>运行情况反馈：告警，通过调用链结合业务日志快速定位错误信息</p>
+</li>
+</ul>
+<h3 id="APM监控系统选择依据">APM监控系统选择依据</h3>
+<p>APM类监控系统有：Skywalking、Pinpoint、Zipkin</p>
+<p>关于选型，可以从以下方面考虑：</p>
+<p>探针的性能消耗</p>
+<p>APM组件服务的影响应该做到足够小，数据分析要快，性能占用小。</p>
+<p>代码的侵入性</p>
+<p>即也作为业务组件，应当尽可能少入侵或者无入侵其他业务系统，对于使用 方透明，减少开发人员的负担。</p>
+<p>监控维度</p>
+<p>分析的维度尽可能多。</p>
+<p>可扩展性</p>
+<p>一个优秀的调用跟踪系统必须支持分布式部署，具备良好的可扩展性。能够 支持的组件越多当然越好。</p>
+<h3 id="Skywalking介绍">Skywalking介绍</h3>
+<p>Skywalking 是一个分布式应用程序性能监控系统，针对微服务体系结构而设计。</p>
+<p>功能：</p>
+<ul>
+<li>
+<p>多种监控手段。可以通过语言探针和 service mesh 获得监控是数据。</p>
+</li>
+<li>
+<p>多个语言自动探针。包括 Java，.NET Core 和 Node.JS。</p>
+</li>
+<li>
+<p>轻量高效。无需大数据平台，和大量的服务器资源。</p>
+</li>
+<li>
+<p>模块化。UI、存储、集群管理都有多种机制可选。</p>
+</li>
+<li>
+<p>支持告警。</p>
+</li>
+<li>
+<p>优秀的可视化解决方案。</p>
+</li>
+</ul>
+<h3 id="Skywalking架构">Skywalking架构</h3>
+<p><img src="/images/E1BBAA9498D24E019DDE045649A3ADBBclipboard.png" alt></p>
+<p><img src="/images/6926700A02404FB6B29E6B2B5A20ADECclipboard.png" alt></p>
+<h3 id="Skywalking部署">Skywalking部署</h3>
+<p>1、部署ES数据库</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run --name elasticsearch -p 9200:9200 -e <span class="string">&quot;discovery.type=single-node&quot;</span> -d elasticsearch:7.7.0</span><br></pre></td></tr></table></figure>
+<p>2、部署Skywalking OAP</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">软件包下载地址：https://archive.apache.org/dist/skywalking/8.3.0/</span><br><span class="line">yum install java-11-openjdk –y</span><br><span class="line">tar zxvf apache-skywalking-apm-es7-8.3.0.tar.gz</span><br><span class="line"><span class="built_in">cd</span> apache-skywalking-apm-bin-es7/</span><br></pre></td></tr></table></figure>
+<p>指定数据源：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi config/application.yml</span></span><br><span class="line">storage: </span><br><span class="line">    selector: <span class="variable">$&#123;SW_STORAGE:elasticsearch7&#125;</span> <span class="comment">#这里使用elasticsearch7</span></span><br><span class="line">    ...</span><br><span class="line">    elasticsearch7: </span><br><span class="line">        nameSpace: <span class="variable">$&#123;SW_NAMESPACE:&quot;&quot;&#125;</span> </span><br><span class="line">        clusterNodes: <span class="variable">$&#123;SW_STORAGE_ES_CLUSTER_NODES:192.168.0.10:9200&#125;</span> <span class="comment"># 指定ES地址</span></span><br></pre></td></tr></table></figure>
+<p>启动OAP和UI：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">./bin/startup.sh</span><br></pre></td></tr></table></figure>
+<p>访问UI：<a href="http://IP:8080">http://IP:8080</a></p>
+<h3 id="微服务接入Skywalking监控">微服务接入Skywalking监控</h3>
+<p>内置Agent包路径：apache-skywalking-apm-bin-es7/agent/</p>
+<p>启动Java程序以探针方式集成Agent：</p>
+<p>java -jar -javaagent:/skywalking/skywalking-agent.jar=agent.service_name=&lt;项目名称 &gt;,agent.instance_name=&lt;实例名称&gt;,collector.backend_service=:11800 xxx.jar</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#使用dev4分支部署</span></span><br><span class="line"><span class="comment">#注意修改的部分：</span></span><br><span class="line">1.修改每个微服务下的Dockerfile中连接Skywalking服务器地址以及application-fat.yml</span><br><span class="line">中连接MySQL服务器的地址</span><br><span class="line">2.修改docker_build.sh脚本中连接harbor服务器的地址以及推送到镜像仓库的项目名</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="Skywalking-UI使用">Skywalking UI使用</h3>
+<p><img src="/images/F6B490280E3F405986346EF4426185CBclipboard.png" alt></p>
+<ul>
+<li>
+<p>第一栏：不同内容主题的监控面板，应用/数据库/容器等</p>
+</li>
+<li>
+<p>第二栏：操作，包括编辑/导出当前数据/倒入展示数据/不同服务端点筛选展示</p>
+</li>
+<li>
+<p>第三栏：不同纬度展示，服务/实例/端点</p>
+</li>
+</ul>
+<p><img src="/images/9EB6C2B5C2D84DC6A2593C66EE25F3E5clipboard.png" alt></p>
+<p>全局：</p>
+<ul>
+<li>
+<p>Service Load：CPM 每分钟回调次数</p>
+</li>
+<li>
+<p>Slow Services：慢响应服务，单位ms</p>
+</li>
+<li>
+<p>Un-Health Services：不健康的服务，1为满分</p>
+</li>
+<li>
+<p>Slow Endpoints：慢端点，单位ms</p>
+</li>
+<li>
+<p>Global Response Latency：百分比响应延时，不同百分 比的延时时间，单位ms</p>
+</li>
+<li>
+<p>Global Heatmap：服务响应时间热力分布图，根据时间 段内不同响应时间的数量显示颜色深度</p>
+</li>
+<li>
+<p>底部栏：展示数据的时间区间，点击可以调整</p>
+</li>
+</ul>
+<p><img src="/images/CF412AFC16BE4D87891F6104CB7F0F5Aclipboard.png" alt></p>
+<p>Service：</p>
+<ul>
+<li>
+<p>Service Apdex（数字）:当前服务的评分</p>
+</li>
+<li>
+<p>Service Apdex（折线图）：当前服务评分趋势图</p>
+</li>
+<li>
+<p>Service Avg Response Times：服务平均响应时间，单 位ms</p>
+</li>
+<li>
+<p>Service Response Time Percentile：服务响应时间百分 比，单位ms</p>
+</li>
+<li>
+<p>Successful Rate（数字）：请求成功率</p>
+</li>
+<li>
+<p>Successful Rate（折线图）：请求成功率趋势图</p>
+</li>
+<li>
+<p>Servce Load（数字）：每分钟请求数</p>
+</li>
+<li>
+<p>Servce Load（折线图）：每分钟请求数趋势图</p>
+</li>
+<li>
+<p>Servce Instances Load：服务实例的每分钟请求数</p>
+</li>
+<li>
+<p>Slow Service Instance：慢服务实例，单位ms</p>
+</li>
+<li>
+<p>Service Instance Successful Rate：服务实例成功率</p>
+</li>
+</ul>
+<p><img src="/images/C79A0E385FAE42D28182674C1412A8C3clipboard.png" alt></p>
+<p>Instance：</p>
+<ul>
+<li>
+<p>Service Instance Load：当前实例的每分钟请求数</p>
+</li>
+<li>
+<p>Service Instance Successful Rate：当前实例的请求成功率</p>
+</li>
+<li>
+<p>Service Instance Latency：当前实例的响应延时</p>
+</li>
+<li>
+<p>JVM CPU：jvm占用CPU的百分比</p>
+</li>
+<li>
+<p>JVM Memory：JVM堆内存，单位MB</p>
+</li>
+<li>
+<p>JVM GC Time：JVM垃圾回收时间，包含YGC和OGC</p>
+</li>
+<li>
+<p>JVM GC Count：JVM垃圾回收次数，包含YGC和OGC</p>
+</li>
+<li>
+<p>JVM Thread Count：JVM线程统计CLR XX：.NET服务的 指标，类似JVM虚拟机</p>
+</li>
+</ul>
+<p><img src="/images/478535722F1A4126AE64F077CC4E9F29clipboard.png" alt></p>
+<p>Instance：</p>
+<ul>
+<li>
+<p>Endpoint Load in Current Service：每个端点的每分钟请求数</p>
+</li>
+<li>
+<p>Slow Endpoints in Current Service：每个端点的最慢请求时间， 单位ms</p>
+</li>
+<li>
+<p>Successful Rate in Current Service：每个端点的请求成功率</p>
+</li>
+<li>
+<p>Endpoint Load：端点请求数趋势图</p>
+</li>
+<li>
+<p>Endpoint Avg Response Time：端点平均响应时间趋势图</p>
+</li>
+<li>
+<p>Endpoint Response Time Percentile：端口响应时间的百分位数</p>
+</li>
+<li>
+<p>Endpoint Successful Rate：端点请求成功率</p>
+</li>
+</ul>
+<p><img src="/images/2D7C6A7C67D14F698D466688DBBDCF9Fclipboard.png" alt></p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>微服务治理istio初探上</title>
+    <url>/2023/12/25/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8A/</url>
+    <content><![CDATA[<h2 id="Service-Mesh">Service Mesh</h2>
+<p>Service Mesh 的中文译为 “服务网格” ，是一个用于处理服务 和服务之间通信的基础设施层，它负责为构建复杂的云原生应用 传递可靠的网络请求，并为服务通信实现了微服务所需的基本组 件功能，例如服务发现、负载均衡、监控、流量管理、访问控制 等。在实践中，服务网格通常实现为一组和应用程序部署在一起 的轻量级的网络代理，但对应用程序来说是透明的。</p>
+<p>右图，绿色方块为应用服务，蓝色方块为 Sidecar Proxy，应用 服务之间通过 Sidecar Proxy 进行通信，整个服务通信形成图中 的蓝色网络连线，图中所有蓝色部分就形成一个网络，这个就是 服务网格名字的由来。</p>
+<p><img src="/images/4B16166E7B5D4A9C8EF473CEF39CBAFDclipboard.png" alt></p>
+<h2 id="Service-Mesh特点">Service Mesh特点</h2>
+<p>Service Mesh有以下特点：</p>
+<ul>
+<li>
+<p>治理能力独立（Sidecar）</p>
+</li>
+<li>
+<p>应用程序无感知</p>
+</li>
+<li>
+<p>服务通信的基础设施层</p>
+</li>
+<li>
+<p>解耦应用程序的重试/超时、监控、追踪和服务发现</p>
+</li>
+</ul>
+<p><img src="/images/C29CFDD8671144E4B028504B2E4966CEclipboard.png" alt></p>
+<h2 id="Istio概述">Istio概述</h2>
+<p>Isito是Service Mesh的产品化落地，是目前最受欢迎的服务网格，功能丰富、成熟度高。</p>
+<p>Linkerd是世界上第一个服务网格类的产品。</p>
+<ul>
+<li>
+<p>连接（Connect）</p>
+</li>
+<li>
+<p>流量管理</p>
+</li>
+<li>
+<p>负载均衡</p>
+</li>
+<li>
+<p>灰度发布</p>
+</li>
+<li>
+<p>安全（Secure）</p>
+</li>
+<li>
+<p>认证 - 鉴权</p>
+</li>
+<li>
+<p>控制（Control）</p>
+</li>
+<li>
+<p>限流</p>
+</li>
+<li>
+<p>ACL</p>
+</li>
+<li>
+<p>观察（Observe）</p>
+</li>
+<li>
+<p>监控</p>
+</li>
+<li>
+<p>调用链</p>
+</li>
+</ul>
+<p><img src="/images/34F3225902F843979C4F1E091D8D84ABclipboard.png" alt></p>
+<p><img src="/images/3F033BCA807D4B148FEBD1030E2FA455clipboard.png" alt></p>
+<h2 id="Istio版本变化">Istio版本变化</h2>
+<p>在Istio1.5版本发生了一个重大变革，彻底推翻原有控制平面的架构，将有原有多个组件整合为单体结构 “istiod”，同时废弃了Mixer 组件，如果你正在使用之前版本，必须了解这些变化。</p>
+<p><img src="/images/3432DCE395E34C519D680A715D39AA2Dclipboard.png" alt></p>
+<h2 id="Istio架构与组件">Istio架构与组件</h2>
+<p>Istio服务网格在逻辑上分为数据平面和控制平面。</p>
+<ul>
+<li>控制平面：使用全新的部署模式：istiod，这个组件负责处理Sidecar注入、证书分发、配置管理等功能，替 代 原有组件，降低复杂度，提高易用性。</li>
+</ul>
+<p>Pilot：策略配置组件，为Proxy提供服务发现、智能路由、错误处理等。</p>
+<p>Citadel：安全组件，提供证书生成下发、加密通信、访问控制。</p>
+<p>Galley：配置管理、验证、分发。</p>
+<ul>
+<li>数据平面：由一组Proxy组成，这些Proxy负责所有微服务网络通信，实现高效转发和策略。使用envoy实现， envoy是一个基于C++实现的L4/L7 Proxy转发器，是Istio在数据平面唯一的组件。</li>
+</ul>
+<h2 id="Istio基本概念">Istio基本概念</h2>
+<p>Istio 有 4 个配置资源，落地所有流量管理需求：</p>
+<ul>
+<li>
+<p>VirtualService（虚拟服务）：实现服务请求路由规则的功能。</p>
+</li>
+<li>
+<p>DestinationRule（目标规则）：实现目标服务的负载均衡、服务发现、故障处理和故障注入的功能。</p>
+</li>
+<li>
+<p>Gateway（网关）：让服务网格内的服务，可以被全世界看到。</p>
+</li>
+<li>
+<p>ServiceEntry（服务入口） ：允许管理网格外的服务的流量。</p>
+</li>
+</ul>
+<h2 id="部署Istio">部署Istio</h2>
+<p>官方文档：<a href="https://preliminary.istio.io/latest/zh/docs/setup/getting-started">https://preliminary.istio.io/latest/zh/docs/setup/getting-started</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -L https://istio.io/downloadIstio | sh -</span><br><span class="line">tar zxvf istio-1.8.2-linux.tar.gz</span><br><span class="line"><span class="built_in">cd</span> istio-1.8.2</span><br><span class="line"><span class="built_in">mv</span> bin/istioctl /usr/bin</span><br><span class="line">istioctl profile list</span><br><span class="line">istioctl install</span><br><span class="line">或者istioctl install --<span class="built_in">set</span> profile=default -y</span><br><span class="line"><span class="comment">#查看具体的profile开启了哪些组件可用如下命令</span></span><br><span class="line">istioctl profile dump [default|demo|minimal|remote|empty|preview]</span><br><span class="line">kubectl get pods -n istio-system </span><br><span class="line">kubectl get svc -n istio-system</span><br><span class="line"></span><br><span class="line"><span class="comment">#卸载：</span></span><br><span class="line">istioctl manifest generate | kubectl delete -f -</span><br></pre></td></tr></table></figure>
+<h2 id="Sidercar注入">Sidercar注入</h2>
+<p>部署httpbin Web示例：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> istio-1.8.2/samples/httpbin</span><br></pre></td></tr></table></figure>
+<h1>手动注入</h1>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f &lt;(istioctl kube-inject -f httpbin-nodeport.yaml)</span><br><span class="line">或者</span><br><span class="line">istioctl kube-inject -f httpbin-nodeport.yaml |kubectl apply -f -</span><br></pre></td></tr></table></figure>
+<h1>自动注入（给命名空间打指定标签，启用自动注入）</h1>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl label namespace default istio-injection=enabled</span><br><span class="line">kubectl get ns --show-labels </span><br><span class="line">kubectl apply -f httpbin-gateway.yaml</span><br></pre></td></tr></table></figure>
+<p>IngressGateway NodePort访问地址：<a href="http://192.168.0.11:32615/">http://192.168.0.11:32615/</a></p>
+<p><img src="/images/E0D362E4B99243DB809D6E9151AB8E8Aclipboard.png" alt></p>
+<p><img src="/images/85AAA642A7A041AF94483F9570F5528Bclipboard.png" alt></p>
+<h2 id="Istio与K8s集成流程">Istio与K8s集成流程</h2>
+<p><img src="/images/969A593798B846F5957B37EFB3D3260Dclipboard.png" alt></p>
+<h2 id="服务网关：Gateway">服务网关：Gateway</h2>
+<p><img src="/images/39B39E61B5E448E78E446992BBA91D02clipboard.png" alt></p>
+<p>Gateway为网格内服务提供负载均衡器，提供以下功能：</p>
+<ul>
+<li>
+<p>L4-L7的负载均衡</p>
+</li>
+<li>
+<p>对外的mTLS</p>
+</li>
+</ul>
+<p>Gateway根据流入流出方向分为：</p>
+<ul>
+<li>
+<p>IngressGateway：接收外部访问，并将流量转发到网格内的服务。</p>
+</li>
+<li>
+<p>EgressGateway：网格内服务访问外部应用。</p>
+</li>
+</ul>
+<p>在实际部署中，K8s集群一般部署在内网，为了将暴露到互联 网，会在前面加一层负载均衡器，用于流量入口，将用户访问 的域名传递给IngressGateway，IngressGateway再转发到不 同应用。</p>
+<p><img src="/images/EB6991F8CF47469283BDA4DE19031C16clipboard.png" alt></p>
+<p>学习：</p>
+<p><a href="https://www.it610.com/article/1292898160674414592.htm">https://www.it610.com/article/1292898160674414592.htm</a></p>
+<p><a href="https://blog.csdn.net/lswzw/article/details/104745617/">https://blog.csdn.net/lswzw/article/details/104745617/</a></p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>微服务治理istio初探下</title>
+    <url>/2023/01/10/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8B/</url>
+    <content><![CDATA[<h2 id="Istio-流量管理核心资源">Istio 流量管理核心资源</h2>
+<p>核心资源：</p>
+<ul>
+<li>
+<p>VirtualService（虚拟服务）</p>
+</li>
+<li>
+<p>DestinationRule（目标规则）</p>
+</li>
+<li>
+<p>Gateway（网关）</p>
+</li>
+<li>
+<p>ServiceEntry（服务入口）</p>
+</li>
+</ul>
+<h2 id="VirtualService">VirtualService</h2>
+<p>VirtualService（虚拟服务）：</p>
+<ul>
+<li>
+<p>定义路由规则</p>
+</li>
+<li>
+<p>描述满足条件的请求去哪里</p>
+</li>
+</ul>
+<p><img src="/images/3985D1EC0AD44499924A416B5CAF5E4Fclipboard.png" alt></p>
+<p><img src="/images/24B29DE7AB414C75BB2C8025DC474071clipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get vs <span class="comment"># 查看已创建的虚拟服务</span></span><br></pre></td></tr></table></figure>
+<h2 id="DestinationRule">DestinationRule</h2>
+<p>DestinationRule（目标规则）：定义虚拟服务路由目标地址的 真实地址，即子集（subset），支持多种负载均衡策略：</p>
+<ul>
+<li>
+<p>随机</p>
+</li>
+<li>
+<p>权重</p>
+</li>
+<li>
+<p>最小请求数</p>
+</li>
+</ul>
+<p><img src="/images/338D88EB1A1D4B22A61C94DC6721A74Bclipboard.png" alt></p>
+<h2 id="Gateway">Gateway</h2>
+<p>Gateway（网关）：为网格内服务对外访问入口，管理进出网格的流量，根据流入流出方向分为：</p>
+<ul>
+<li>
+<p>IngressGateway：接收外部访问，并将流量转发到网格内的服务。</p>
+</li>
+<li>
+<p>EgressGateway：网格内服务访问外部应用。</p>
+</li>
+</ul>
+<p><img src="/images/22624576E1B44322A5343B271D3F52D6clipboard.png" alt></p>
+<p>Gateway（网关）与Kubernetes Ingress有什么区别？</p>
+<p>Kubernetes Ingress与Getaway都是用于为集群内服务提供访问入口， 但Ingress主要功能比较单一，不易于Istio现有流量管理功能集成。</p>
+<p>目前Gateway支持的功能：</p>
+<ul>
+<li>
+<p>支持L4-L7的负载均衡</p>
+</li>
+<li>
+<p>支持HTTPS和mTLS</p>
+</li>
+<li>
+<p>支持流量镜像、熔断等</p>
+</li>
+</ul>
+<p><img src="/images/3E61532C0C1F4DECBF56AD070367167Fclipboard.png" alt></p>
+<p><img src="/images/0918E22244E14EECBE6CA3F81F8D8814clipboard.png" alt></p>
+<p><img src="/images/29A976A68E5E4904BD7CC7889F7F28CAclipboard.png" alt></p>
+<h2 id="ServiceEntry">ServiceEntry</h2>
+<p>ServiceEntry（服务入口）：将网格外部服务添加到网格内， 像网格内其他服务一样管理。</p>
+<p><img src="/images/9165DAC827F2412FA08DA86174EDA13Fclipboard.png" alt></p>
+<h2 id="Istio-流量管理案例（主流发布方案介绍，灰度发布，流量镜像）">Istio 流量管理案例（主流发布方案介绍，灰度发布，流量镜像）</h2>
+<h2 id="主流发布方案介绍">主流发布方案介绍</h2>
+<p>主流发布方案：</p>
+<ul>
+<li>
+<p>蓝绿发布</p>
+</li>
+<li>
+<p>滚动发布</p>
+</li>
+<li>
+<p>灰度发布（金丝雀发布）</p>
+</li>
+<li>
+<p>A/B Test</p>
+</li>
+</ul>
+<p>蓝绿发布</p>
+<p>项目逻辑上分为AB组，在项目升级时，首先把A组从负载均衡 中摘除，进行新版本的部署。B组仍然继续提供服务。A组升级 完成上线，B组从负载均衡中摘除。</p>
+<p>特点：</p>
+<ul>
+<li>
+<p>策略简单</p>
+</li>
+<li>
+<p>升级/回滚速度快</p>
+</li>
+<li>
+<p>用户无感知，平滑过渡</p>
+</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>
+<p>需要两倍以上服务器资源</p>
+</li>
+<li>
+<p>短时间内浪费一定资源成本</p>
+</li>
+<li>
+<p>有问题影响范围大</p>
+</li>
+</ul>
+<p><img src="/images/4320B5549A7C4DB8A4F9444D5665E972clipboard.png" alt></p>
+<p>滚动发布</p>
+<p>每次只升级一个或多个服务，升级完成后加入生产环境， 不断执行这个过程，直到集群中的全部旧版升级新版本。 Kubernetes的默认发布策略。</p>
+<p>特点：</p>
+<ul>
+<li>用户无感知，平滑过渡</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>
+<p>部署周期长</p>
+</li>
+<li>
+<p>发布策略较复杂</p>
+</li>
+<li>
+<p>不易回滚</p>
+</li>
+<li>
+<p>有影响范围较大</p>
+</li>
+</ul>
+<p><img src="/images/9F0A5D41A3584A00BD43485570FB2121clipboard.png" alt></p>
+<p>灰度发布（金丝雀发布）</p>
+<p>只升级部分服务，即让一部分用户继续用老版本，一部分用户 开始用新版本，如果用户对新版本没有什么意见，那么逐步扩 大范围，把所有用户都迁移到新版本上面来。</p>
+<p>特点：</p>
+<ul>
+<li>
+<p>保证整体系统稳定性</p>
+</li>
+<li>
+<p>用户无感知，平滑过渡</p>
+</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>自动化要求高</li>
+</ul>
+<p><img src="/images/A1AA8F206D844340A64D9467AB5605A0clipboard.png" alt></p>
+<h2 id="灰度发布">灰度发布</h2>
+<p>A/B Test</p>
+<p>灰度发布的一种方式，主要对特定用户采样后，对收集到的反 馈数据做相关对比，然后根据比对结果作出决策。用来测试应 用功能表现的方法，侧重应用的可用性，受欢迎程度等，最后 决定是否升级。</p>
+<p><img src="/images/851466FB5D89403D93CFB6BF8E5A8731clipboard.png" alt></p>
+<h2 id="灰度发布：部署Bookinfo微服务项目">灰度发布：部署Bookinfo微服务项目</h2>
+<p>Bookinfo 是官方提供一个图书评测系统微服务项目示例，</p>
+<p>分为四个微服务：</p>
+<p><img src="/images/CEDE7A347482448B8222D62B9C714972clipboard.png" alt></p>
+<p><img src="/images/E4CCFEAA3F414E2591535D118549476Dclipboard.png" alt></p>
+<p>1、创建命名空间并开启自动注入</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create ns bookinfo</span><br><span class="line">kubectl label namespace bookinfo istio-injection=enabled</span><br></pre></td></tr></table></figure>
+<p>2、部署应用YAML</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> istio-1.8.2/samples/bookinfo</span><br><span class="line">kubectl apply -f platform/kube/bookinfo.yaml -n bookinfo</span><br><span class="line">kubectl get pod -n bookinfo</span><br></pre></td></tr></table></figure>
+<p>3、创建Ingress网关</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f networking/bookinfo-gateway.yaml -n bookinfo</span><br></pre></td></tr></table></figure>
+<p>4、确认网关和访问地址，访问应用页面</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get pod,svc -n istio-system </span><br></pre></td></tr></table></figure>
+<p>访问地址：<a href="http://192.168.1.11:31265/productpage">http://192.168.1.11:31265/productpage</a></p>
+<p><img src="/images/328BD108F2504AB8AA40387642BAF9A0clipboard.png" alt></p>
+<p>reviews 微服务部署 3 个版本，用于测试灰度发布效果：</p>
+<ul>
+<li>
+<p>v1 版本不会调用 ratings 服务</p>
+</li>
+<li>
+<p>v2 版本会调用 ratings 服务，并使用 5个黑色五角星来显示评分信息</p>
+</li>
+<li>
+<p>v3 版本会调用 ratings 服务，并使用5个红色五角星 来显示评分信息</p>
+</li>
+</ul>
+<h2 id="灰度发布：基于权重的路由">灰度发布：基于权重的路由</h2>
+<p><img src="/images/1471C2B6984044A4A2CBCA760E505E1Aclipboard.png" alt></p>
+<p>任务：</p>
+<ol>
+<li>
+<p>流量全部发送到reviews v1版本（不带五角星）</p>
+</li>
+<li>
+<p>将90%的流量发送到reviews v1版本，另外10%的流量发送到reviews v2版本（5个黑色五角星）， 最后完全切换到v2版本</p>
+</li>
+<li>
+<p>将50%的流量发送到v2版本，另外50%的流量发送到v3版本（5个红色五角星）</p>
+</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f networking/virtual-service-all-v1.yaml -n bookinfo</span><br><span class="line">kubectl apply -f networking/destination-rule-all.yaml -n bookinfo</span><br><span class="line">kubectl apply -f networking/virtual-service-reviews-90-10.yaml -n bookinfo</span><br><span class="line">kubectl apply -f networking/virtual-service-reviews-v2-v3.yaml -n bookinfo</span><br></pre></td></tr></table></figure>
+<h2 id="灰度发布：基于请求内容的路由">灰度发布：基于请求内容的路由</h2>
+<p><img src="/images/E85755EF9FC14456ADDB3EED6C60BECFclipboard.png" alt></p>
+<p>任务：将特定用户的请求发送到reviews v2版本（5个黑色五角星），其他用户则不受影响（v3）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f networking/virtual-service-reviews-jason-v2-v3.yaml -n bookinfo</span><br></pre></td></tr></table></figure>
+<h2 id="灰度发布：工作流程">灰度发布：工作流程</h2>
+<p><img src="/images/F236CE642CBE4A1381B423D30217641Fclipboard.png" alt></p>
+<p>1.将部署应用的deployment里pod标签增加一个&quot;version :v1&quot;</p>
+<p>2.部署deployment接入istio</p>
+<p>3.目标规则关联服务版本标签</p>
+<p>4.虚拟服务实现灰度发布</p>
+<h2 id="流量镜像">流量镜像</h2>
+<p>流量镜像：将请求复制一份，并根据策略来处理这个请求，不会影响真实请求。</p>
+<p>应用场景：</p>
+<ul>
+<li>
+<p>线上问题排查</p>
+</li>
+<li>
+<p>用真实的流量验证应用功能是否正常</p>
+</li>
+<li>
+<p>对镜像环境压力测试</p>
+</li>
+<li>
+<p>收集真实流量数据进行分析</p>
+</li>
+<li></li>
+</ul>
+<p>验证模拟测试：（访问nginx-v1版本的流量复制到nginx-v2版本）</p>
+<p><a href="/attachments/8794669FE2E04A64A668905476955E7Fazhe.zip">azhe.zip</a></p>
+<p><img src="/images/4DD72B0F055D4DB4965DF0F30E44986Aclipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl label namespaces default istio-injection=enabled</span><br><span class="line"><span class="built_in">cd</span> azhe/</span><br><span class="line">kubectl apply -f .</span><br><span class="line">kubectl logs nginx-v1-7fcbd8f56f-s9s4m -c nginx  -f</span><br><span class="line">kubectl logs  nginx-v2-596b8cbb66-lcnnc -c nginx -f </span><br><span class="line">kubectl get svc -n istio-system </span><br></pre></td></tr></table></figure>
+<p>访问页面验证，访问nginx-v1版本的流量复制到nginx-v2版本</p>
+<p>nodeport暴露的端口：<a href="http://192.168.0.12:31994/">http://192.168.0.12:31994/</a></p>
+<h2 id="将应用暴露到互联网">将应用暴露到互联网</h2>
+<p>在实际部署中，K8s集群一般部署在内网，为了将暴露到互联 网，会在前面加一层负载均衡器（公有云LB产品、Nginx、 LVS等），用于流量入口，将用户访问的域名传递给 IngressGateway，IngressGateway再转发到不同应用。</p>
+<p><img src="/images/B14BFF55B56245619CE3945DC864BFC2clipboard.png" alt></p>
+<p>1.安装nginx并配置</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line">    server_name  localhost;</span><br><span class="line">    ....</span><br><span class="line">location / &#123;</span><br><span class="line">         proxy_http_version 1.1; <span class="comment">#必须指定不然会出现422，默认只支持1.1，upstream默认支持1.0</span></span><br><span class="line">         proxy_set_header Host <span class="variable">$host</span>;</span><br><span class="line">         proxy_pass http://192.168.0.11:31994;</span><br><span class="line">         &#125;</span><br></pre></td></tr></table></figure>
+<h2 id="2-在Gateway和VirtualService添加接收流量入口的域名">2.在Gateway和VirtualService添加接收流量入口的域名</h2>
+<p><img src="/images/FA8B624FF34C4A568996E2B2CED399C1clipboard.png" alt></p>
+<p>3.宿主机绑定nginx负载均衡ip关联的hosts解析，<a href="http://xn--nginx-408hr55ozm5bnft.ctnrs.com">然后访问nginx.ctnrs.com</a></p>
+<h2 id="可视化监控">可视化监控</h2>
+<p>Istio集成了多维度监控系统：</p>
+<ul>
+<li>
+<p>使用Kiali观测应用</p>
+</li>
+<li>
+<p>使用Prometheus+Grafana查看系统状态</p>
+</li>
+<li>
+<p>使用Jaeger进行链路追踪</p>
+</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f samples/addons/prometheus.yaml -n istio-system</span><br><span class="line">kubectl apply -f samples/addons/grafana.yaml -n istio-system</span><br><span class="line">kubectl apply -f samples/addons/jaeger.yaml -n istio-system</span><br><span class="line">kubectl apply -f samples/addons/kiali.yaml -n istio-system</span><br></pre></td></tr></table></figure>
+<p>注：service默认使用ClusterIP，浏览器访问需要改成NodePort后再apply</p>
+<h2 id="使用Kiali观测应用">使用Kiali观测应用</h2>
+<p>Kiali是一款Isito服务网格可视化工具，提供以下功能：</p>
+<ul>
+<li>
+<p>Istio 的可观察性控制台</p>
+</li>
+<li>
+<p>通过服务拓扑帮助你理解服务网格的结构</p>
+</li>
+<li>
+<p>提供网格的健康状态视图</p>
+</li>
+<li>
+<p>具有服务网格配置功能</p>
+</li>
+</ul>
+<p><img src="/images/2184D9031775451C98121A0C77B15479clipboard.png" alt></p>
+<h2 id="使用Prometheus-Grafana查看系统状态">使用Prometheus+Grafana查看系统状态</h2>
+<p>Prometheus用于收集Isito指标，通过Grafana可视化展示。</p>
+<p>仪表盘：</p>
+<ul>
+<li>
+<p>Istio Control Plane Dashboard：控制面板仪表盘</p>
+</li>
+<li>
+<p>Istio Mesh Dashboard：网格仪表盘，查看应用（服务）数据</p>
+</li>
+<li>
+<p>Istio Performance Dashboard：查看Istio 自身（各组件）数据</p>
+</li>
+<li>
+<p>Istio Service Dashboard：服务仪表盘</p>
+</li>
+<li>
+<p>Istio Workload Dashboard：工作负载仪表盘</p>
+</li>
+<li>
+<p>Istio Wasm Extension Dashboard</p>
+</li>
+</ul>
+<p><img src="/images/F21B64A414A24EABA49FD57FCC5DC342clipboard.png" alt></p>
+<h2 id="使用Jaeger进行链路追踪">使用Jaeger进行链路追踪</h2>
+<p>Jaeger是Uber开源的分布式追踪系统，用于微服务的监控 和全链路追踪。</p>
+<p><img src="/images/86CF0CD21B4B4236BDB44435A7918C82clipboard.png" alt></p>
 ]]></content>
       <categories>
         <category>K8S</category>

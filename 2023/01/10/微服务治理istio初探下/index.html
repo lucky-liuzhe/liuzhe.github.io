@@ -1,0 +1,459 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>微服务治理istio初探下 | 阿哲技术之路</title><meta name="author" content="阿哲"><meta name="copyright" content="阿哲"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Istio 流量管理核心资源 核心资源：   VirtualService（虚拟服务）   DestinationRule（目标规则）   Gateway（网关）   ServiceEntry（服务入口）   VirtualService VirtualService（虚拟服务）：   定义路由规则   描述满足条件的请求去哪里     kubectl get vs # 查看已创建的虚拟服务 De">
+<meta property="og:type" content="article">
+<meta property="og:title" content="微服务治理istio初探下">
+<meta property="og:url" content="http://liuzhemax.github.io/2023/01/10/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8B/index.html">
+<meta property="og:site_name" content="阿哲技术之路">
+<meta property="og:description" content="Istio 流量管理核心资源 核心资源：   VirtualService（虚拟服务）   DestinationRule（目标规则）   Gateway（网关）   ServiceEntry（服务入口）   VirtualService VirtualService（虚拟服务）：   定义路由规则   描述满足条件的请求去哪里     kubectl get vs # 查看已创建的虚拟服务 De">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg">
+<meta property="article:published_time" content="2023-01-10T13:45:32.000Z">
+<meta property="article:modified_time" content="2024-05-25T01:06:48.324Z">
+<meta property="article:author" content="阿哲">
+<meta property="article:tag" content="K8S">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="shortcut icon" href="/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="canonical" href="http://liuzhemax.github.io/2023/01/10/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8B/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '微服务治理istio初探下',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-05-25 09:06:48'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">33</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="阿哲技术之路"><img class="site-icon" src="/medias/%E6%90%AC%E7%A0%96.jpg"/><span class="site-name">阿哲技术之路</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">微服务治理istio初探下</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2023-01-10T13:45:32.000Z" title="发表于 2023-01-10 21:45:32">2023-01-10</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-05-25T01:06:48.324Z" title="更新于 2024-05-25 09:06:48">2024-05-25</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/K8S/">K8S</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="微服务治理istio初探下"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h2 id="Istio-流量管理核心资源">Istio 流量管理核心资源</h2>
+<p>核心资源：</p>
+<ul>
+<li>
+<p>VirtualService（虚拟服务）</p>
+</li>
+<li>
+<p>DestinationRule（目标规则）</p>
+</li>
+<li>
+<p>Gateway（网关）</p>
+</li>
+<li>
+<p>ServiceEntry（服务入口）</p>
+</li>
+</ul>
+<h2 id="VirtualService">VirtualService</h2>
+<p>VirtualService（虚拟服务）：</p>
+<ul>
+<li>
+<p>定义路由规则</p>
+</li>
+<li>
+<p>描述满足条件的请求去哪里</p>
+</li>
+</ul>
+<p><img src="/images/3985D1EC0AD44499924A416B5CAF5E4Fclipboard.png" alt></p>
+<p><img src="/images/24B29DE7AB414C75BB2C8025DC474071clipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get vs <span class="comment"># 查看已创建的虚拟服务</span></span><br></pre></td></tr></table></figure>
+<h2 id="DestinationRule">DestinationRule</h2>
+<p>DestinationRule（目标规则）：定义虚拟服务路由目标地址的 真实地址，即子集（subset），支持多种负载均衡策略：</p>
+<ul>
+<li>
+<p>随机</p>
+</li>
+<li>
+<p>权重</p>
+</li>
+<li>
+<p>最小请求数</p>
+</li>
+</ul>
+<p><img src="/images/338D88EB1A1D4B22A61C94DC6721A74Bclipboard.png" alt></p>
+<h2 id="Gateway">Gateway</h2>
+<p>Gateway（网关）：为网格内服务对外访问入口，管理进出网格的流量，根据流入流出方向分为：</p>
+<ul>
+<li>
+<p>IngressGateway：接收外部访问，并将流量转发到网格内的服务。</p>
+</li>
+<li>
+<p>EgressGateway：网格内服务访问外部应用。</p>
+</li>
+</ul>
+<p><img src="/images/22624576E1B44322A5343B271D3F52D6clipboard.png" alt></p>
+<p>Gateway（网关）与Kubernetes Ingress有什么区别？</p>
+<p>Kubernetes Ingress与Getaway都是用于为集群内服务提供访问入口， 但Ingress主要功能比较单一，不易于Istio现有流量管理功能集成。</p>
+<p>目前Gateway支持的功能：</p>
+<ul>
+<li>
+<p>支持L4-L7的负载均衡</p>
+</li>
+<li>
+<p>支持HTTPS和mTLS</p>
+</li>
+<li>
+<p>支持流量镜像、熔断等</p>
+</li>
+</ul>
+<p><img src="/images/3E61532C0C1F4DECBF56AD070367167Fclipboard.png" alt></p>
+<p><img src="/images/0918E22244E14EECBE6CA3F81F8D8814clipboard.png" alt></p>
+<p><img src="/images/29A976A68E5E4904BD7CC7889F7F28CAclipboard.png" alt></p>
+<h2 id="ServiceEntry">ServiceEntry</h2>
+<p>ServiceEntry（服务入口）：将网格外部服务添加到网格内， 像网格内其他服务一样管理。</p>
+<p><img src="/images/9165DAC827F2412FA08DA86174EDA13Fclipboard.png" alt></p>
+<h2 id="Istio-流量管理案例（主流发布方案介绍，灰度发布，流量镜像）">Istio 流量管理案例（主流发布方案介绍，灰度发布，流量镜像）</h2>
+<h2 id="主流发布方案介绍">主流发布方案介绍</h2>
+<p>主流发布方案：</p>
+<ul>
+<li>
+<p>蓝绿发布</p>
+</li>
+<li>
+<p>滚动发布</p>
+</li>
+<li>
+<p>灰度发布（金丝雀发布）</p>
+</li>
+<li>
+<p>A/B Test</p>
+</li>
+</ul>
+<p>蓝绿发布</p>
+<p>项目逻辑上分为AB组，在项目升级时，首先把A组从负载均衡 中摘除，进行新版本的部署。B组仍然继续提供服务。A组升级 完成上线，B组从负载均衡中摘除。</p>
+<p>特点：</p>
+<ul>
+<li>
+<p>策略简单</p>
+</li>
+<li>
+<p>升级/回滚速度快</p>
+</li>
+<li>
+<p>用户无感知，平滑过渡</p>
+</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>
+<p>需要两倍以上服务器资源</p>
+</li>
+<li>
+<p>短时间内浪费一定资源成本</p>
+</li>
+<li>
+<p>有问题影响范围大</p>
+</li>
+</ul>
+<p><img src="/images/4320B5549A7C4DB8A4F9444D5665E972clipboard.png" alt></p>
+<p>滚动发布</p>
+<p>每次只升级一个或多个服务，升级完成后加入生产环境， 不断执行这个过程，直到集群中的全部旧版升级新版本。 Kubernetes的默认发布策略。</p>
+<p>特点：</p>
+<ul>
+<li>用户无感知，平滑过渡</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>
+<p>部署周期长</p>
+</li>
+<li>
+<p>发布策略较复杂</p>
+</li>
+<li>
+<p>不易回滚</p>
+</li>
+<li>
+<p>有影响范围较大</p>
+</li>
+</ul>
+<p><img src="/images/9F0A5D41A3584A00BD43485570FB2121clipboard.png" alt></p>
+<p>灰度发布（金丝雀发布）</p>
+<p>只升级部分服务，即让一部分用户继续用老版本，一部分用户 开始用新版本，如果用户对新版本没有什么意见，那么逐步扩 大范围，把所有用户都迁移到新版本上面来。</p>
+<p>特点：</p>
+<ul>
+<li>
+<p>保证整体系统稳定性</p>
+</li>
+<li>
+<p>用户无感知，平滑过渡</p>
+</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>自动化要求高</li>
+</ul>
+<p><img src="/images/A1AA8F206D844340A64D9467AB5605A0clipboard.png" alt></p>
+<h2 id="灰度发布">灰度发布</h2>
+<p>A/B Test</p>
+<p>灰度发布的一种方式，主要对特定用户采样后，对收集到的反 馈数据做相关对比，然后根据比对结果作出决策。用来测试应 用功能表现的方法，侧重应用的可用性，受欢迎程度等，最后 决定是否升级。</p>
+<p><img src="/images/851466FB5D89403D93CFB6BF8E5A8731clipboard.png" alt></p>
+<h2 id="灰度发布：部署Bookinfo微服务项目">灰度发布：部署Bookinfo微服务项目</h2>
+<p>Bookinfo 是官方提供一个图书评测系统微服务项目示例，</p>
+<p>分为四个微服务：</p>
+<p><img src="/images/CEDE7A347482448B8222D62B9C714972clipboard.png" alt></p>
+<p><img src="/images/E4CCFEAA3F414E2591535D118549476Dclipboard.png" alt></p>
+<p>1、创建命名空间并开启自动注入</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create ns bookinfo</span><br><span class="line">kubectl label namespace bookinfo istio-injection=enabled</span><br></pre></td></tr></table></figure>
+<p>2、部署应用YAML</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> istio-1.8.2/samples/bookinfo</span><br><span class="line">kubectl apply -f platform/kube/bookinfo.yaml -n bookinfo</span><br><span class="line">kubectl get pod -n bookinfo</span><br></pre></td></tr></table></figure>
+<p>3、创建Ingress网关</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f networking/bookinfo-gateway.yaml -n bookinfo</span><br></pre></td></tr></table></figure>
+<p>4、确认网关和访问地址，访问应用页面</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get pod,svc -n istio-system </span><br></pre></td></tr></table></figure>
+<p>访问地址：<a target="_blank" rel="noopener" href="http://192.168.1.11:31265/productpage">http://192.168.1.11:31265/productpage</a></p>
+<p><img src="/images/328BD108F2504AB8AA40387642BAF9A0clipboard.png" alt></p>
+<p>reviews 微服务部署 3 个版本，用于测试灰度发布效果：</p>
+<ul>
+<li>
+<p>v1 版本不会调用 ratings 服务</p>
+</li>
+<li>
+<p>v2 版本会调用 ratings 服务，并使用 5个黑色五角星来显示评分信息</p>
+</li>
+<li>
+<p>v3 版本会调用 ratings 服务，并使用5个红色五角星 来显示评分信息</p>
+</li>
+</ul>
+<h2 id="灰度发布：基于权重的路由">灰度发布：基于权重的路由</h2>
+<p><img src="/images/1471C2B6984044A4A2CBCA760E505E1Aclipboard.png" alt></p>
+<p>任务：</p>
+<ol>
+<li>
+<p>流量全部发送到reviews v1版本（不带五角星）</p>
+</li>
+<li>
+<p>将90%的流量发送到reviews v1版本，另外10%的流量发送到reviews v2版本（5个黑色五角星）， 最后完全切换到v2版本</p>
+</li>
+<li>
+<p>将50%的流量发送到v2版本，另外50%的流量发送到v3版本（5个红色五角星）</p>
+</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f networking/virtual-service-all-v1.yaml -n bookinfo</span><br><span class="line">kubectl apply -f networking/destination-rule-all.yaml -n bookinfo</span><br><span class="line">kubectl apply -f networking/virtual-service-reviews-90-10.yaml -n bookinfo</span><br><span class="line">kubectl apply -f networking/virtual-service-reviews-v2-v3.yaml -n bookinfo</span><br></pre></td></tr></table></figure>
+<h2 id="灰度发布：基于请求内容的路由">灰度发布：基于请求内容的路由</h2>
+<p><img src="/images/E85755EF9FC14456ADDB3EED6C60BECFclipboard.png" alt></p>
+<p>任务：将特定用户的请求发送到reviews v2版本（5个黑色五角星），其他用户则不受影响（v3）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f networking/virtual-service-reviews-jason-v2-v3.yaml -n bookinfo</span><br></pre></td></tr></table></figure>
+<h2 id="灰度发布：工作流程">灰度发布：工作流程</h2>
+<p><img src="/images/F236CE642CBE4A1381B423D30217641Fclipboard.png" alt></p>
+<p>1.将部署应用的deployment里pod标签增加一个&quot;version :v1&quot;</p>
+<p>2.部署deployment接入istio</p>
+<p>3.目标规则关联服务版本标签</p>
+<p>4.虚拟服务实现灰度发布</p>
+<h2 id="流量镜像">流量镜像</h2>
+<p>流量镜像：将请求复制一份，并根据策略来处理这个请求，不会影响真实请求。</p>
+<p>应用场景：</p>
+<ul>
+<li>
+<p>线上问题排查</p>
+</li>
+<li>
+<p>用真实的流量验证应用功能是否正常</p>
+</li>
+<li>
+<p>对镜像环境压力测试</p>
+</li>
+<li>
+<p>收集真实流量数据进行分析</p>
+</li>
+<li></li>
+</ul>
+<p>验证模拟测试：（访问nginx-v1版本的流量复制到nginx-v2版本）</p>
+<p><a href="/attachments/8794669FE2E04A64A668905476955E7Fazhe.zip">azhe.zip</a></p>
+<p><img src="/images/4DD72B0F055D4DB4965DF0F30E44986Aclipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl label namespaces default istio-injection=enabled</span><br><span class="line"><span class="built_in">cd</span> azhe/</span><br><span class="line">kubectl apply -f .</span><br><span class="line">kubectl logs nginx-v1-7fcbd8f56f-s9s4m -c nginx  -f</span><br><span class="line">kubectl logs  nginx-v2-596b8cbb66-lcnnc -c nginx -f </span><br><span class="line">kubectl get svc -n istio-system </span><br></pre></td></tr></table></figure>
+<p>访问页面验证，访问nginx-v1版本的流量复制到nginx-v2版本</p>
+<p>nodeport暴露的端口：<a target="_blank" rel="noopener" href="http://192.168.0.12:31994/">http://192.168.0.12:31994/</a></p>
+<h2 id="将应用暴露到互联网">将应用暴露到互联网</h2>
+<p>在实际部署中，K8s集群一般部署在内网，为了将暴露到互联 网，会在前面加一层负载均衡器（公有云LB产品、Nginx、 LVS等），用于流量入口，将用户访问的域名传递给 IngressGateway，IngressGateway再转发到不同应用。</p>
+<p><img src="/images/B14BFF55B56245619CE3945DC864BFC2clipboard.png" alt></p>
+<p>1.安装nginx并配置</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line">    server_name  localhost;</span><br><span class="line">    ....</span><br><span class="line">location / &#123;</span><br><span class="line">         proxy_http_version 1.1; <span class="comment">#必须指定不然会出现422，默认只支持1.1，upstream默认支持1.0</span></span><br><span class="line">         proxy_set_header Host <span class="variable">$host</span>;</span><br><span class="line">         proxy_pass http://192.168.0.11:31994;</span><br><span class="line">         &#125;</span><br></pre></td></tr></table></figure>
+<h2 id="2-在Gateway和VirtualService添加接收流量入口的域名">2.在Gateway和VirtualService添加接收流量入口的域名</h2>
+<p><img src="/images/FA8B624FF34C4A568996E2B2CED399C1clipboard.png" alt></p>
+<p>3.宿主机绑定nginx负载均衡ip关联的hosts解析，<a target="_blank" rel="noopener" href="http://xn--nginx-408hr55ozm5bnft.ctnrs.com">然后访问nginx.ctnrs.com</a></p>
+<h2 id="可视化监控">可视化监控</h2>
+<p>Istio集成了多维度监控系统：</p>
+<ul>
+<li>
+<p>使用Kiali观测应用</p>
+</li>
+<li>
+<p>使用Prometheus+Grafana查看系统状态</p>
+</li>
+<li>
+<p>使用Jaeger进行链路追踪</p>
+</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f samples/addons/prometheus.yaml -n istio-system</span><br><span class="line">kubectl apply -f samples/addons/grafana.yaml -n istio-system</span><br><span class="line">kubectl apply -f samples/addons/jaeger.yaml -n istio-system</span><br><span class="line">kubectl apply -f samples/addons/kiali.yaml -n istio-system</span><br></pre></td></tr></table></figure>
+<p>注：service默认使用ClusterIP，浏览器访问需要改成NodePort后再apply</p>
+<h2 id="使用Kiali观测应用">使用Kiali观测应用</h2>
+<p>Kiali是一款Isito服务网格可视化工具，提供以下功能：</p>
+<ul>
+<li>
+<p>Istio 的可观察性控制台</p>
+</li>
+<li>
+<p>通过服务拓扑帮助你理解服务网格的结构</p>
+</li>
+<li>
+<p>提供网格的健康状态视图</p>
+</li>
+<li>
+<p>具有服务网格配置功能</p>
+</li>
+</ul>
+<p><img src="/images/2184D9031775451C98121A0C77B15479clipboard.png" alt></p>
+<h2 id="使用Prometheus-Grafana查看系统状态">使用Prometheus+Grafana查看系统状态</h2>
+<p>Prometheus用于收集Isito指标，通过Grafana可视化展示。</p>
+<p>仪表盘：</p>
+<ul>
+<li>
+<p>Istio Control Plane Dashboard：控制面板仪表盘</p>
+</li>
+<li>
+<p>Istio Mesh Dashboard：网格仪表盘，查看应用（服务）数据</p>
+</li>
+<li>
+<p>Istio Performance Dashboard：查看Istio 自身（各组件）数据</p>
+</li>
+<li>
+<p>Istio Service Dashboard：服务仪表盘</p>
+</li>
+<li>
+<p>Istio Workload Dashboard：工作负载仪表盘</p>
+</li>
+<li>
+<p>Istio Wasm Extension Dashboard</p>
+</li>
+</ul>
+<p><img src="/images/F21B64A414A24EABA49FD57FCC5DC342clipboard.png" alt></p>
+<h2 id="使用Jaeger进行链路追踪">使用Jaeger进行链路追踪</h2>
+<p>Jaeger是Uber开源的分布式追踪系统，用于微服务的监控 和全链路追踪。</p>
+<p><img src="/images/86CF0CD21B4B4236BDB44435A7918C82clipboard.png" alt></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io">阿哲</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io/2023/01/10/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8B/">http://liuzhemax.github.io/2023/01/10/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8B/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://liuzhemax.github.io" target="_blank">阿哲技术之路</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/K8S/">K8S</a></div><div class="post_share"><div class="social-share" data-image="/medias/%E6%90%AC%E7%A0%96.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2022/07/16/%E5%AE%9E%E9%99%85%E9%A1%B9%E7%9B%AE%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B/" title="实际项目部署案例"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">实际项目部署案例</div></div></a></div><div class="next-post pull-right"><a href="/2023/05/10/prometheus+grafana%E7%9B%91%E6%8E%A7kubernetes/" title="Prometheus+Grafana监控Kubernetes"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Prometheus+Grafana监控Kubernetes</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2023/06/10/elk-stack%E6%94%B6%E9%9B%86kubernetes%E5%BA%94%E7%94%A8%E6%97%A5%E5%BF%97/" title="ELK Stack收集Kubernetes应用日志"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-06-10</div><div class="title">ELK Stack收集Kubernetes应用日志</div></div></a></div><div><a href="/2022/07/10/ingress%E6%9C%80%E4%BD%B3%E6%96%B9%E5%BC%8F%E5%AF%B9%E5%A4%96%E6%9A%B4%E9%9C%B2%E5%BA%94%E7%94%A8/" title="Ingress最佳方式对外暴露应用"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-07-10</div><div class="title">Ingress最佳方式对外暴露应用</div></div></a></div><div><a href="/2022/07/14/k8s%E5%AE%89%E5%85%A8%E6%8E%A7%E5%88%B6/" title="K8s安全控制"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-07-14</div><div class="title">K8s安全控制</div></div></a></div><div><a href="/2022/07/15/k8s%E5%BA%94%E7%94%A8%E5%8C%85%E7%AE%A1%E7%90%86%E5%99%A8helm%E5%88%9D%E6%8E%A2/" title="K8s应用包管理器Helm初探"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-07-15</div><div class="title">K8s应用包管理器Helm初探</div></div></a></div><div><a href="/2023/10/11/k8s%E9%9B%86%E7%BE%A4%E7%BD%91%E7%BB%9C%E4%B8%8A/" title="K8s集群网络上"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-10-11</div><div class="title">K8s集群网络上</div></div></a></div><div><a href="/2023/10/21/k8s%E9%9B%86%E7%BE%A4%E7%BD%91%E7%BB%9C%E4%B8%8B/" title="K8s集群网络下"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-10-21</div><div class="title">K8s集群网络下</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">阿哲</div><div class="author-info__description">强大自己是解决问题的唯一办法</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">33</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1437626743@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">分享个人经验总结</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Istio-%E6%B5%81%E9%87%8F%E7%AE%A1%E7%90%86%E6%A0%B8%E5%BF%83%E8%B5%84%E6%BA%90"><span class="toc-number">1.</span> <span class="toc-text">Istio 流量管理核心资源</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#VirtualService"><span class="toc-number">2.</span> <span class="toc-text">VirtualService</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#DestinationRule"><span class="toc-number">3.</span> <span class="toc-text">DestinationRule</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Gateway"><span class="toc-number">4.</span> <span class="toc-text">Gateway</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ServiceEntry"><span class="toc-number">5.</span> <span class="toc-text">ServiceEntry</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Istio-%E6%B5%81%E9%87%8F%E7%AE%A1%E7%90%86%E6%A1%88%E4%BE%8B%EF%BC%88%E4%B8%BB%E6%B5%81%E5%8F%91%E5%B8%83%E6%96%B9%E6%A1%88%E4%BB%8B%E7%BB%8D%EF%BC%8C%E7%81%B0%E5%BA%A6%E5%8F%91%E5%B8%83%EF%BC%8C%E6%B5%81%E9%87%8F%E9%95%9C%E5%83%8F%EF%BC%89"><span class="toc-number">6.</span> <span class="toc-text">Istio 流量管理案例（主流发布方案介绍，灰度发布，流量镜像）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BB%E6%B5%81%E5%8F%91%E5%B8%83%E6%96%B9%E6%A1%88%E4%BB%8B%E7%BB%8D"><span class="toc-number">7.</span> <span class="toc-text">主流发布方案介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%81%B0%E5%BA%A6%E5%8F%91%E5%B8%83"><span class="toc-number">8.</span> <span class="toc-text">灰度发布</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%81%B0%E5%BA%A6%E5%8F%91%E5%B8%83%EF%BC%9A%E9%83%A8%E7%BD%B2Bookinfo%E5%BE%AE%E6%9C%8D%E5%8A%A1%E9%A1%B9%E7%9B%AE"><span class="toc-number">9.</span> <span class="toc-text">灰度发布：部署Bookinfo微服务项目</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%81%B0%E5%BA%A6%E5%8F%91%E5%B8%83%EF%BC%9A%E5%9F%BA%E4%BA%8E%E6%9D%83%E9%87%8D%E7%9A%84%E8%B7%AF%E7%94%B1"><span class="toc-number">10.</span> <span class="toc-text">灰度发布：基于权重的路由</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%81%B0%E5%BA%A6%E5%8F%91%E5%B8%83%EF%BC%9A%E5%9F%BA%E4%BA%8E%E8%AF%B7%E6%B1%82%E5%86%85%E5%AE%B9%E7%9A%84%E8%B7%AF%E7%94%B1"><span class="toc-number">11.</span> <span class="toc-text">灰度发布：基于请求内容的路由</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%81%B0%E5%BA%A6%E5%8F%91%E5%B8%83%EF%BC%9A%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-number">12.</span> <span class="toc-text">灰度发布：工作流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B5%81%E9%87%8F%E9%95%9C%E5%83%8F"><span class="toc-number">13.</span> <span class="toc-text">流量镜像</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%86%E5%BA%94%E7%94%A8%E6%9A%B4%E9%9C%B2%E5%88%B0%E4%BA%92%E8%81%94%E7%BD%91"><span class="toc-number">14.</span> <span class="toc-text">将应用暴露到互联网</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E5%9C%A8Gateway%E5%92%8CVirtualService%E6%B7%BB%E5%8A%A0%E6%8E%A5%E6%94%B6%E6%B5%81%E9%87%8F%E5%85%A5%E5%8F%A3%E7%9A%84%E5%9F%9F%E5%90%8D"><span class="toc-number">15.</span> <span class="toc-text">2.在Gateway和VirtualService添加接收流量入口的域名</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%AF%E8%A7%86%E5%8C%96%E7%9B%91%E6%8E%A7"><span class="toc-number">16.</span> <span class="toc-text">可视化监控</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8Kiali%E8%A7%82%E6%B5%8B%E5%BA%94%E7%94%A8"><span class="toc-number">17.</span> <span class="toc-text">使用Kiali观测应用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8Prometheus-Grafana%E6%9F%A5%E7%9C%8B%E7%B3%BB%E7%BB%9F%E7%8A%B6%E6%80%81"><span class="toc-number">18.</span> <span class="toc-text">使用Prometheus+Grafana查看系统状态</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8Jaeger%E8%BF%9B%E8%A1%8C%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA"><span class="toc-number">19.</span> <span class="toc-text">使用Jaeger进行链路追踪</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/25/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8A/" title="微服务治理istio初探上">微服务治理istio初探上</a><time datetime="2023-12-25T13:45:32.000Z" title="发表于 2023-12-25 21:45:32">2023-12-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/15/%E5%9F%BA%E4%BA%8Ejenkins%E6%9E%84%E5%BB%BA%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8F%91%E5%B8%83%E5%B9%B3%E5%8F%B0/" title="基于Jenkins构建微服务发布平台">基于Jenkins构建微服务发布平台</a><time datetime="2023-12-15T13:45:32.000Z" title="发表于 2023-12-15 21:45:32">2023-12-15</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/11/28/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E8%BF%81%E7%A7%BB/" title="微服务容器化迁移">微服务容器化迁移</a><time datetime="2023-11-28T13:45:32.000Z" title="发表于 2023-11-28 21:45:32">2023-11-28</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/11/08/ceph%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/" title="Ceph分布式存储">Ceph分布式存储</a><time datetime="2023-11-08T13:45:32.000Z" title="发表于 2023-11-08 21:45:32">2023-11-08</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/10/21/k8s%E9%9B%86%E7%BE%A4%E7%BD%91%E7%BB%9C%E4%B8%8B/" title="K8s集群网络下">K8s集群网络下</a><time datetime="2023-10-21T13:45:32.000Z" title="发表于 2023-10-21 21:45:32">2023-10-21</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="footer_custom_text">阿哲技术之路</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.13.0"></script></div></div></body></html>
