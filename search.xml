@@ -621,6 +621,139 @@
       </tags>
   </entry>
   <entry>
+    <title>Ingress最佳方式对外暴露应用</title>
+    <url>/2022/07/10/ingress%E6%9C%80%E4%BD%B3%E6%96%B9%E5%BC%8F%E5%AF%B9%E5%A4%96%E6%9A%B4%E9%9C%B2%E5%BA%94%E7%94%A8/</url>
+    <content><![CDATA[<h2 id="Ingress是什么">Ingress是什么</h2>
+<p>NodePort存在的不足：</p>
+<ul>
+<li>
+<p>一个端口只能一个服务使用，端口需提前规划</p>
+</li>
+<li>
+<p>只支持4层负载均衡</p>
+</li>
+</ul>
+<p>Ingress：Ingress公开了从集群外部到集群内服务的HTTP和HTTPS路由的规则集合，而具体实现流量路 由则是由Ingress Controller负责。</p>
+<ul>
+<li>
+<p>Ingress：K8s中的一个抽象资源，给管理员 提供一个暴露应用的入口定义方法</p>
+</li>
+<li>
+<p>Ingress Controller：根据Ingress生成具体 的路由规则，并对Pod负载均衡器</p>
+</li>
+</ul>
+<p><img src="/images/A2C7CDD3D8F548A98C5BF3FF5833B996clipboard.png" alt></p>
+<h2 id="Ingress-Controller">Ingress Controller</h2>
+<p>Ingress Controller有很多实现，我们这里采用官方维护的Nginx控制器。</p>
+<p>项目地址：<a href="https://github.com/kubernetes/ingress-nginx">https://github.com/kubernetes/ingress-nginx</a></p>
+<p>部署：kubectl apply -f <a href="https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx0.30.0/deploy/static/mandatory.yaml">https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx0.30.0/deploy/static/mandatory.yaml</a></p>
+<p>注意事项：</p>
+<ul>
+<li>
+<p>镜像地址修改成国内的：lizhenliang/nginx-ingress-controller:0.30.0</p>
+</li>
+<li>
+<p>将Ingress Controller暴露，一般使用宿主机网络（hostNetwork: true）或者使用NodePort</p>
+</li>
+</ul>
+<p>其他控制器：<a href="https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/">https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/</a></p>
+<h2 id="Ingress">Ingress</h2>
+<p>部署deployment与serivce</p>
+<p>vim web1-deploy-svc.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web1</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 3 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: web1</span><br><span class="line">        image: nginx:1.15</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web</span><br><span class="line">  name: web1</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 80 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 80 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>访问</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f web1-deploy-svc.yaml </span><br><span class="line">kubectl get svc</span><br><span class="line">curl 10.99.227.165</span><br></pre></td></tr></table></figure>
+<p>部署ingress（基于域名方式访问）</p>
+<p>vim ingress-web1.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web1</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: web1.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 80          <span class="comment">#ClusterIP的端口</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><a href="http://xn--web1-z03g362j2w5b9jdn63a.ctnrs.com">浏览器访问web1.ctnrs.com</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f ingress-web1.yaml </span><br><span class="line">kubectl get ingress</span><br></pre></td></tr></table></figure>
+<p>测试：本地电脑绑定hosts记录对应ingress里面配置的域名</p>
+<p>例： &lt;Ingress Controller Pod所在Node IP&gt; <a href="http://foo.bar.com">foo.bar.com</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get pod -n ingress-nginx -o wide</span><br></pre></td></tr></table></figure>
+<h2 id="Ingress：基于URI路由多个服务">Ingress：基于URI路由多个服务</h2>
+<p>vim web2-deploy-svc.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web2</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web2</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web2 <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx</span><br><span class="line">        image: nginx:1.15</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web2</span><br><span class="line">  name: web2</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 80 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 80 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web2 <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>vim web22-deploy-svc.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web22</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web22</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web22 <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: web22</span><br><span class="line">        image: lizhenliang/java-demo</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web22</span><br><span class="line">  name: web22</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 8080 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 8080 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web22 <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>vim ingress-web2.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web2</span><br><span class="line">  annotations:</span><br><span class="line">    nginx.ingress.kubernetes.io/rewrite-target: /<span class="variable">$2</span></span><br><span class="line">    nginx.ingress.kubernetes.io/server-snippet: |</span><br><span class="line">      rewrite ^/css/(.*)$ /bar/css/<span class="variable">$1</span> redirect;</span><br><span class="line">      rewrite ^/images/(.*)$ /bar/images/<span class="variable">$1</span> redirect;</span><br><span class="line">      rewrite ^/js/(.*)$ /bar/js/<span class="variable">$1</span> redirect;</span><br><span class="line"></span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: web2.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /foo                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web2            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 80          <span class="comment">#ClusterIP的端口</span></span><br><span class="line">      - path: /bar(/|$)(.*)                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web22            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 8080          <span class="comment">#ClusterIP的端口</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f web2-deploy-svc.yaml </span><br><span class="line">kubectl apply -f web22-deploy-svc.yaml </span><br><span class="line">kubectl apply -f ingress-web2.yaml </span><br><span class="line">kubectl get pod </span><br><span class="line">kubectl get svc</span><br><span class="line">kubectl get ingress</span><br></pre></td></tr></table></figure>
+<p>访问</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">http://web2.ctnrs.com/bar</span><br><span class="line">http://web2.ctnrs.com/foo</span><br></pre></td></tr></table></figure>
+<h2 id="Ingress-：基于名称的虚拟主机">Ingress ：基于名称的虚拟主机</h2>
+<p><img src="/images/F43B7E2488D24867918ACC44A42437CEclipboard.png" alt></p>
+<p>vim web3-deploy-svc.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web3</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 3 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web-tomcat</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web-tomcat <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: java-demo</span><br><span class="line">        image: lizhenliang/java-demo</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web-tomcat</span><br><span class="line">  name: web3</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 88 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 8080 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web-tomcat <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>vim ingress-web3.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web3</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: web3-1.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 80          <span class="comment">#ClusterIP的端口</span></span><br><span class="line">  - host: web3-2.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web3            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 88          <span class="comment">#ClusterIP的端口</span></span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f web3-deploy-svc.yaml </span><br><span class="line">kubectl apply -f ingress-web3.yaml </span><br><span class="line">kubectl get ingress</span><br></pre></td></tr></table></figure>
+<p>访问</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">web3-1.ctnrs.com</span><br><span class="line">web3-2.ctnrs.com </span><br></pre></td></tr></table></figure>
+<h2 id="Ingress：HTTPS">Ingress：HTTPS</h2>
+<p>配置HTTPS步骤：</p>
+<p>1、准备域名证书文件（来自：openssl/cfssl工具自签或者权威机构颁发）</p>
+<p>vim <a href="http://cfssl.sh">cfssl.sh</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://pkg.cfssl.org/R1.2/cfssl_linux-amd64</span><br><span class="line">wget https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64</span><br><span class="line">wget https://pkg.cfssl.org/R1.2/cfssl-certinfo_linux-amd64</span><br><span class="line"><span class="built_in">chmod</span> +x cfssl*</span><br><span class="line"><span class="built_in">mv</span> cfssl_linux-amd64 /usr/bin/cfssl</span><br><span class="line"><span class="built_in">mv</span> cfssljson_linux-amd64 /usr/bin/cfssljson</span><br><span class="line"><span class="built_in">mv</span> cfssl-certinfo_linux-amd64 /usr/bin/cfssl-certinfo</span><br></pre></td></tr></table></figure>
+<p>vim <a href="http://certs.sh">certs.sh</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> &gt; ca-config.json &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">&#123;</span></span><br><span class="line"><span class="string">  &quot;signing&quot;: &#123;</span></span><br><span class="line"><span class="string">    &quot;default&quot;: &#123;</span></span><br><span class="line"><span class="string">      &quot;expiry&quot;: &quot;87600h&quot;</span></span><br><span class="line"><span class="string">    &#125;,</span></span><br><span class="line"><span class="string">    &quot;profiles&quot;: &#123;</span></span><br><span class="line"><span class="string">      &quot;kubernetes&quot;: &#123;</span></span><br><span class="line"><span class="string">         &quot;expiry&quot;: &quot;87600h&quot;,</span></span><br><span class="line"><span class="string">         &quot;usages&quot;: [</span></span><br><span class="line"><span class="string">            &quot;signing&quot;,</span></span><br><span class="line"><span class="string">            &quot;key encipherment&quot;,</span></span><br><span class="line"><span class="string">            &quot;server auth&quot;,</span></span><br><span class="line"><span class="string">            &quot;client auth&quot;</span></span><br><span class="line"><span class="string">        ]</span></span><br><span class="line"><span class="string">      &#125;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">  &#125;</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">cat</span> &gt; ca-csr.json &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">&#123;</span></span><br><span class="line"><span class="string">    &quot;CN&quot;: &quot;kubernetes&quot;,</span></span><br><span class="line"><span class="string">    &quot;key&quot;: &#123;</span></span><br><span class="line"><span class="string">        &quot;algo&quot;: &quot;rsa&quot;,</span></span><br><span class="line"><span class="string">        &quot;size&quot;: 2048</span></span><br><span class="line"><span class="string">    &#125;,</span></span><br><span class="line"><span class="string">    &quot;names&quot;: [</span></span><br><span class="line"><span class="string">        &#123;</span></span><br><span class="line"><span class="string">            &quot;C&quot;: &quot;CN&quot;,</span></span><br><span class="line"><span class="string">            &quot;L&quot;: &quot;Beijing&quot;,</span></span><br><span class="line"><span class="string">            &quot;ST&quot;: &quot;Beijing&quot;</span></span><br><span class="line"><span class="string">        &#125;</span></span><br><span class="line"><span class="string">    ]</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line">cfssl gencert -initca ca-csr.json | cfssljson -bare ca -</span><br><span class="line"></span><br><span class="line"><span class="built_in">cat</span> &gt; web4.ctnrs.com-csr.json &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">&#123;</span></span><br><span class="line"><span class="string">  &quot;CN&quot;: &quot;web4.ctnrs.com&quot;,</span></span><br><span class="line"><span class="string">  &quot;hosts&quot;: [],</span></span><br><span class="line"><span class="string">  &quot;key&quot;: &#123;</span></span><br><span class="line"><span class="string">    &quot;algo&quot;: &quot;rsa&quot;,</span></span><br><span class="line"><span class="string">    &quot;size&quot;: 2048</span></span><br><span class="line"><span class="string">  &#125;,</span></span><br><span class="line"><span class="string">  &quot;names&quot;: [</span></span><br><span class="line"><span class="string">    &#123;</span></span><br><span class="line"><span class="string">      &quot;C&quot;: &quot;CN&quot;,</span></span><br><span class="line"><span class="string">      &quot;L&quot;: &quot;BeiJing&quot;,</span></span><br><span class="line"><span class="string">      &quot;ST&quot;: &quot;BeiJing&quot;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">  ]</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line">cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes web4.ctnrs.com-csr.json | cfssljson -bare web4.ctnrs.com</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>生成证书</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash cfssl.sh</span><br><span class="line">bash certs.sh</span><br></pre></td></tr></table></figure>
+<p>2、将证书文件保存到Secret</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create secret tls web4-ctnrs-com --cert=ssl/web4.ctnrs.com.pem --key=ssl/web4.ctnrs.com-key.pem</span><br><span class="line">kubectl get secrets </span><br></pre></td></tr></table></figure>
+<p>3、Ingress规则配置tls</p>
+<p>vim ingress-web4-https.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web4</span><br><span class="line">spec:</span><br><span class="line">  tls:</span><br><span class="line">  - hosts:</span><br><span class="line">    - web4.ctnrs.com                 <span class="comment">#自签证书对应的域名</span></span><br><span class="line">    secretName: web4-ctnrs-com       <span class="comment">#Secret的名字</span></span><br><span class="line">  rules:</span><br><span class="line">  - host: web4.ctnrs.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1</span><br><span class="line">            port:</span><br><span class="line">              number: 80</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f ingress-web4-https.yaml </span><br><span class="line">kubectl get ingress</span><br></pre></td></tr></table></figure>
+<p>配置本地hosts文件解析</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">192.168.1.12      web1.ctnrs.com  web4.ctnrs.com  </span><br><span class="line">192.168.1.13      web1.ctnrs.com  web4.ctnrs.com  </span><br></pre></td></tr></table></figure>
+<p>访问</p>
+<p><img src="/images/5BA66364BB194B94A5D1992F439DB35Aclipboard.png" alt></p>
+<h2 id="Ingress：个性化配置">Ingress：个性化配置</h2>
+<p>示例1：设置代理超时参数</p>
+<p>vim ingress-annotations.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: annotations</span><br><span class="line">  annotations:</span><br><span class="line">    kubernetes.io/ingress.class: <span class="string">&quot;nginx&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-connect-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-send-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-read-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: annotations.ctnrs.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1</span><br><span class="line">            port:</span><br><span class="line">              number: 80</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f ingress-annotations.yaml </span><br><span class="line">kubectl get ingress</span><br><span class="line">kubectl get pod -n ingress-nginx </span><br><span class="line">kubectl <span class="built_in">exec</span> -it nginx-ingress-controller-qj4vg bash -n ingress-nginx </span><br><span class="line"><span class="variable">$vi</span> /etc/nginx/nginx.conf</span><br></pre></td></tr></table></figure>
+<p>查看是否有代理的配置</p>
+<p><img src="/images/7342077EDF3E4812AED83A5730609A01clipboard.png" alt></p>
+<p>示例2：设置客户端上传文件大小</p>
+<p>vim ingress-annotations.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: annotations</span><br><span class="line">  annotations:</span><br><span class="line">    kubernetes.io/ingress.class: <span class="string">&quot;nginx&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-connect-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-send-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-read-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-body-size: <span class="string">&quot;10m&quot;</span></span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: annotations.ctnrs.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1</span><br><span class="line">            port:</span><br><span class="line">              number: 80</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f ingress-annotations.yaml </span><br><span class="line">kubectl get pod -n ingress-nginx </span><br><span class="line">kubectl <span class="built_in">exec</span> -it nginx-ingress-controller-qj4vg bash -n ingress-nginx </span><br><span class="line"><span class="variable">$vi</span> /etc/nginx/nginx.conf</span><br></pre></td></tr></table></figure>
+<p>查看annotations.ctnrs.com域名下有没有相关的配置</p>
+<p><img src="/images/2DF62D4954594D6DB5667A0BD8C86C6Eclipboard.png" alt></p>
+<p>示例3：重定向</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nginx.ingress.kubernetes.io/rewrite-target: https://www.baidu.com</span><br></pre></td></tr></table></figure>
+<p>示例4：自定义规则</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nginx.ingress.kubernetes.io/server-snippet: |</span><br><span class="line">  <span class="keyword">if</span> (<span class="variable">$http_user_agent</span> ~* <span class="string">&#x27;(Android|iPhone)&#x27;</span>) &#123;</span><br><span class="line">    rewrite ^/(.*) http://m.baidu.com <span class="built_in">break</span>;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>vim web5-deploy-svc.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web5</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web5</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web5 <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: web5-java-demo</span><br><span class="line">        image: lizhenliang/java-demo</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web5</span><br><span class="line">  name: web5</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 8888 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 8080 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web5 <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>vim ingress-web5.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web5</span><br><span class="line">  annotations:</span><br><span class="line">    nginx.ingress.kubernetes.io/server-snippet: |</span><br><span class="line">      <span class="keyword">if</span> (<span class="variable">$http_user_agent</span> ~* <span class="string">&#x27;(Android|iPhone)&#x27;</span>) &#123;</span><br><span class="line">        rewrite ^/(.*) http://m.baidu.com <span class="built_in">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: web5.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web5        <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 8888          <span class="comment">#ClusterIP的端口</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证访问</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f web5-deploy-svc.yaml </span><br><span class="line">kubectl apply -f ingress-web5.yaml </span><br><span class="line">kubectl get ingress</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>电脑端访问：<a href="http://web5.ctnrs.com/">http://web5.ctnrs.com/</a></p>
+<p><img src="/images/04BC8BD141DD47EF9D3744B923B3C53Aclipboard.png" alt></p>
+<p>使用电脑火狐浏览器模仿手机端访问跳转到百度页面</p>
+<p><img src="/images/EC681CFC0F3C4BF7822277C1AFDB0999clipboard.png" alt></p>
+<p>注：上面这些配置都是针对Nginx Server块生效</p>
+<p>更多使用方法：<a href="https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md">https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md</a></p>
+<h2 id="Ingress-Controller-2">Ingress Controller</h2>
+<p>Ingress Contronler怎么工作的？</p>
+<p>Ingress Contronler通过与 Kubernetes API 交互，动态的去感知集群中 Ingress 规则变化，然后读取它， 按照自定义的规则，规则就是写明了哪个域名对应哪个service，生成一段 Nginx 配置，应用到管理的 Nginx服务，然后热加载生效。 以此来达到Nginx负载均衡器配置及动态更新的问题。</p>
+<p>流程包流程：客户端 -&gt;Ingress Controller（nginx） -&gt; 分布在各节点Pod</p>
+<h2 id="Ingress-Controller高可用方案">Ingress Controller高可用方案</h2>
+<p>一般Ingress Controller会以DaemonSet+nodeSelector部署到几台特定 Node，然后将这几台挂载到公网负载均衡器对外提供服务。</p>
+<p><img src="/images/9267ADA4F67F4FE9BDD1C7371BEA7534clipboard.png" alt></p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>JAVA项目镜像构建：Tomcat</title>
     <url>/2022/05/23/java%E9%A1%B9%E7%9B%AE%E9%95%9C%E5%83%8F%E6%9E%84%E5%BB%BA/</url>
     <content><![CDATA[<p>JAVA项目镜像构建：Tomcat</p>
@@ -784,139 +917,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Ingress最佳方式对外暴露应用</title>
-    <url>/2022/07/10/ingress%E6%9C%80%E4%BD%B3%E6%96%B9%E5%BC%8F%E5%AF%B9%E5%A4%96%E6%9A%B4%E9%9C%B2%E5%BA%94%E7%94%A8/</url>
-    <content><![CDATA[<h2 id="Ingress是什么">Ingress是什么</h2>
-<p>NodePort存在的不足：</p>
-<ul>
-<li>
-<p>一个端口只能一个服务使用，端口需提前规划</p>
-</li>
-<li>
-<p>只支持4层负载均衡</p>
-</li>
-</ul>
-<p>Ingress：Ingress公开了从集群外部到集群内服务的HTTP和HTTPS路由的规则集合，而具体实现流量路 由则是由Ingress Controller负责。</p>
-<ul>
-<li>
-<p>Ingress：K8s中的一个抽象资源，给管理员 提供一个暴露应用的入口定义方法</p>
-</li>
-<li>
-<p>Ingress Controller：根据Ingress生成具体 的路由规则，并对Pod负载均衡器</p>
-</li>
-</ul>
-<p><img src="/images/A2C7CDD3D8F548A98C5BF3FF5833B996clipboard.png" alt></p>
-<h2 id="Ingress-Controller">Ingress Controller</h2>
-<p>Ingress Controller有很多实现，我们这里采用官方维护的Nginx控制器。</p>
-<p>项目地址：<a href="https://github.com/kubernetes/ingress-nginx">https://github.com/kubernetes/ingress-nginx</a></p>
-<p>部署：kubectl apply -f <a href="https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx0.30.0/deploy/static/mandatory.yaml">https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx0.30.0/deploy/static/mandatory.yaml</a></p>
-<p>注意事项：</p>
-<ul>
-<li>
-<p>镜像地址修改成国内的：lizhenliang/nginx-ingress-controller:0.30.0</p>
-</li>
-<li>
-<p>将Ingress Controller暴露，一般使用宿主机网络（hostNetwork: true）或者使用NodePort</p>
-</li>
-</ul>
-<p>其他控制器：<a href="https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/">https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/</a></p>
-<h2 id="Ingress">Ingress</h2>
-<p>部署deployment与serivce</p>
-<p>vim web1-deploy-svc.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web1</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 3 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: web1</span><br><span class="line">        image: nginx:1.15</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web</span><br><span class="line">  name: web1</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 80 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 80 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>访问</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f web1-deploy-svc.yaml </span><br><span class="line">kubectl get svc</span><br><span class="line">curl 10.99.227.165</span><br></pre></td></tr></table></figure>
-<p>部署ingress（基于域名方式访问）</p>
-<p>vim ingress-web1.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web1</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: web1.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 80          <span class="comment">#ClusterIP的端口</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p><a href="http://xn--web1-z03g362j2w5b9jdn63a.ctnrs.com">浏览器访问web1.ctnrs.com</a></p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f ingress-web1.yaml </span><br><span class="line">kubectl get ingress</span><br></pre></td></tr></table></figure>
-<p>测试：本地电脑绑定hosts记录对应ingress里面配置的域名</p>
-<p>例： &lt;Ingress Controller Pod所在Node IP&gt; <a href="http://foo.bar.com">foo.bar.com</a></p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get pod -n ingress-nginx -o wide</span><br></pre></td></tr></table></figure>
-<h2 id="Ingress：基于URI路由多个服务">Ingress：基于URI路由多个服务</h2>
-<p>vim web2-deploy-svc.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web2</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web2</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web2 <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx</span><br><span class="line">        image: nginx:1.15</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web2</span><br><span class="line">  name: web2</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 80 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 80 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web2 <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>vim web22-deploy-svc.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web22</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web22</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web22 <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: web22</span><br><span class="line">        image: lizhenliang/java-demo</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web22</span><br><span class="line">  name: web22</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 8080 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 8080 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web22 <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>vim ingress-web2.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web2</span><br><span class="line">  annotations:</span><br><span class="line">    nginx.ingress.kubernetes.io/rewrite-target: /<span class="variable">$2</span></span><br><span class="line">    nginx.ingress.kubernetes.io/server-snippet: |</span><br><span class="line">      rewrite ^/css/(.*)$ /bar/css/<span class="variable">$1</span> redirect;</span><br><span class="line">      rewrite ^/images/(.*)$ /bar/images/<span class="variable">$1</span> redirect;</span><br><span class="line">      rewrite ^/js/(.*)$ /bar/js/<span class="variable">$1</span> redirect;</span><br><span class="line"></span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: web2.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /foo                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web2            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 80          <span class="comment">#ClusterIP的端口</span></span><br><span class="line">      - path: /bar(/|$)(.*)                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web22            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 8080          <span class="comment">#ClusterIP的端口</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f web2-deploy-svc.yaml </span><br><span class="line">kubectl apply -f web22-deploy-svc.yaml </span><br><span class="line">kubectl apply -f ingress-web2.yaml </span><br><span class="line">kubectl get pod </span><br><span class="line">kubectl get svc</span><br><span class="line">kubectl get ingress</span><br></pre></td></tr></table></figure>
-<p>访问</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">http://web2.ctnrs.com/bar</span><br><span class="line">http://web2.ctnrs.com/foo</span><br></pre></td></tr></table></figure>
-<h2 id="Ingress-：基于名称的虚拟主机">Ingress ：基于名称的虚拟主机</h2>
-<p><img src="/images/F43B7E2488D24867918ACC44A42437CEclipboard.png" alt></p>
-<p>vim web3-deploy-svc.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web3</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 3 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web-tomcat</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web-tomcat <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: java-demo</span><br><span class="line">        image: lizhenliang/java-demo</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web-tomcat</span><br><span class="line">  name: web3</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 88 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 8080 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web-tomcat <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>vim ingress-web3.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web3</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: web3-1.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 80          <span class="comment">#ClusterIP的端口</span></span><br><span class="line">  - host: web3-2.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web3            <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 88          <span class="comment">#ClusterIP的端口</span></span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f web3-deploy-svc.yaml </span><br><span class="line">kubectl apply -f ingress-web3.yaml </span><br><span class="line">kubectl get ingress</span><br></pre></td></tr></table></figure>
-<p>访问</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">web3-1.ctnrs.com</span><br><span class="line">web3-2.ctnrs.com </span><br></pre></td></tr></table></figure>
-<h2 id="Ingress：HTTPS">Ingress：HTTPS</h2>
-<p>配置HTTPS步骤：</p>
-<p>1、准备域名证书文件（来自：openssl/cfssl工具自签或者权威机构颁发）</p>
-<p>vim <a href="http://cfssl.sh">cfssl.sh</a></p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://pkg.cfssl.org/R1.2/cfssl_linux-amd64</span><br><span class="line">wget https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64</span><br><span class="line">wget https://pkg.cfssl.org/R1.2/cfssl-certinfo_linux-amd64</span><br><span class="line"><span class="built_in">chmod</span> +x cfssl*</span><br><span class="line"><span class="built_in">mv</span> cfssl_linux-amd64 /usr/bin/cfssl</span><br><span class="line"><span class="built_in">mv</span> cfssljson_linux-amd64 /usr/bin/cfssljson</span><br><span class="line"><span class="built_in">mv</span> cfssl-certinfo_linux-amd64 /usr/bin/cfssl-certinfo</span><br></pre></td></tr></table></figure>
-<p>vim <a href="http://certs.sh">certs.sh</a></p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> &gt; ca-config.json &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">&#123;</span></span><br><span class="line"><span class="string">  &quot;signing&quot;: &#123;</span></span><br><span class="line"><span class="string">    &quot;default&quot;: &#123;</span></span><br><span class="line"><span class="string">      &quot;expiry&quot;: &quot;87600h&quot;</span></span><br><span class="line"><span class="string">    &#125;,</span></span><br><span class="line"><span class="string">    &quot;profiles&quot;: &#123;</span></span><br><span class="line"><span class="string">      &quot;kubernetes&quot;: &#123;</span></span><br><span class="line"><span class="string">         &quot;expiry&quot;: &quot;87600h&quot;,</span></span><br><span class="line"><span class="string">         &quot;usages&quot;: [</span></span><br><span class="line"><span class="string">            &quot;signing&quot;,</span></span><br><span class="line"><span class="string">            &quot;key encipherment&quot;,</span></span><br><span class="line"><span class="string">            &quot;server auth&quot;,</span></span><br><span class="line"><span class="string">            &quot;client auth&quot;</span></span><br><span class="line"><span class="string">        ]</span></span><br><span class="line"><span class="string">      &#125;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">  &#125;</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">cat</span> &gt; ca-csr.json &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">&#123;</span></span><br><span class="line"><span class="string">    &quot;CN&quot;: &quot;kubernetes&quot;,</span></span><br><span class="line"><span class="string">    &quot;key&quot;: &#123;</span></span><br><span class="line"><span class="string">        &quot;algo&quot;: &quot;rsa&quot;,</span></span><br><span class="line"><span class="string">        &quot;size&quot;: 2048</span></span><br><span class="line"><span class="string">    &#125;,</span></span><br><span class="line"><span class="string">    &quot;names&quot;: [</span></span><br><span class="line"><span class="string">        &#123;</span></span><br><span class="line"><span class="string">            &quot;C&quot;: &quot;CN&quot;,</span></span><br><span class="line"><span class="string">            &quot;L&quot;: &quot;Beijing&quot;,</span></span><br><span class="line"><span class="string">            &quot;ST&quot;: &quot;Beijing&quot;</span></span><br><span class="line"><span class="string">        &#125;</span></span><br><span class="line"><span class="string">    ]</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line">cfssl gencert -initca ca-csr.json | cfssljson -bare ca -</span><br><span class="line"></span><br><span class="line"><span class="built_in">cat</span> &gt; web4.ctnrs.com-csr.json &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">&#123;</span></span><br><span class="line"><span class="string">  &quot;CN&quot;: &quot;web4.ctnrs.com&quot;,</span></span><br><span class="line"><span class="string">  &quot;hosts&quot;: [],</span></span><br><span class="line"><span class="string">  &quot;key&quot;: &#123;</span></span><br><span class="line"><span class="string">    &quot;algo&quot;: &quot;rsa&quot;,</span></span><br><span class="line"><span class="string">    &quot;size&quot;: 2048</span></span><br><span class="line"><span class="string">  &#125;,</span></span><br><span class="line"><span class="string">  &quot;names&quot;: [</span></span><br><span class="line"><span class="string">    &#123;</span></span><br><span class="line"><span class="string">      &quot;C&quot;: &quot;CN&quot;,</span></span><br><span class="line"><span class="string">      &quot;L&quot;: &quot;BeiJing&quot;,</span></span><br><span class="line"><span class="string">      &quot;ST&quot;: &quot;BeiJing&quot;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">  ]</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line">cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes web4.ctnrs.com-csr.json | cfssljson -bare web4.ctnrs.com</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>生成证书</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash cfssl.sh</span><br><span class="line">bash certs.sh</span><br></pre></td></tr></table></figure>
-<p>2、将证书文件保存到Secret</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create secret tls web4-ctnrs-com --cert=ssl/web4.ctnrs.com.pem --key=ssl/web4.ctnrs.com-key.pem</span><br><span class="line">kubectl get secrets </span><br></pre></td></tr></table></figure>
-<p>3、Ingress规则配置tls</p>
-<p>vim ingress-web4-https.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web4</span><br><span class="line">spec:</span><br><span class="line">  tls:</span><br><span class="line">  - hosts:</span><br><span class="line">    - web4.ctnrs.com                 <span class="comment">#自签证书对应的域名</span></span><br><span class="line">    secretName: web4-ctnrs-com       <span class="comment">#Secret的名字</span></span><br><span class="line">  rules:</span><br><span class="line">  - host: web4.ctnrs.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1</span><br><span class="line">            port:</span><br><span class="line">              number: 80</span><br></pre></td></tr></table></figure>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f ingress-web4-https.yaml </span><br><span class="line">kubectl get ingress</span><br></pre></td></tr></table></figure>
-<p>配置本地hosts文件解析</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">192.168.1.12      web1.ctnrs.com  web4.ctnrs.com  </span><br><span class="line">192.168.1.13      web1.ctnrs.com  web4.ctnrs.com  </span><br></pre></td></tr></table></figure>
-<p>访问</p>
-<p><img src="/images/5BA66364BB194B94A5D1992F439DB35Aclipboard.png" alt></p>
-<h2 id="Ingress：个性化配置">Ingress：个性化配置</h2>
-<p>示例1：设置代理超时参数</p>
-<p>vim ingress-annotations.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: annotations</span><br><span class="line">  annotations:</span><br><span class="line">    kubernetes.io/ingress.class: <span class="string">&quot;nginx&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-connect-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-send-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-read-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: annotations.ctnrs.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1</span><br><span class="line">            port:</span><br><span class="line">              number: 80</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f ingress-annotations.yaml </span><br><span class="line">kubectl get ingress</span><br><span class="line">kubectl get pod -n ingress-nginx </span><br><span class="line">kubectl <span class="built_in">exec</span> -it nginx-ingress-controller-qj4vg bash -n ingress-nginx </span><br><span class="line"><span class="variable">$vi</span> /etc/nginx/nginx.conf</span><br></pre></td></tr></table></figure>
-<p>查看是否有代理的配置</p>
-<p><img src="/images/7342077EDF3E4812AED83A5730609A01clipboard.png" alt></p>
-<p>示例2：设置客户端上传文件大小</p>
-<p>vim ingress-annotations.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: annotations</span><br><span class="line">  annotations:</span><br><span class="line">    kubernetes.io/ingress.class: <span class="string">&quot;nginx&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-connect-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-send-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-read-timeout: <span class="string">&quot;600&quot;</span></span><br><span class="line">    nginx.ingress.kubernetes.io/proxy-body-size: <span class="string">&quot;10m&quot;</span></span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: annotations.ctnrs.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web1</span><br><span class="line">            port:</span><br><span class="line">              number: 80</span><br></pre></td></tr></table></figure>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f ingress-annotations.yaml </span><br><span class="line">kubectl get pod -n ingress-nginx </span><br><span class="line">kubectl <span class="built_in">exec</span> -it nginx-ingress-controller-qj4vg bash -n ingress-nginx </span><br><span class="line"><span class="variable">$vi</span> /etc/nginx/nginx.conf</span><br></pre></td></tr></table></figure>
-<p>查看annotations.ctnrs.com域名下有没有相关的配置</p>
-<p><img src="/images/2DF62D4954594D6DB5667A0BD8C86C6Eclipboard.png" alt></p>
-<p>示例3：重定向</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nginx.ingress.kubernetes.io/rewrite-target: https://www.baidu.com</span><br></pre></td></tr></table></figure>
-<p>示例4：自定义规则</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nginx.ingress.kubernetes.io/server-snippet: |</span><br><span class="line">  <span class="keyword">if</span> (<span class="variable">$http_user_agent</span> ~* <span class="string">&#x27;(Android|iPhone)&#x27;</span>) &#123;</span><br><span class="line">    rewrite ^/(.*) http://m.baidu.com <span class="built_in">break</span>;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-<p>vim web5-deploy-svc.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: web5</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1 <span class="comment"># Pod副本预期数量</span></span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web5</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: web5 <span class="comment"># Pod副本的标签</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: web5-java-demo</span><br><span class="line">        image: lizhenliang/java-demo</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web5</span><br><span class="line">  name: web5</span><br><span class="line">spec:</span><br><span class="line">  <span class="built_in">type</span>: ClusterIP <span class="comment"># 服务类型</span></span><br><span class="line">  ports:</span><br><span class="line">  - port: 8888 <span class="comment"># Service端口</span></span><br><span class="line">    protocol: TCP <span class="comment"># 协议</span></span><br><span class="line">    targetPort: 8080 <span class="comment"># 容器端口</span></span><br><span class="line">   <span class="comment"># nodePort: 30009    #nodeport暴露的端口</span></span><br><span class="line">  selector:</span><br><span class="line">    app: web5 <span class="comment"># 指定关联Pod的标签</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>vim ingress-web5.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: web5</span><br><span class="line">  annotations:</span><br><span class="line">    nginx.ingress.kubernetes.io/server-snippet: |</span><br><span class="line">      <span class="keyword">if</span> (<span class="variable">$http_user_agent</span> ~* <span class="string">&#x27;(Android|iPhone)&#x27;</span>) &#123;</span><br><span class="line">        rewrite ^/(.*) http://m.baidu.com <span class="built_in">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: web5.ctnrs.com        <span class="comment">#域名</span></span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /                  <span class="comment">#类似nginx配置文件的location /访问路径</span></span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: web5        <span class="comment">#service的名字</span></span><br><span class="line">            port:</span><br><span class="line">              number: 8888          <span class="comment">#ClusterIP的端口</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>验证访问</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl apply -f web5-deploy-svc.yaml </span><br><span class="line">kubectl apply -f ingress-web5.yaml </span><br><span class="line">kubectl get ingress</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>电脑端访问：<a href="http://web5.ctnrs.com/">http://web5.ctnrs.com/</a></p>
-<p><img src="/images/04BC8BD141DD47EF9D3744B923B3C53Aclipboard.png" alt></p>
-<p>使用电脑火狐浏览器模仿手机端访问跳转到百度页面</p>
-<p><img src="/images/EC681CFC0F3C4BF7822277C1AFDB0999clipboard.png" alt></p>
-<p>注：上面这些配置都是针对Nginx Server块生效</p>
-<p>更多使用方法：<a href="https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md">https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md</a></p>
-<h2 id="Ingress-Controller-2">Ingress Controller</h2>
-<p>Ingress Contronler怎么工作的？</p>
-<p>Ingress Contronler通过与 Kubernetes API 交互，动态的去感知集群中 Ingress 规则变化，然后读取它， 按照自定义的规则，规则就是写明了哪个域名对应哪个service，生成一段 Nginx 配置，应用到管理的 Nginx服务，然后热加载生效。 以此来达到Nginx负载均衡器配置及动态更新的问题。</p>
-<p>流程包流程：客户端 -&gt;Ingress Controller（nginx） -&gt; 分布在各节点Pod</p>
-<h2 id="Ingress-Controller高可用方案">Ingress Controller高可用方案</h2>
-<p>一般Ingress Controller会以DaemonSet+nodeSelector部署到几台特定 Node，然后将这几台挂载到公网负载均衡器对外提供服务。</p>
-<p><img src="/images/9267ADA4F67F4FE9BDD1C7371BEA7534clipboard.png" alt></p>
-]]></content>
-      <categories>
-        <category>K8S</category>
-      </categories>
-      <tags>
-        <tag>K8S</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>K8s应用包管理器Helm初探</title>
     <url>/2022/07/15/k8s%E5%BA%94%E7%94%A8%E5%8C%85%E7%AE%A1%E7%90%86%E5%99%A8helm%E5%88%9D%E6%8E%A2/</url>
     <content><![CDATA[<h2 id="为什么需要Helm">为什么需要Helm</h2>
@@ -1045,254 +1045,6 @@
 </ul>
 <p>添加仓库方式：</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm repo add azure http://mirror.azure.cn/kubernetes/charts/</span><br><span class="line">helm repo add aliyun https://kubernetes.oss-cn-hangzhou.aliyuncs.com/charts </span><br><span class="line">helm repo update                       <span class="comment">#更新</span></span><br><span class="line">helm repo list                         <span class="comment">#列出当前的仓库</span></span><br><span class="line">helm search repo mysql                 <span class="comment">#搜索MySQL的chart包</span></span><br><span class="line">helm install mysql aliyun/mysql        <span class="comment">#安装</span></span><br><span class="line">helm pull aliyun/mysql --untar         <span class="comment">#从远程仓库中下载chart并解压到本地</span></span><br><span class="line">helm package mychart/                  <span class="comment">#打包自己的chart</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>K8S</category>
-      </categories>
-      <tags>
-        <tag>K8S</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>K8s集群网络下</title>
-    <url>/2023/10/21/k8s%E9%9B%86%E7%BE%A4%E7%BD%91%E7%BB%9C%E4%B8%8B/</url>
-    <content><![CDATA[<h2 id="K8s网络组件之Calico">K8s网络组件之Calico</h2>
-<p>Calico是一个纯三层的数据中心网络方案，Calico支持广泛的平台，包括Kubernetes、OpenStack等。 Calico 在每一个计算节点利用 Linux Kernel 实现了一个高效的虚拟路由器（ vRouter） 来负责数据转发， 而每个 vRouter 通过 BGP 协议负责把自己上运行的 workload 的路由信息向整个 Calico 网络内传播。 此外，Calico 项目还实现了 Kubernetes 网络策略，提供ACL功能。</p>
-<p>实际上，Calico项目提供的网络解决方案，与Flannel的host-gw模式几乎一样。也就是说，Calico也是基于 路由表实现容器数据包转发，但不同于Flannel使用flanneld进程来维护路由信息的做法，而Calico项目使用 BGP协议来自动维护整个集群的路由信息。</p>
-<p>BGP英文全称是Border Gateway Protocol，即边界网关协议，它是一种自治系统间的动态路由发现协议， 与其他 BGP 系统交换网络可达信息。</p>
-<h2 id="K8s网络组件之Calico：BGP介绍">K8s网络组件之Calico：BGP介绍</h2>
-<p><img src="/images/B827CF15481445E89E1D1034D29041CDclipboard.png" alt></p>
-<p>在这个图中，有两个自治系统（autonomous system，简称为AS）：AS 1 和 AS 2。</p>
-<p>在互联网中，一个自治系统(AS)是一个有权自主地决定在本系统中应采用何种路由协议的小型单位。这 个网络单位可以是一个简单的网络也可以是一个由一个或多个普通的网络管理员来控制的网络群体，它 是一个单独的可管理的网络单元（例如一所大学，一个企业或者一个公司个体）。一个自治系统有时也 被称为是一个路由选择域（routing domain）。一个自治系统将会分配一个全局的唯一的16位号码， 有时我们把这个号码叫做自治系统号（ASN）。</p>
-<p>在正常情况下，自治系统之间不会有任何来往。如果两个自治系统里的主机，要通过 IP 地址直接进行通 信，我们就必须使用路由器把这两个自治系统连接起来。BGP协议就是让他们互联的一种方式。</p>
-<p><img src="/images/7C6041A0731C48E8871D77AE1A19C384clipboard.png" alt></p>
-<p>在了解了 BGP 之后，Calico 项目的架构就非常容易理解了，</p>
-<p>Calico主要由三个部分组成：</p>
-<ul>
-<li>
-<p>Felix：以DaemonSet方式部署，运行在每一个Node节点上， 主要负责维护宿主机上路由规则以及ACL规则。</p>
-</li>
-<li>
-<p>BGP Client（BIRD）：主要负责把 Felix 写入 Kernel 的路 由信息分发到集群 Calico 网络。</p>
-</li>
-<li>
-<p>Etcd：分布式键值存储，保存Calico的策略和网络配置状态。</p>
-</li>
-<li>
-<p>calicoctl：命令行管理Calico。</p>
-</li>
-</ul>
-<h2 id="K8s网络组件之Calico：部署">K8s网络组件之Calico：部署</h2>
-<p>Calico存储有两种方式：</p>
-<ul>
-<li>数据存储在etcd</li>
-</ul>
-<p><a href="https://docs.projectcalico.org/v3.9/manifests/calico-etcd.yaml">https://docs.projectcalico.org/v3.9/manifests/calico-etcd.yaml</a></p>
-<ul>
-<li>数据存储在Kubernetes API Datastore服务中</li>
-</ul>
-<p><a href="https://docs.projectcalico.org/manifests/calico.yaml">https://docs.projectcalico.org/manifests/calico.yaml</a></p>
-<p>数据存储在etcd中还需要修改yaml：</p>
-<ul>
-<li>配置连接etcd地址，如果使用https，还需要配置证书。（ConfigMap和Secret位置）</li>
-</ul>
-<p><img src="/images/58A4C504154C42139DB62DBB35DC626Aclipboard.png" alt></p>
-<p><img src="/images/4C6D98958A53495A8A2C599B4FCEE2A7clipboard.png" alt></p>
-<p>根据实际网络规划修改Pod CIDR（CALICOIPV4POOLCIDR）（两种方式都需要修改）</p>
-<p>部署：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># kubectl apply -f calico.yaml</span></span><br><span class="line"><span class="comment"># kubectl get pods -n kube-system</span></span><br></pre></td></tr></table></figure>
-<h2 id="K8s网络组件之Calico：管理工具">K8s网络组件之Calico：管理工具</h2>
-<p>calicoctl工具用于管理calico，可通过命令行读取、创建、更新和删除 Calico 的存储对象。</p>
-<p>项目地址：<a href="https://github.com/projectcalico/calicoctl">https://github.com/projectcalico/calicoctl</a></p>
-<p>calicoctl 在使用过程中，需要从配置文件中读取 Calico 对象存储地址等信息。默认配置文件路 径 /etc/calico/calicoctl.cfg</p>
-<p>方式1（基于ectd存储）：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#使用calicoctl命令</span></span><br><span class="line"><span class="built_in">chmod</span> +x calicoctl </span><br><span class="line"><span class="built_in">mv</span> calicoctl /usr/bin/</span><br><span class="line"><span class="comment">#配置calicoctl配置文件</span></span><br><span class="line"><span class="built_in">mkdir</span> /etc/calico</span><br><span class="line"><span class="comment">#vi /etc/calico/calicoctl.cfg</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: CalicoAPIConfig</span><br><span class="line">metadata:</span><br><span class="line">spec:</span><br><span class="line">  datastoreType: <span class="string">&quot;etcdv3&quot;</span></span><br><span class="line">  etcdEndpoints:</span><br><span class="line">  <span class="string">&quot;https://192.168.0.11:2379,https://192.168.0.12:2379,https://192.168.0.13:2379&quot;</span></span><br><span class="line">  etcdKeyFile: <span class="string">&quot;/opt/etcd/ssl/server-key.pem&quot;</span></span><br><span class="line">  etcdCertFile: <span class="string">&quot;/opt/etcd/ssl/server.pem&quot;</span></span><br><span class="line">  etcdCACertFile: <span class="string">&quot;/opt/etcd/ssl/ca.pem&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>方式2（基于kubernetes API Datastore存储）：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#配置calicoctl配置文件</span></span><br><span class="line"><span class="built_in">mkdir</span> /etc/calico</span><br><span class="line"><span class="comment">#vi /etc/calico/calicoctl.cfg</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: CalicoAPIConfig</span><br><span class="line">metadata:</span><br><span class="line">spec:</span><br><span class="line">  datastoreType: <span class="string">&quot;kubernetes&quot;</span>     <span class="comment">#数据存储类型</span></span><br><span class="line">  kubeconfig: <span class="string">&quot;/root/.kube/config&quot;</span>   </span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>查看Calico状态：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl node status</span><br><span class="line">calicoctl get node</span><br><span class="line">calicoctl get ippool -o wide</span><br></pre></td></tr></table></figure>
-<p><img src="/images/E8B277C4EF1843DA8D20EAFF4D60A844clipboard.png" alt></p>
-<h2 id="K8s网络组件之Calico：工作模式">K8s网络组件之Calico：工作模式</h2>
-<p>Calico工作模式：</p>
-<ul>
-<li>
-<p>IPIP：Overlay Network方案，源数据包封装在宿主机网络包里进行转发和通信。（默认）</p>
-</li>
-<li>
-<p>BGP：基于路由转发，每个节点通过BGP协议同步路由表，写到宿主机。 （值设置Never）</p>
-</li>
-<li>
-<p>CrossSubnet：同时支持BGP和IPIP，即根据子网选择转发方式。</p>
-</li>
-</ul>
-<p>通过调整参数改变工作模式：</p>
-<ul>
-<li>
-<p>name: CALICO_IPV4POOL_IPIP</p>
-<p>value: “Always”</p>
-</li>
-</ul>
-<h2 id="K8s网络组件之Calico：IPIP工作模式">K8s网络组件之Calico：IPIP工作模式</h2>
-<p>IPIP模式：采用Linux IPIP隧道技术实现的数据包封装与转发。</p>
-<p>IP 隧道（IP tunneling）是将一个IP报文封装在另一个IP报文的技术，Linux系统内核实现的</p>
-<p>IP隧道技术主要有三种：IPIP、GRE、SIT。</p>
-<p><img src="/images/5A9BDD04F43240559B4915A1115A732Dclipboard.png" alt></p>
-<p>Pod 1 访问 Pod 2 大致流程如下：</p>
-<ol>
-<li>
-<p>数据包（原始数据包）从容器出去到达宿主机，宿主机根据路由表发送到tunl0设备（IP隧道设备）</p>
-</li>
-<li>
-<p>Linux内核IPIP驱动将原始数据包封装在宿主机网络的IP包中（新的IP包目的地之是原IP包的下一跳地 址，即192.168.31.63）。</p>
-</li>
-<li>
-<p>数据包根据宿主机网络到达Node2；</p>
-</li>
-<li>
-<p>Node2收到数据包后，使用IPIP驱动进行解包，从中拿到原始数据包；</p>
-</li>
-<li>
-<p>然后根据路由规则，根据路由规则将数据包转发给cali设备，从而到达容器2。</p>
-</li>
-</ol>
-<h2 id="K8s网络组件之Calico：BGP工作模式">K8s网络组件之Calico：BGP工作模式</h2>
-<p>BGP模式：基于路由转发，每个节点通过BGP协议同步路由 表，将每个宿主机当做路由器，实现数据包转发。</p>
-<p>calicoctl工具修改为BGP模式：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl get ippool -o yaml &gt;ippool.yaml</span><br><span class="line">vi ippool.yaml </span><br></pre></td></tr></table></figure>
-<p><img src="/images/BE93E537DA2644D08C62BA6ADE103640clipboard.png" alt></p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl apply -f ippool.yaml </span><br><span class="line">calicoctl get ippool -o wide</span><br></pre></td></tr></table></figure>
-<p><img src="/images/6713FFDDE2824151A31B4C4AB3D27349clipboard.png" alt></p>
-<p><img src="/images/713BC2D00F444CF1B0A30B74B6D6ADF0clipboard.png" alt></p>
-<p>Pod 1 访问 Pod 2 大致流程如下：</p>
-<ol>
-<li>
-<p>数据包从容器出去到达宿主机；</p>
-</li>
-<li>
-<p>宿主机根据路由规则，将数据包转发给下一跳（网关）；</p>
-</li>
-<li>
-<p>到达Node2，根据路由规则将数据包转发给cali设备，从而到达容器2。</p>
-</li>
-</ol>
-<h2 id="K8s网络组件之Calico：Route-Reflector-模式（RR）">K8s网络组件之Calico：Route Reflector 模式（RR）</h2>
-<p>Calico 维护的网络在默认是（Node-to-Node Mesh）全互联模式，Calico集群中的节点之间都会相互建立连接，用于路由 交换。但是随着集群规模的扩大，mesh模式将形成一个巨大服务网格，连接数成倍增加，就会产生性能问题。</p>
-<p>这时就需要使用 Route Reflector（路由器反射）模式解决这个问题。</p>
-<p><img src="/images/9944A097E9DA43589BB46BAA9FDE8705clipboard.png" alt></p>
-<p><img src="/images/ADAFF9FA70284DD0B24FD4106D012B12clipboard.png" alt></p>
-<p>确定一个或多个Calico节点充当路由反射器，集中分发路由，让其 他节点从这个RR节点获取路由信息。</p>
-<p>具体步骤如下：</p>
-<p>1、关闭 node-to-node模式</p>
-<p>添加 default BGP配置，调整 nodeToNodeMeshEnabled和asNumber：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#ASN号可以通过获取</span></span><br><span class="line">calicoctl get nodes --output=wide</span><br><span class="line"></span><br><span class="line"><span class="comment">#vi bgpconfig.yaml</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: BGPConfiguration</span><br><span class="line">metadata:</span><br><span class="line">  name: default</span><br><span class="line">spec:</span><br><span class="line">  logSeverityScreen: Info</span><br><span class="line">  nodeToNodeMeshEnabled: <span class="literal">false</span></span><br><span class="line">  asNumber: 64512</span><br><span class="line"></span><br><span class="line"><span class="comment">#应用配置</span></span><br><span class="line">calicoctl apply -f bgpconfig.yaml </span><br><span class="line">calicoctl get bgpconfig</span><br></pre></td></tr></table></figure>
-<p>2、配置指定节点充当路由反射器</p>
-<p>为方便让BGPPeer轻松选择节点，通过标签选择器匹配。 给路由器反射器节点打标签：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#kubectl label node k8s-node2 route-reflector=true</span></span><br></pre></td></tr></table></figure>
-<p>然后配置路由器反射器节点routeReflectorClusterID</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#calicoctl get node k8s-node2 -o yaml &gt; rr-node.yaml</span></span><br><span class="line"><span class="comment">#vi rr-node.yaml </span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: Node</span><br><span class="line">metadata:</span><br><span class="line">  annotations:</span><br><span class="line">    projectcalico.org/kube-labels: <span class="string">&#x27;&#123;&quot;beta.kubernetes.io/arch&quot;:&quot;amd64&quot;,&quot;beta.kubernetes.io/os&quot;:&quot;linux&quot;,&quot;kubernetes.io/arch&quot;:&quot;amd64&quot;,&quot;kubernetes.io/hostname&quot;:&quot;k8s-node2&quot;,&quot;kubernetes.io/os&quot;:&quot;linux&quot;,&quot;route-reflector&quot;:&quot;true&quot;&#125;&#x27;</span></span><br><span class="line">  creationTimestamp: 2021-03-08T03:28:34Z</span><br><span class="line">  labels:</span><br><span class="line">    beta.kubernetes.io/arch: amd64</span><br><span class="line">    beta.kubernetes.io/os: linux</span><br><span class="line">    kubernetes.io/arch: amd64</span><br><span class="line">    kubernetes.io/hostname: k8s-node2</span><br><span class="line">    kubernetes.io/os: linux</span><br><span class="line">    route-reflector: <span class="string">&quot;true&quot;</span></span><br><span class="line">  name: k8s-node2</span><br><span class="line">  resourceVersion: <span class="string">&quot;53597&quot;</span></span><br><span class="line">  uid: ffc15f57-d624-4003-a3bc-77cb78232f6a</span><br><span class="line">spec:</span><br><span class="line">  bgp:</span><br><span class="line">    ipv4Address: 192.168.1.13/24</span><br><span class="line">    routeReflectorClusterID: 244.0.0.1 <span class="comment"># 添加集群ID 要唯一</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#calicoctl apply -f rr-node.yaml </span></span><br></pre></td></tr></table></figure>
-<h2 id="3、使用标签选择器将路由反射器节点与其他非路由反射器节点配置为对等">3、使用标签选择器将路由反射器节点与其他非路由反射器节点配置为对等</h2>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi bgppeer.yaml</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: BGPPeer</span><br><span class="line">metadata:</span><br><span class="line">  name: peer-with-route-reflectors</span><br><span class="line">spec:</span><br><span class="line">  nodeSelector: all()</span><br><span class="line">  peerSelector: route-reflector == <span class="string">&#x27;true&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#calicoctl apply -f bgppeer.yaml </span></span><br><span class="line"><span class="comment">#calicoctl node status   查看节点的BGP连接状态：</span></span><br><span class="line"><span class="comment">#calicoctl get bgppeer</span></span><br><span class="line"><span class="comment">#ss -anpt |grep EST |grep 179</span></span><br></pre></td></tr></table></figure>
-<p><img src="/images/B22931364F2B416D996CA61EBCEA7013clipboard.png" alt></p>
-<p>配置多个节点充当路由反射器</p>
-<p>1.给路由器反射器节点打标签：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl label node k8s-node1 route-reflector=<span class="literal">true</span></span><br></pre></td></tr></table></figure>
-<p>然后配置路由器反射器节点routeReflectorClusterID：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl get node k8s-node1 -o yaml &gt; rr-node.yaml</span><br><span class="line"><span class="comment">#vi rr-node.yaml</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: Node</span><br><span class="line">metadata:</span><br><span class="line">  annotations:</span><br><span class="line">    projectcalico.org/kube-labels: <span class="string">&#x27;&#123;&quot;beta.kubernetes.io/arch&quot;:&quot;amd64&quot;,&quot;beta.kubernetes.io/os&quot;:&quot;linux&quot;,&quot;kubernetes.io/arch&quot;:&quot;amd64&quot;,&quot;kubernetes.io/hostname&quot;:&quot;k8s-node1&quot;,&quot;kubernetes.io/os&quot;:&quot;linux&quot;,&quot;route-reflector&quot;:&quot;true&quot;&#125;&#x27;</span></span><br><span class="line">  creationTimestamp: 2021-03-08T03:28:33Z</span><br><span class="line">  labels:</span><br><span class="line">    beta.kubernetes.io/arch: amd64</span><br><span class="line">    beta.kubernetes.io/os: linux</span><br><span class="line">    kubernetes.io/arch: amd64</span><br><span class="line">    kubernetes.io/hostname: k8s-node1</span><br><span class="line">    kubernetes.io/os: linux</span><br><span class="line">    route-reflector: <span class="string">&quot;true&quot;</span></span><br><span class="line">  name: k8s-node1</span><br><span class="line">  resourceVersion: <span class="string">&quot;60365&quot;</span></span><br><span class="line">  uid: 47632c58-5dac-44d0-941d-abf772048cc4</span><br><span class="line">spec:</span><br><span class="line">  bgp:</span><br><span class="line">    ipv4Address: 192.168.1.12/24</span><br><span class="line">    routeReflectorClusterID: 244.0.0.2  <span class="comment"># 添加集群ID，要唯一</span></span><br><span class="line">    </span><br><span class="line"><span class="comment"># calicoctl apply -f rr-node.yam</span></span><br></pre></td></tr></table></figure>
-<p>2.重新应用bgppeer.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl delete -f bgppeer.yaml </span><br><span class="line">calicoctl apply -f bgppeer.yaml</span><br><span class="line">calicoctl node status</span><br></pre></td></tr></table></figure>
-<p><img src="/images/0885EF19E4D24FE5998D0FCD2F90A0A0clipboard.png" alt></p>
-<p><img src="/images/C220687577084968908D41C5CD8E9F3Fclipboard.png" alt></p>
-<h2 id="小结">小结</h2>
-<p><img src="/images/676EE94556D9494C85C7765856BE3E7Bclipboard.png" alt></p>
-<p>网络性能：首选路由方案  flannel组件的hostGW和calico的BGP</p>
-<p>集群规划：100+建议calico</p>
-<p>网络限制：不能跑BGP</p>
-<p>是否需要网络策略？</p>
-<p>VXLAN和IPIP模式：</p>
-<p>优势：只要你的集群节点之间互相能通信就行，不管你宿主机走的是二层还是三层。</p>
-<p>缺点：先进行二层帧封装，再通过宿主机网络封装，解封装也一样，所以增加性能开销</p>
-<p>HostGW和BGP模式：</p>
-<p>优势：由于走的是宿主机网络路由，性能开销小</p>
-<p>缺点：对宿主机网络要求二层可达，想要实现宿主机之前跨网段通信，需要同步宿主机路由信息到上层路由器。flannel需要手动同步，calico使用BGP动态路由发现协议自动同步，只要上层路由支持BGP协议。</p>
-<h2 id="办公网络与K8s网络互通方案">办公网络与K8s网络互通方案</h2>
-<p>网络需求：</p>
-<ul>
-<li>
-<p>办公网络与Pod网络不通。在微服务架构下，开发人员希望在办公电脑能 直接连接K8s中注册中心调试；</p>
-</li>
-<li>
-<p>办公网络与Service网络不通。在测试环境运行的mysql、redis等需要通过 nodeport暴露，维护成本大；</p>
-</li>
-<li>
-<p>现有虚拟机业务访问K8s上的业务。</p>
-</li>
-</ul>
-<p>解决方案：打通办公网络与K8s网络</p>
-<p><img src="/images/0E59C28B367A4A76921B50CA20B67F59clipboard.png" alt></p>
-<p>方案一：在办公室网络上层路由器添加一条静态路由条目，目标网段是容器网络（10.244.0.0）下一跳地址设置为某个node节点IP，从路由器的一个接口出，到达node节点上后，配置iptables规则源网段是办公室网段IP（192.168.0.0）转发到pod网段IP（10.244.0.0），还有源网段是办公室网段IP转发到service网段IP（10.96.0.0/12）。</p>
-<p>方案二：服务器的上层核心交换机和k8s集群的上层路由反射器通过BGP协议相互学习对方的路由，从而实现路由的互通。</p>
-<h2 id="网络策略概述">网络策略概述</h2>
-<p>网络策略（Network Policy），用于限制Pod出入流量，提供Pod级别和Namespace级别网络访问控制。 一些应用场景：</p>
-<ul>
-<li>
-<p>应用程序间的访问控制。例如微服务A允许访问微服务B，微服务C不能访问微服务A</p>
-</li>
-<li>
-<p>开发环境命名空间不能访问测试环境命名空间Pod</p>
-</li>
-<li>
-<p>当Pod暴露到外部时，需要做Pod白名单</p>
-</li>
-<li>
-<p>多租户网络环境隔离</p>
-</li>
-</ul>
-<p>Pod网络入口方向隔离：</p>
-<ul>
-<li>
-<p>基于Pod级网络隔离：只允许特定对象访问Pod（使用标签定义），允许白名单上的IP地址或者IP段访问Pod</p>
-</li>
-<li>
-<p>基于Namespace级网络隔离：多个命名空间，A和B命名空间Pod完全隔离。</p>
-</li>
-</ul>
-<p>Pod网络出口方向隔离：</p>
-<ul>
-<li>
-<p>拒绝某个Namespace上所有Pod访问外部</p>
-</li>
-<li>
-<p>基于目的IP的网络隔离：只允许Pod访问白名单上的IP地址或者IP段</p>
-</li>
-<li>
-<p>基于目标端口的网络隔离：只允许Pod访问白名单上的端口</p>
-</li>
-</ul>
-<p><img src="/images/D45782348B0D40C39F526C0B7297606Fclipboard.png" alt></p>
-<p>podSelector：目标Pod，根据标签选择</p>
-<p>policyTypes：策略类型，指定策略用于入站、出站流量。</p>
-<p>Ingress：from是可以访问的白名单，可以来自于IP段、命名空间、 Pod标签等，ports是可以访问的端口。</p>
-<p>Egress：这个Pod组可以访问外部的IP段和端口。</p>
-<h2 id="案例：对项目Pod出入流量访问控制">案例：对项目Pod出入流量访问控制</h2>
-<p>需求1：将default命名空间携带app=web标签的Pod隔离，只允 许default命名空间携带run=client1标签的Pod访问80端口。</p>
-<p>准备测试环境：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create deployment web --image=nginx</span><br><span class="line">kubectl run client1 --image=busybox -- <span class="built_in">sleep</span> 36000</span><br><span class="line">kubectl run client2 --image=busybox -- <span class="built_in">sleep</span> 36000</span><br></pre></td></tr></table></figure>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi np.yaml</span></span><br><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: NetworkPolicy</span><br><span class="line">metadata:</span><br><span class="line">  name: test-network-policy</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  podSelector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web</span><br><span class="line">  policyTypes:</span><br><span class="line">  - Ingress</span><br><span class="line">  ingress:</span><br><span class="line">  - from:</span><br><span class="line">    - podSelector:</span><br><span class="line">        matchLabels:</span><br><span class="line">          run: client1</span><br><span class="line">    ports:</span><br><span class="line">    - protocol: TCP</span><br><span class="line">      port: 80</span><br><span class="line"></span><br><span class="line"><span class="comment">#kubectl apply -f np.yaml </span></span><br></pre></td></tr></table></figure>
-<p>验证结果：client1pod可以下载web的首页，client2pod不可以下载web的首页</p>
-<p>需求2：default命名空间下所有pod可以互相访问，也可以访问其 他命名空间Pod，但其他命名空间不能访问default命名空间Pod。</p>
-<ul>
-<li>
-<p>podSelector: {}：如果未配置，默认所有Pod</p>
-</li>
-<li>
-<p>from.podSelector: {} : 如果未配置，默认不允许</p>
-</li>
-</ul>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl run client3 --image=busybox -n azhe -- <span class="built_in">sleep</span> 36000</span><br><span class="line"><span class="comment">#vi np2.yaml </span></span><br><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: NetworkPolicy</span><br><span class="line">metadata:</span><br><span class="line">  name: deny-from-other-namespaces</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  podSelector: &#123;&#125;</span><br><span class="line">  policyTypes:</span><br><span class="line">  - Ingress</span><br><span class="line">  ingress:</span><br><span class="line">  - from:</span><br><span class="line">    - podSelector: &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">#kubectl apply -f np2.yaml</span></span><br></pre></td></tr></table></figure>
-<p>验证结果：azhe命名空间下的client3pod不可以访问default命名空间下的pod，但default命名空间下的pod可以访问azhe命名空间下的pod。</p>
-<h2 id="网络策略实现流程">网络策略实现流程</h2>
-<p><img src="/images/D06CDA70F2FC4AF984902BCCA9DC0D48clipboard.png" alt></p>
-<p>当我们创建一个网络策略，也就是apply 一个yaml文件，它会提交到apiserver，policy controller控制器（calico-kube-controllers）里面的进程会实时监听apiserver上的网络策略，拿到之后会通知它的agent（也就是运行在每个节点上calico pod（calico-node）来取我拿到的网络策略，然后在本地运行，calico-node利用iptables创建相应的网络规则。</p>
 ]]></content>
       <categories>
         <category>K8S</category>
@@ -1571,6 +1323,254 @@
 <p>卸载flnnel</p>
 <p><a href="https://blog.csdn.net/weixin_34409741/article/details/92513036">https://blog.csdn.net/weixin_34409741/article/details/92513036</a></p>
 <p>学习：<a href="https://edu.51cto.com/center/course/lesson/index?id=532871">https://edu.51cto.com/center/course/lesson/index?id=532871</a></p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>K8s集群网络下</title>
+    <url>/2023/10/21/k8s%E9%9B%86%E7%BE%A4%E7%BD%91%E7%BB%9C%E4%B8%8B/</url>
+    <content><![CDATA[<h2 id="K8s网络组件之Calico">K8s网络组件之Calico</h2>
+<p>Calico是一个纯三层的数据中心网络方案，Calico支持广泛的平台，包括Kubernetes、OpenStack等。 Calico 在每一个计算节点利用 Linux Kernel 实现了一个高效的虚拟路由器（ vRouter） 来负责数据转发， 而每个 vRouter 通过 BGP 协议负责把自己上运行的 workload 的路由信息向整个 Calico 网络内传播。 此外，Calico 项目还实现了 Kubernetes 网络策略，提供ACL功能。</p>
+<p>实际上，Calico项目提供的网络解决方案，与Flannel的host-gw模式几乎一样。也就是说，Calico也是基于 路由表实现容器数据包转发，但不同于Flannel使用flanneld进程来维护路由信息的做法，而Calico项目使用 BGP协议来自动维护整个集群的路由信息。</p>
+<p>BGP英文全称是Border Gateway Protocol，即边界网关协议，它是一种自治系统间的动态路由发现协议， 与其他 BGP 系统交换网络可达信息。</p>
+<h2 id="K8s网络组件之Calico：BGP介绍">K8s网络组件之Calico：BGP介绍</h2>
+<p><img src="/images/B827CF15481445E89E1D1034D29041CDclipboard.png" alt></p>
+<p>在这个图中，有两个自治系统（autonomous system，简称为AS）：AS 1 和 AS 2。</p>
+<p>在互联网中，一个自治系统(AS)是一个有权自主地决定在本系统中应采用何种路由协议的小型单位。这 个网络单位可以是一个简单的网络也可以是一个由一个或多个普通的网络管理员来控制的网络群体，它 是一个单独的可管理的网络单元（例如一所大学，一个企业或者一个公司个体）。一个自治系统有时也 被称为是一个路由选择域（routing domain）。一个自治系统将会分配一个全局的唯一的16位号码， 有时我们把这个号码叫做自治系统号（ASN）。</p>
+<p>在正常情况下，自治系统之间不会有任何来往。如果两个自治系统里的主机，要通过 IP 地址直接进行通 信，我们就必须使用路由器把这两个自治系统连接起来。BGP协议就是让他们互联的一种方式。</p>
+<p><img src="/images/7C6041A0731C48E8871D77AE1A19C384clipboard.png" alt></p>
+<p>在了解了 BGP 之后，Calico 项目的架构就非常容易理解了，</p>
+<p>Calico主要由三个部分组成：</p>
+<ul>
+<li>
+<p>Felix：以DaemonSet方式部署，运行在每一个Node节点上， 主要负责维护宿主机上路由规则以及ACL规则。</p>
+</li>
+<li>
+<p>BGP Client（BIRD）：主要负责把 Felix 写入 Kernel 的路 由信息分发到集群 Calico 网络。</p>
+</li>
+<li>
+<p>Etcd：分布式键值存储，保存Calico的策略和网络配置状态。</p>
+</li>
+<li>
+<p>calicoctl：命令行管理Calico。</p>
+</li>
+</ul>
+<h2 id="K8s网络组件之Calico：部署">K8s网络组件之Calico：部署</h2>
+<p>Calico存储有两种方式：</p>
+<ul>
+<li>数据存储在etcd</li>
+</ul>
+<p><a href="https://docs.projectcalico.org/v3.9/manifests/calico-etcd.yaml">https://docs.projectcalico.org/v3.9/manifests/calico-etcd.yaml</a></p>
+<ul>
+<li>数据存储在Kubernetes API Datastore服务中</li>
+</ul>
+<p><a href="https://docs.projectcalico.org/manifests/calico.yaml">https://docs.projectcalico.org/manifests/calico.yaml</a></p>
+<p>数据存储在etcd中还需要修改yaml：</p>
+<ul>
+<li>配置连接etcd地址，如果使用https，还需要配置证书。（ConfigMap和Secret位置）</li>
+</ul>
+<p><img src="/images/58A4C504154C42139DB62DBB35DC626Aclipboard.png" alt></p>
+<p><img src="/images/4C6D98958A53495A8A2C599B4FCEE2A7clipboard.png" alt></p>
+<p>根据实际网络规划修改Pod CIDR（CALICOIPV4POOLCIDR）（两种方式都需要修改）</p>
+<p>部署：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># kubectl apply -f calico.yaml</span></span><br><span class="line"><span class="comment"># kubectl get pods -n kube-system</span></span><br></pre></td></tr></table></figure>
+<h2 id="K8s网络组件之Calico：管理工具">K8s网络组件之Calico：管理工具</h2>
+<p>calicoctl工具用于管理calico，可通过命令行读取、创建、更新和删除 Calico 的存储对象。</p>
+<p>项目地址：<a href="https://github.com/projectcalico/calicoctl">https://github.com/projectcalico/calicoctl</a></p>
+<p>calicoctl 在使用过程中，需要从配置文件中读取 Calico 对象存储地址等信息。默认配置文件路 径 /etc/calico/calicoctl.cfg</p>
+<p>方式1（基于ectd存储）：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#使用calicoctl命令</span></span><br><span class="line"><span class="built_in">chmod</span> +x calicoctl </span><br><span class="line"><span class="built_in">mv</span> calicoctl /usr/bin/</span><br><span class="line"><span class="comment">#配置calicoctl配置文件</span></span><br><span class="line"><span class="built_in">mkdir</span> /etc/calico</span><br><span class="line"><span class="comment">#vi /etc/calico/calicoctl.cfg</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: CalicoAPIConfig</span><br><span class="line">metadata:</span><br><span class="line">spec:</span><br><span class="line">  datastoreType: <span class="string">&quot;etcdv3&quot;</span></span><br><span class="line">  etcdEndpoints:</span><br><span class="line">  <span class="string">&quot;https://192.168.0.11:2379,https://192.168.0.12:2379,https://192.168.0.13:2379&quot;</span></span><br><span class="line">  etcdKeyFile: <span class="string">&quot;/opt/etcd/ssl/server-key.pem&quot;</span></span><br><span class="line">  etcdCertFile: <span class="string">&quot;/opt/etcd/ssl/server.pem&quot;</span></span><br><span class="line">  etcdCACertFile: <span class="string">&quot;/opt/etcd/ssl/ca.pem&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>方式2（基于kubernetes API Datastore存储）：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#配置calicoctl配置文件</span></span><br><span class="line"><span class="built_in">mkdir</span> /etc/calico</span><br><span class="line"><span class="comment">#vi /etc/calico/calicoctl.cfg</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: CalicoAPIConfig</span><br><span class="line">metadata:</span><br><span class="line">spec:</span><br><span class="line">  datastoreType: <span class="string">&quot;kubernetes&quot;</span>     <span class="comment">#数据存储类型</span></span><br><span class="line">  kubeconfig: <span class="string">&quot;/root/.kube/config&quot;</span>   </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>查看Calico状态：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl node status</span><br><span class="line">calicoctl get node</span><br><span class="line">calicoctl get ippool -o wide</span><br></pre></td></tr></table></figure>
+<p><img src="/images/E8B277C4EF1843DA8D20EAFF4D60A844clipboard.png" alt></p>
+<h2 id="K8s网络组件之Calico：工作模式">K8s网络组件之Calico：工作模式</h2>
+<p>Calico工作模式：</p>
+<ul>
+<li>
+<p>IPIP：Overlay Network方案，源数据包封装在宿主机网络包里进行转发和通信。（默认）</p>
+</li>
+<li>
+<p>BGP：基于路由转发，每个节点通过BGP协议同步路由表，写到宿主机。 （值设置Never）</p>
+</li>
+<li>
+<p>CrossSubnet：同时支持BGP和IPIP，即根据子网选择转发方式。</p>
+</li>
+</ul>
+<p>通过调整参数改变工作模式：</p>
+<ul>
+<li>
+<p>name: CALICO_IPV4POOL_IPIP</p>
+<p>value: “Always”</p>
+</li>
+</ul>
+<h2 id="K8s网络组件之Calico：IPIP工作模式">K8s网络组件之Calico：IPIP工作模式</h2>
+<p>IPIP模式：采用Linux IPIP隧道技术实现的数据包封装与转发。</p>
+<p>IP 隧道（IP tunneling）是将一个IP报文封装在另一个IP报文的技术，Linux系统内核实现的</p>
+<p>IP隧道技术主要有三种：IPIP、GRE、SIT。</p>
+<p><img src="/images/5A9BDD04F43240559B4915A1115A732Dclipboard.png" alt></p>
+<p>Pod 1 访问 Pod 2 大致流程如下：</p>
+<ol>
+<li>
+<p>数据包（原始数据包）从容器出去到达宿主机，宿主机根据路由表发送到tunl0设备（IP隧道设备）</p>
+</li>
+<li>
+<p>Linux内核IPIP驱动将原始数据包封装在宿主机网络的IP包中（新的IP包目的地之是原IP包的下一跳地 址，即192.168.31.63）。</p>
+</li>
+<li>
+<p>数据包根据宿主机网络到达Node2；</p>
+</li>
+<li>
+<p>Node2收到数据包后，使用IPIP驱动进行解包，从中拿到原始数据包；</p>
+</li>
+<li>
+<p>然后根据路由规则，根据路由规则将数据包转发给cali设备，从而到达容器2。</p>
+</li>
+</ol>
+<h2 id="K8s网络组件之Calico：BGP工作模式">K8s网络组件之Calico：BGP工作模式</h2>
+<p>BGP模式：基于路由转发，每个节点通过BGP协议同步路由 表，将每个宿主机当做路由器，实现数据包转发。</p>
+<p>calicoctl工具修改为BGP模式：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl get ippool -o yaml &gt;ippool.yaml</span><br><span class="line">vi ippool.yaml </span><br></pre></td></tr></table></figure>
+<p><img src="/images/BE93E537DA2644D08C62BA6ADE103640clipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl apply -f ippool.yaml </span><br><span class="line">calicoctl get ippool -o wide</span><br></pre></td></tr></table></figure>
+<p><img src="/images/6713FFDDE2824151A31B4C4AB3D27349clipboard.png" alt></p>
+<p><img src="/images/713BC2D00F444CF1B0A30B74B6D6ADF0clipboard.png" alt></p>
+<p>Pod 1 访问 Pod 2 大致流程如下：</p>
+<ol>
+<li>
+<p>数据包从容器出去到达宿主机；</p>
+</li>
+<li>
+<p>宿主机根据路由规则，将数据包转发给下一跳（网关）；</p>
+</li>
+<li>
+<p>到达Node2，根据路由规则将数据包转发给cali设备，从而到达容器2。</p>
+</li>
+</ol>
+<h2 id="K8s网络组件之Calico：Route-Reflector-模式（RR）">K8s网络组件之Calico：Route Reflector 模式（RR）</h2>
+<p>Calico 维护的网络在默认是（Node-to-Node Mesh）全互联模式，Calico集群中的节点之间都会相互建立连接，用于路由 交换。但是随着集群规模的扩大，mesh模式将形成一个巨大服务网格，连接数成倍增加，就会产生性能问题。</p>
+<p>这时就需要使用 Route Reflector（路由器反射）模式解决这个问题。</p>
+<p><img src="/images/9944A097E9DA43589BB46BAA9FDE8705clipboard.png" alt></p>
+<p><img src="/images/ADAFF9FA70284DD0B24FD4106D012B12clipboard.png" alt></p>
+<p>确定一个或多个Calico节点充当路由反射器，集中分发路由，让其 他节点从这个RR节点获取路由信息。</p>
+<p>具体步骤如下：</p>
+<p>1、关闭 node-to-node模式</p>
+<p>添加 default BGP配置，调整 nodeToNodeMeshEnabled和asNumber：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#ASN号可以通过获取</span></span><br><span class="line">calicoctl get nodes --output=wide</span><br><span class="line"></span><br><span class="line"><span class="comment">#vi bgpconfig.yaml</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: BGPConfiguration</span><br><span class="line">metadata:</span><br><span class="line">  name: default</span><br><span class="line">spec:</span><br><span class="line">  logSeverityScreen: Info</span><br><span class="line">  nodeToNodeMeshEnabled: <span class="literal">false</span></span><br><span class="line">  asNumber: 64512</span><br><span class="line"></span><br><span class="line"><span class="comment">#应用配置</span></span><br><span class="line">calicoctl apply -f bgpconfig.yaml </span><br><span class="line">calicoctl get bgpconfig</span><br></pre></td></tr></table></figure>
+<p>2、配置指定节点充当路由反射器</p>
+<p>为方便让BGPPeer轻松选择节点，通过标签选择器匹配。 给路由器反射器节点打标签：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#kubectl label node k8s-node2 route-reflector=true</span></span><br></pre></td></tr></table></figure>
+<p>然后配置路由器反射器节点routeReflectorClusterID</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#calicoctl get node k8s-node2 -o yaml &gt; rr-node.yaml</span></span><br><span class="line"><span class="comment">#vi rr-node.yaml </span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: Node</span><br><span class="line">metadata:</span><br><span class="line">  annotations:</span><br><span class="line">    projectcalico.org/kube-labels: <span class="string">&#x27;&#123;&quot;beta.kubernetes.io/arch&quot;:&quot;amd64&quot;,&quot;beta.kubernetes.io/os&quot;:&quot;linux&quot;,&quot;kubernetes.io/arch&quot;:&quot;amd64&quot;,&quot;kubernetes.io/hostname&quot;:&quot;k8s-node2&quot;,&quot;kubernetes.io/os&quot;:&quot;linux&quot;,&quot;route-reflector&quot;:&quot;true&quot;&#125;&#x27;</span></span><br><span class="line">  creationTimestamp: 2021-03-08T03:28:34Z</span><br><span class="line">  labels:</span><br><span class="line">    beta.kubernetes.io/arch: amd64</span><br><span class="line">    beta.kubernetes.io/os: linux</span><br><span class="line">    kubernetes.io/arch: amd64</span><br><span class="line">    kubernetes.io/hostname: k8s-node2</span><br><span class="line">    kubernetes.io/os: linux</span><br><span class="line">    route-reflector: <span class="string">&quot;true&quot;</span></span><br><span class="line">  name: k8s-node2</span><br><span class="line">  resourceVersion: <span class="string">&quot;53597&quot;</span></span><br><span class="line">  uid: ffc15f57-d624-4003-a3bc-77cb78232f6a</span><br><span class="line">spec:</span><br><span class="line">  bgp:</span><br><span class="line">    ipv4Address: 192.168.1.13/24</span><br><span class="line">    routeReflectorClusterID: 244.0.0.1 <span class="comment"># 添加集群ID 要唯一</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#calicoctl apply -f rr-node.yaml </span></span><br></pre></td></tr></table></figure>
+<p>3、使用标签选择器将路由反射器节点与其他非路由反射器节点配置为对等</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi bgppeer.yaml</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: BGPPeer</span><br><span class="line">metadata:</span><br><span class="line">  name: peer-with-route-reflectors</span><br><span class="line">spec:</span><br><span class="line">  nodeSelector: all()</span><br><span class="line">  peerSelector: route-reflector == <span class="string">&#x27;true&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#calicoctl apply -f bgppeer.yaml </span></span><br><span class="line"><span class="comment">#calicoctl node status   查看节点的BGP连接状态：</span></span><br><span class="line"><span class="comment">#calicoctl get bgppeer</span></span><br><span class="line"><span class="comment">#ss -anpt |grep EST |grep 179</span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/B22931364F2B416D996CA61EBCEA7013clipboard.png" alt></p>
+<p>配置多个节点充当路由反射器</p>
+<p>1.给路由器反射器节点打标签：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl label node k8s-node1 route-reflector=<span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>然后配置路由器反射器节点routeReflectorClusterID：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl get node k8s-node1 -o yaml &gt; rr-node.yaml</span><br><span class="line"><span class="comment">#vi rr-node.yaml</span></span><br><span class="line">apiVersion: projectcalico.org/v3</span><br><span class="line">kind: Node</span><br><span class="line">metadata:</span><br><span class="line">  annotations:</span><br><span class="line">    projectcalico.org/kube-labels: <span class="string">&#x27;&#123;&quot;beta.kubernetes.io/arch&quot;:&quot;amd64&quot;,&quot;beta.kubernetes.io/os&quot;:&quot;linux&quot;,&quot;kubernetes.io/arch&quot;:&quot;amd64&quot;,&quot;kubernetes.io/hostname&quot;:&quot;k8s-node1&quot;,&quot;kubernetes.io/os&quot;:&quot;linux&quot;,&quot;route-reflector&quot;:&quot;true&quot;&#125;&#x27;</span></span><br><span class="line">  creationTimestamp: 2021-03-08T03:28:33Z</span><br><span class="line">  labels:</span><br><span class="line">    beta.kubernetes.io/arch: amd64</span><br><span class="line">    beta.kubernetes.io/os: linux</span><br><span class="line">    kubernetes.io/arch: amd64</span><br><span class="line">    kubernetes.io/hostname: k8s-node1</span><br><span class="line">    kubernetes.io/os: linux</span><br><span class="line">    route-reflector: <span class="string">&quot;true&quot;</span></span><br><span class="line">  name: k8s-node1</span><br><span class="line">  resourceVersion: <span class="string">&quot;60365&quot;</span></span><br><span class="line">  uid: 47632c58-5dac-44d0-941d-abf772048cc4</span><br><span class="line">spec:</span><br><span class="line">  bgp:</span><br><span class="line">    ipv4Address: 192.168.1.12/24</span><br><span class="line">    routeReflectorClusterID: 244.0.0.2  <span class="comment"># 添加集群ID，要唯一</span></span><br><span class="line">    </span><br><span class="line"><span class="comment"># calicoctl apply -f rr-node.yam</span></span><br></pre></td></tr></table></figure>
+<p>2.重新应用bgppeer.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">calicoctl delete -f bgppeer.yaml </span><br><span class="line">calicoctl apply -f bgppeer.yaml</span><br><span class="line">calicoctl node status</span><br></pre></td></tr></table></figure>
+<p><img src="/images/0885EF19E4D24FE5998D0FCD2F90A0A0clipboard.png" alt></p>
+<p><img src="/images/C220687577084968908D41C5CD8E9F3Fclipboard.png" alt></p>
+<h2 id="小结">小结</h2>
+<p><img src="/images/676EE94556D9494C85C7765856BE3E7Bclipboard.png" alt></p>
+<p>网络性能：首选路由方案  flannel组件的hostGW和calico的BGP</p>
+<p>集群规划：100+建议calico</p>
+<p>网络限制：不能跑BGP</p>
+<p>是否需要网络策略？</p>
+<p>VXLAN和IPIP模式：</p>
+<p>优势：只要你的集群节点之间互相能通信就行，不管你宿主机走的是二层还是三层。</p>
+<p>缺点：先进行二层帧封装，再通过宿主机网络封装，解封装也一样，所以增加性能开销</p>
+<p>HostGW和BGP模式：</p>
+<p>优势：由于走的是宿主机网络路由，性能开销小</p>
+<p>缺点：对宿主机网络要求二层可达，想要实现宿主机之前跨网段通信，需要同步宿主机路由信息到上层路由器。flannel需要手动同步，calico使用BGP动态路由发现协议自动同步，只要上层路由支持BGP协议。</p>
+<h2 id="办公网络与K8s网络互通方案">办公网络与K8s网络互通方案</h2>
+<p>网络需求：</p>
+<ul>
+<li>
+<p>办公网络与Pod网络不通。在微服务架构下，开发人员希望在办公电脑能 直接连接K8s中注册中心调试；</p>
+</li>
+<li>
+<p>办公网络与Service网络不通。在测试环境运行的mysql、redis等需要通过 nodeport暴露，维护成本大；</p>
+</li>
+<li>
+<p>现有虚拟机业务访问K8s上的业务。</p>
+</li>
+</ul>
+<p>解决方案：打通办公网络与K8s网络</p>
+<p><img src="/images/0E59C28B367A4A76921B50CA20B67F59clipboard.png" alt></p>
+<p>方案一：在办公室网络上层路由器添加一条静态路由条目，目标网段是容器网络（10.244.0.0）下一跳地址设置为某个node节点IP，从路由器的一个接口出，到达node节点上后，配置iptables规则源网段是办公室网段IP（192.168.0.0）转发到pod网段IP（10.244.0.0），还有源网段是办公室网段IP转发到service网段IP（10.96.0.0/12）。</p>
+<p>方案二：服务器的上层核心交换机和k8s集群的上层路由反射器通过BGP协议相互学习对方的路由，从而实现路由的互通。</p>
+<h2 id="网络策略概述">网络策略概述</h2>
+<p>网络策略（Network Policy），用于限制Pod出入流量，提供Pod级别和Namespace级别网络访问控制。 一些应用场景：</p>
+<ul>
+<li>
+<p>应用程序间的访问控制。例如微服务A允许访问微服务B，微服务C不能访问微服务A</p>
+</li>
+<li>
+<p>开发环境命名空间不能访问测试环境命名空间Pod</p>
+</li>
+<li>
+<p>当Pod暴露到外部时，需要做Pod白名单</p>
+</li>
+<li>
+<p>多租户网络环境隔离</p>
+</li>
+</ul>
+<p>Pod网络入口方向隔离：</p>
+<ul>
+<li>
+<p>基于Pod级网络隔离：只允许特定对象访问Pod（使用标签定义），允许白名单上的IP地址或者IP段访问Pod</p>
+</li>
+<li>
+<p>基于Namespace级网络隔离：多个命名空间，A和B命名空间Pod完全隔离。</p>
+</li>
+</ul>
+<p>Pod网络出口方向隔离：</p>
+<ul>
+<li>
+<p>拒绝某个Namespace上所有Pod访问外部</p>
+</li>
+<li>
+<p>基于目的IP的网络隔离：只允许Pod访问白名单上的IP地址或者IP段</p>
+</li>
+<li>
+<p>基于目标端口的网络隔离：只允许Pod访问白名单上的端口</p>
+</li>
+</ul>
+<p><img src="/images/D45782348B0D40C39F526C0B7297606Fclipboard.png" alt></p>
+<p>podSelector：目标Pod，根据标签选择</p>
+<p>policyTypes：策略类型，指定策略用于入站、出站流量。</p>
+<p>Ingress：from是可以访问的白名单，可以来自于IP段、命名空间、 Pod标签等，ports是可以访问的端口。</p>
+<p>Egress：这个Pod组可以访问外部的IP段和端口。</p>
+<h2 id="案例：对项目Pod出入流量访问控制">案例：对项目Pod出入流量访问控制</h2>
+<p>需求1：将default命名空间携带app=web标签的Pod隔离，只允 许default命名空间携带run=client1标签的Pod访问80端口。</p>
+<p>准备测试环境：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl create deployment web --image=nginx</span><br><span class="line">kubectl run client1 --image=busybox -- <span class="built_in">sleep</span> 36000</span><br><span class="line">kubectl run client2 --image=busybox -- <span class="built_in">sleep</span> 36000</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi np.yaml</span></span><br><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: NetworkPolicy</span><br><span class="line">metadata:</span><br><span class="line">  name: test-network-policy</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  podSelector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: web</span><br><span class="line">  policyTypes:</span><br><span class="line">  - Ingress</span><br><span class="line">  ingress:</span><br><span class="line">  - from:</span><br><span class="line">    - podSelector:</span><br><span class="line">        matchLabels:</span><br><span class="line">          run: client1</span><br><span class="line">    ports:</span><br><span class="line">    - protocol: TCP</span><br><span class="line">      port: 80</span><br><span class="line"></span><br><span class="line"><span class="comment">#kubectl apply -f np.yaml </span></span><br></pre></td></tr></table></figure>
+<p>验证结果：client1pod可以下载web的首页，client2pod不可以下载web的首页</p>
+<p>需求2：default命名空间下所有pod可以互相访问，也可以访问其 他命名空间Pod，但其他命名空间不能访问default命名空间Pod。</p>
+<ul>
+<li>
+<p>podSelector: {}：如果未配置，默认所有Pod</p>
+</li>
+<li>
+<p>from.podSelector: {} : 如果未配置，默认不允许</p>
+</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl run client3 --image=busybox -n azhe -- <span class="built_in">sleep</span> 36000</span><br><span class="line"><span class="comment">#vi np2.yaml </span></span><br><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: NetworkPolicy</span><br><span class="line">metadata:</span><br><span class="line">  name: deny-from-other-namespaces</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  podSelector: &#123;&#125;</span><br><span class="line">  policyTypes:</span><br><span class="line">  - Ingress</span><br><span class="line">  ingress:</span><br><span class="line">  - from:</span><br><span class="line">    - podSelector: &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">#kubectl apply -f np2.yaml</span></span><br></pre></td></tr></table></figure>
+<p>验证结果：azhe命名空间下的client3pod不可以访问default命名空间下的pod，但default命名空间下的pod可以访问azhe命名空间下的pod。</p>
+<h2 id="网络策略实现流程">网络策略实现流程</h2>
+<p><img src="/images/D06CDA70F2FC4AF984902BCCA9DC0D48clipboard.png" alt></p>
+<p>当我们创建一个网络策略，也就是apply 一个yaml文件，它会提交到apiserver，policy controller控制器（calico-kube-controllers）里面的进程会实时监听apiserver上的网络策略，拿到之后会通知它的agent（也就是运行在每个节点上calico pod（calico-node）来取我拿到的网络策略，然后在本地运行，calico-node利用iptables创建相应的网络规则。</p>
 ]]></content>
       <categories>
         <category>K8S</category>
@@ -3174,39 +3174,6 @@
       </tags>
   </entry>
   <entry>
-    <title>实现Docker容器多主机通信</title>
-    <url>/2022/05/26/%E5%AE%9E%E7%8E%B0docker%E5%AE%B9%E5%99%A8%E5%A4%9A%E4%B8%BB%E6%9C%BA%E9%80%9A%E4%BF%A1/</url>
-    <content><![CDATA[<p>跨主机网络：实现Docker容器多主机通信</p>
-<p>Flannel是CoreOS维护的一个网络组件，在每个主机上运行守护 进程负责维护本地路由转发，Flannel使用ETCD来存储容器网络 与主机之前的关系。</p>
-<p>其他主流容器跨主机网络方案：</p>
-<p>• Weave</p>
-<p>• Calico</p>
-<p>• OpenvSwitch</p>
-<p><img src="/images/10B81BDFE6B2495FB1B335FAC555BF8Dclipboard.png" alt></p>
-<p>1、etcd安装并配置（任意找一台节点安装即可）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum -y install etcd</span><br><span class="line">vim /etc/etcd/etcd.conf </span><br><span class="line">ETCD_DATA_DIR=<span class="string">&quot;/var/lib/etcd/default.etcd&quot;</span></span><br><span class="line">ETCD_LISTEN_CLIENT_URLS=<span class="string">&quot;http://192.168.0.11:2379&quot;</span></span><br><span class="line">ETCD_NAME=<span class="string">&quot;default&quot;</span></span><br><span class="line">ETCD_ADVERTISE_CLIENT_URLS=<span class="string">&quot;http://192.168.0.11:2379&quot;</span></span><br><span class="line">systemctl start etcd</span><br><span class="line">systemctl <span class="built_in">enable</span> etcd</span><br><span class="line">ss -anpt |grep 2379</span><br></pre></td></tr></table></figure>
-<p>2、flanneld安装并配置（两台跨主机的docker主机安装）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum -y install flannel</span><br><span class="line">vim /etc/sysconfig/flanneld</span><br><span class="line">FLANNEL_ETCD_ENDPOINTS=<span class="string">&quot;http://192.168.0.11:2379&quot;</span></span><br><span class="line">FLANNEL_ETCD_PREFIX=<span class="string">&quot;/atomic.io/network&quot;</span></span><br></pre></td></tr></table></figure>
-<p>3、向etcd写入子网启动并flanneld服务</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">etcdctl --endpoints=<span class="string">&quot;http://192.168.0.11:2379&quot;</span> <span class="built_in">set</span> /atomic.io/network/config <span class="string">&#x27;&#123; &quot;Network&quot;:&quot;172.17.0.0/16&quot;, &quot;Backend&quot;: &#123;&quot;Type&quot;: &quot;vxlan&quot;&#125;&#125; &#x27;</span></span><br><span class="line">etcdctl --endpoints=<span class="string">&quot;http://192.168.0.11:2379&quot;</span> get /atomic.io/network/config </span><br><span class="line">systemctl start flanneld.service  </span><br><span class="line">systemctl <span class="built_in">enable</span> flanneld.service </span><br></pre></td></tr></table></figure>
-<p>4、配置Docker使用flannel生成的网络信息 (两台跨主机的docker主机配置）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">vim /usr/lib/systemd/system/docker.service</span><br><span class="line">EnvironmentFile=/var/run/flannel/docker</span><br><span class="line">ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock <span class="variable">$DOCKER_NETWORK_OPTIONS</span></span><br><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl restart docker </span><br><span class="line">ps -ef |grep docker</span><br></pre></td></tr></table></figure>
-<p>5.两台跨主机的docker主机设置iptable转发策略为允许并重启服务（按顺序启动）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">iptables -P FORWARD ACCEPT</span><br><span class="line">systemctl restart flanneld.service </span><br><span class="line">systemctl restart docker.service</span><br></pre></td></tr></table></figure>
-<p>6、在两台主机创建容器相互ping验证</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run -it busybox sh</span><br><span class="line">ifconfig </span><br></pre></td></tr></table></figure>
-<p>防火墙学习：</p>
-<p><a href="https://www.cnblogs.com/shijiaqi1066/p/3812510.html">https://www.cnblogs.com/shijiaqi1066/p/3812510.html</a></p>
-<p><a href="http://www.zsythink.net/archives/1199">http://www.zsythink.net/archives/1199</a></p>
-]]></content>
-      <categories>
-        <category>Docker</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>基于Jenkins构建持续集成（CI）平台</title>
     <url>/2023/07/10/%E5%9F%BA%E4%BA%8Ejenkins%E6%9E%84%E5%BB%BA%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90ci%E5%B9%B3%E5%8F%B0/</url>
     <content><![CDATA[<h2 id="发布流程">发布流程</h2>
@@ -3383,6 +3350,39 @@
       </categories>
       <tags>
         <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>实现Docker容器多主机通信</title>
+    <url>/2022/05/26/%E5%AE%9E%E7%8E%B0docker%E5%AE%B9%E5%99%A8%E5%A4%9A%E4%B8%BB%E6%9C%BA%E9%80%9A%E4%BF%A1/</url>
+    <content><![CDATA[<p>跨主机网络：实现Docker容器多主机通信</p>
+<p>Flannel是CoreOS维护的一个网络组件，在每个主机上运行守护 进程负责维护本地路由转发，Flannel使用ETCD来存储容器网络 与主机之前的关系。</p>
+<p>其他主流容器跨主机网络方案：</p>
+<p>• Weave</p>
+<p>• Calico</p>
+<p>• OpenvSwitch</p>
+<p><img src="/images/10B81BDFE6B2495FB1B335FAC555BF8Dclipboard.png" alt></p>
+<p>1、etcd安装并配置（任意找一台节点安装即可）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum -y install etcd</span><br><span class="line">vim /etc/etcd/etcd.conf </span><br><span class="line">ETCD_DATA_DIR=<span class="string">&quot;/var/lib/etcd/default.etcd&quot;</span></span><br><span class="line">ETCD_LISTEN_CLIENT_URLS=<span class="string">&quot;http://192.168.0.11:2379&quot;</span></span><br><span class="line">ETCD_NAME=<span class="string">&quot;default&quot;</span></span><br><span class="line">ETCD_ADVERTISE_CLIENT_URLS=<span class="string">&quot;http://192.168.0.11:2379&quot;</span></span><br><span class="line">systemctl start etcd</span><br><span class="line">systemctl <span class="built_in">enable</span> etcd</span><br><span class="line">ss -anpt |grep 2379</span><br></pre></td></tr></table></figure>
+<p>2、flanneld安装并配置（两台跨主机的docker主机安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum -y install flannel</span><br><span class="line">vim /etc/sysconfig/flanneld</span><br><span class="line">FLANNEL_ETCD_ENDPOINTS=<span class="string">&quot;http://192.168.0.11:2379&quot;</span></span><br><span class="line">FLANNEL_ETCD_PREFIX=<span class="string">&quot;/atomic.io/network&quot;</span></span><br></pre></td></tr></table></figure>
+<p>3、向etcd写入子网启动并flanneld服务</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">etcdctl --endpoints=<span class="string">&quot;http://192.168.0.11:2379&quot;</span> <span class="built_in">set</span> /atomic.io/network/config <span class="string">&#x27;&#123; &quot;Network&quot;:&quot;172.17.0.0/16&quot;, &quot;Backend&quot;: &#123;&quot;Type&quot;: &quot;vxlan&quot;&#125;&#125; &#x27;</span></span><br><span class="line">etcdctl --endpoints=<span class="string">&quot;http://192.168.0.11:2379&quot;</span> get /atomic.io/network/config </span><br><span class="line">systemctl start flanneld.service  </span><br><span class="line">systemctl <span class="built_in">enable</span> flanneld.service </span><br></pre></td></tr></table></figure>
+<p>4、配置Docker使用flannel生成的网络信息 (两台跨主机的docker主机配置）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">vim /usr/lib/systemd/system/docker.service</span><br><span class="line">EnvironmentFile=/var/run/flannel/docker</span><br><span class="line">ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock <span class="variable">$DOCKER_NETWORK_OPTIONS</span></span><br><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl restart docker </span><br><span class="line">ps -ef |grep docker</span><br></pre></td></tr></table></figure>
+<p>5.两台跨主机的docker主机设置iptable转发策略为允许并重启服务（按顺序启动）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">iptables -P FORWARD ACCEPT</span><br><span class="line">systemctl restart flanneld.service </span><br><span class="line">systemctl restart docker.service</span><br></pre></td></tr></table></figure>
+<p>6、在两台主机创建容器相互ping验证</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run -it busybox sh</span><br><span class="line">ifconfig </span><br></pre></td></tr></table></figure>
+<p>防火墙学习：</p>
+<p><a href="https://www.cnblogs.com/shijiaqi1066/p/3812510.html">https://www.cnblogs.com/shijiaqi1066/p/3812510.html</a></p>
+<p><a href="http://www.zsythink.net/archives/1199">http://www.zsythink.net/archives/1199</a></p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
       </tags>
   </entry>
   <entry>
@@ -4234,204 +4234,6 @@
       </tags>
   </entry>
   <entry>
-    <title>快速部署一个K8s集群</title>
-    <url>/2022/06/11/%E5%BF%AB%E9%80%9F%E9%83%A8%E7%BD%B2%E4%B8%80%E4%B8%AAk8s%E9%9B%86%E7%BE%A4/</url>
-    <content><![CDATA[<h2 id="生产环境部署K8s的2种方式">生产环境部署K8s的2种方式</h2>
-<h3 id="kubeadm">kubeadm</h3>
-<p>Kubeadm是一个工具，提供kubeadm init和kubeadm join，用于快速部署Kubernetes集群。</p>
-<p>部署地址：<a href="https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm/">https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm/</a></p>
-<h3 id="二进制">二进制</h3>
-<p>推荐，从官方下载发行版的二进制包，手动部署每个组件，组成Kubernetes集群。</p>
-<p>下载地址：<a href="https://github.com/kubernetes/kubernetes/releases">https://github.com/kubernetes/kubernetes/releases</a></p>
-<h2 id="服务器硬件配置推荐">服务器硬件配置推荐</h2>
-<p><img src="/images/2AB14DBE37A14CEB9A1838BE07C1D5F5clipboard.png" alt></p>
-<h2 id="使用kubeadm快速部署一个K8s集群">使用kubeadm快速部署一个K8s集群</h2>
-<table>
-<thead>
-<tr>
-<th>192.168.0.11/24</th>
-<th>192.168.0.12/24</th>
-<th>192.168.0.13/24</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>k8s-master</td>
-<td>k8s-node1</td>
-<td>k8s-node2</td>
-</tr>
-</tbody>
-</table>
-<p>kubeadm是官方社区推出的一个用于快速部署kubernetes集群的工具。</p>
-<p>这个工具能通过两条指令完成一个kubernetes集群的部署：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 创建一个 Master 节点</span></span><br><span class="line">$ kubeadm init</span><br><span class="line"><span class="comment"># 将一个 Node 节点加入到当前集群中</span></span><br><span class="line">$ kubeadm <span class="built_in">join</span> &lt;Master节点的IP和端口 &gt;</span><br></pre></td></tr></table></figure>
-<p>master：kube-apiserver、scheduler、controller-manager、etcd</p>
-<p>node：kubelet（非容器化）、kube-proxy</p>
-<p>kubeadm不单纯是简化部署k8s集群，采用了容器化方式部署k8s组件。</p>
-<h3 id="1-安装要求">1. 安装要求</h3>
-<p>在开始之前，部署Kubernetes集群机器需要满足以下几个条件：</p>
-<ul>
-<li>
-<p>一台或多台机器，操作系统 CentOS7.x-86_x64</p>
-</li>
-<li>
-<p>硬件配置：2GB或更多RAM，2个CPU或更多CPU，硬盘30GB或更多</p>
-</li>
-<li>
-<p>集群中所有机器之间网络互通</p>
-</li>
-<li>
-<p>可以访问外网，需要拉取镜像</p>
-</li>
-<li>
-<p>禁止swap分区</p>
-</li>
-</ul>
-<h3 id="2-准备环境">2. 准备环境</h3>
-<h4 id="关闭防火墙：">关闭防火墙：</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ systemctl stop firewalld</span><br><span class="line">$ systemctl <span class="built_in">disable</span> firewalld</span><br></pre></td></tr></table></figure>
-<h4 id="关闭selinux：">关闭selinux：</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sed -i <span class="string">&#x27;s/enforcing/disabled/&#x27;</span> /etc/selinux/config  <span class="comment"># 永久</span></span><br><span class="line">$ setenforce 0  <span class="comment"># 临时</span></span><br></pre></td></tr></table></figure>
-<h4 id="关闭swap：">关闭swap：</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ swapoff -a  <span class="comment"># 临时</span></span><br><span class="line">$ vim /etc/fstab  <span class="comment"># 永久</span></span><br></pre></td></tr></table></figure>
-<h4 id="设置主机名：">设置主机名：</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hostnamectl set-hostname &lt;hostname&gt;</span><br></pre></td></tr></table></figure>
-<h4 id="在master添加hosts：">在master添加hosts：</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> &gt;&gt; /etc/hosts &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">192.168.0.11 k8s-master</span></span><br><span class="line"><span class="string">192.168.0.12 k8s-node1</span></span><br><span class="line"><span class="string">192.168.0.13 k8s-node2</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
-<h4 id="将桥接的IPv4流量传递到iptables的链：">将桥接的IPv4流量传递到iptables的链：</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> &gt; /etc/sysctl.d/k8s.conf &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">net.bridge.bridge-nf-call-ip6tables = 1</span></span><br><span class="line"><span class="string">net.bridge.bridge-nf-call-iptables = 1</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line">$ sysctl --system  <span class="comment"># 生效</span></span><br></pre></td></tr></table></figure>
-<h4 id="时间同步：">时间同步：</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ yum install ntpdate -y</span><br><span class="line">$ ntpdate time.windows.com</span><br></pre></td></tr></table></figure>
-<h3 id="3-安装Docker-kubeadm-kubelet【所有节点】">3. 安装Docker/kubeadm/kubelet【所有节点】</h3>
-<p>Kubernetes默认CRI（容器运行时）为Docker，因此先安装Docker。</p>
-<h4 id="3-1-安装Docker">3.1 安装Docker</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ wget https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo -O /etc/yum.repos.d/docker-ce.repo</span><br><span class="line">$ yum -y install docker-ce</span><br><span class="line">$ systemctl <span class="built_in">enable</span> docker &amp;&amp; systemctl start docker</span><br></pre></td></tr></table></figure>
-<p>配置镜像下载加速器：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> &gt; /etc/docker/daemon.json &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">&#123;</span></span><br><span class="line"><span class="string">  &quot;registry-mirrors&quot;: [&quot;https://b9pmyelo.mirror.aliyuncs.com&quot;]</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line">$ systemctl restart docker</span><br><span class="line">$ docker info</span><br></pre></td></tr></table></figure>
-<h4 id="3-2-添加阿里云YUM软件源">3.2 添加阿里云YUM软件源</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> &gt; /etc/yum.repos.d/kubernetes.repo &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">[kubernetes]</span></span><br><span class="line"><span class="string">name=Kubernetes</span></span><br><span class="line"><span class="string">baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64</span></span><br><span class="line"><span class="string">enabled=1</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">repo_gpgcheck=0</span></span><br><span class="line"><span class="string">gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
-<h4 id="3-3-安装kubeadm，kubelet和kubectl">3.3 安装kubeadm，kubelet和kubectl</h4>
-<p>由于版本更新频繁，这里指定版本号部署：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ yum install -y kubelet-1.19.0 kubeadm-1.19.0 kubectl-1.19.0</span><br><span class="line">$ systemctl <span class="built_in">enable</span> kubelet</span><br></pre></td></tr></table></figure>
-<h3 id="4-部署Kubernetes-Master">4. 部署Kubernetes Master</h3>
-<p><a href="https://kubernetes.io/zh/docs/reference/setup-tools/kubeadm/kubeadm-init/#config-file">https://kubernetes.io/zh/docs/reference/setup-tools/kubeadm/kubeadm-init/#config-file</a></p>
-<p><a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#initializing-your-control-plane-node">https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#initializing-your-control-plane-node</a></p>
-<p>在192.168.0.11（Master）执行。</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubeadm init \	</span><br><span class="line">  --apiserver-advertise-address=192.168.0.11 \</span><br><span class="line">  --image-repository registry.aliyuncs.com/google_containers \</span><br><span class="line">  --kubernetes-version v1.19.0 \</span><br><span class="line">  --service-cidr=10.96.0.0/12 \</span><br><span class="line">  --pod-network-cidr=10.244.0.0/16 \</span><br><span class="line">  --ignore-preflight-errors=all</span><br></pre></td></tr></table></figure>
-<ul>
-<li>
-<p>–apiserver-advertise-address 集群通告地址</p>
-</li>
-<li>
-<p>–image-repository  由于默认拉取镜像地址k8s.gcr.io国内无法访问，这里指定阿里云镜像仓库地址</p>
-</li>
-<li>
-<p>–kubernetes-version K8s版本，与上面安装的一致</p>
-</li>
-<li>
-<p>–service-cidr 集群内部虚拟网络，Pod统一访问入口</p>
-</li>
-<li>
-<p>–pod-network-cidr Pod网络，，与下面部署的CNI网络组件yaml中保持一致</p>
-</li>
-</ul>
-<p>kubeadm init初始化工作：</p>
-<p>1、[preflight] 环境检查和拉取镜像 kubeadm config /images pull</p>
-<p>2、[certs] 生成k8s证书和etcd证书 /etc/kubernetes/pki</p>
-<p>3、[kubeconfig] 生成kubeconfig文件</p>
-<p>4、[kubelet-start] 生成kubelet配置文件</p>
-<p>5、[control-plane] 部署管理节点组件，用镜像启动容器  kubectl get pods -n kube-system</p>
-<p>6、[etcd] 部署etcd数据库，用镜像启动容器</p>
-<p>7、[upload-config] [kubelet] [upload-certs] 上传配置文件到k8s中</p>
-<p>8、[mark-control-plane] 给管理节点添加一个标签 <a href="http://node-role.kubernetes.io/master=">node-role.kubernetes.io/master=</a>‘’，再添加一个污点[<a href="http://node-role.kubernetes.io/master:NoSchedule">node-role.kubernetes.io/master:NoSchedule</a>]</p>
-<p>9、[bootstrap-token] 自动为kubelet颁发证书</p>
-<p>10、[addons] 部署插件，CoreDNS、kube-proxy</p>
-<p>或者使用配置文件引导：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ vi kubeadm.conf</span><br><span class="line">apiVersion: kubeadm.k8s.io/v1beta2</span><br><span class="line">kind: ClusterConfiguration</span><br><span class="line">kubernetesVersion: v1.18.0</span><br><span class="line">imageRepository: registry.aliyuncs.com/google_containers </span><br><span class="line">networking:</span><br><span class="line">  podSubnet: 10.244.0.0/16 </span><br><span class="line">  serviceSubnet: 10.96.0.0/12 </span><br><span class="line">  </span><br><span class="line">$ kubeadm init --config kubeadm.conf --ignore-preflight-errors=all  </span><br></pre></td></tr></table></figure>
-<p>拷贝kubectl使用的连接k8s认证文件到默认路径：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> -p <span class="variable">$HOME</span>/.kube</span><br><span class="line">sudo <span class="built_in">cp</span> -i /etc/kubernetes/admin.conf <span class="variable">$HOME</span>/.kube/config</span><br><span class="line">sudo <span class="built_in">chown</span> $(<span class="built_in">id</span> -u):$(<span class="built_in">id</span> -g) <span class="variable">$HOME</span>/.kube/config</span><br><span class="line">$ kubectl get nodes</span><br><span class="line">NAME         STATUS   ROLES    AGE   VERSION</span><br><span class="line">k8s-master   Ready    master   2m   v1.18.0</span><br></pre></td></tr></table></figure>
-<h3 id="5-加入Kubernetes-Node">5. 加入Kubernetes Node</h3>
-<p>在192.168.0.11/12（Node）执行。</p>
-<p>向集群添加新节点，执行在kubeadm init输出的kubeadm join命令：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubeadm <span class="built_in">join</span> 192.168.0.11:6443 --token dq52g0.m44tucwrwwyieklo \</span><br><span class="line">  --discovery-token-ca-cert-hash sha256:0f9df6b112b8bd2ca31c6ccfa777ab057158774bd68990e84393b50e0f181572 </span><br></pre></td></tr></table></figure>
-<p>默认token有效期为24小时，当过期之后，该token就不可用了。这时就需要重新创建token，操作如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubeadm token create</span><br><span class="line">$ kubeadm token list</span><br><span class="line">$ openssl x509 -pubkey -<span class="keyword">in</span> /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2&gt;/dev/null | openssl dgst -sha256 -hex | sed <span class="string">&#x27;s/^.* //&#x27;</span></span><br><span class="line">63bca849e0e01691ae14eab449570284f0c3ddeea590f8da988c07fe2729e924</span><br><span class="line"></span><br><span class="line">$ kubeadm <span class="built_in">join</span> 192.168.0.11:6443 --token nuja6n.o3jrhsffiqs9swnu --discovery-token-ca-cert-hash sha256:63bca849e0e01691ae14eab449570284f0c3ddeea590f8da988c07fe2729e924</span><br></pre></td></tr></table></figure>
-<p>或者直接命令快捷生成：kubeadm token create --print-join-command</p>
-<p><a href="https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-join/">https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-join/</a></p>
-<h3 id="6-部署容器网络（CNI）">6. 部署容器网络（CNI）</h3>
-<p><a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#pod-network">https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#pod-network</a></p>
-<p>注意：只需要部署下面其中一个，推荐Calico。</p>
-<p>Calico是一个纯三层的数据中心网络方案，Calico支持广泛的平台，包括Kubernetes、OpenStack等。</p>
-<p>Calico 在每一个计算节点利用 Linux Kernel 实现了一个高效的虚拟路由器（ vRouter） 来负责数据转发，而每个 vRouter 通过 BGP 协议负责把自己上运行的 workload 的路由信息向整个 Calico 网络内传播。</p>
-<p>此外，Calico  项目还实现了 Kubernetes 网络策略，提供ACL功能。</p>
-<p><a href="https://docs.projectcalico.org/getting-started/kubernetes/quickstart">https://docs.projectcalico.org/getting-started/kubernetes/quickstart</a></p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ wget https://docs.projectcalico.org/manifests/calico.yaml</span><br></pre></td></tr></table></figure>
-<p>下载完后还需要修改里面定义Pod网络（CALICO_IPV4POOL_CIDR），与前面kubeadm init指定的一样</p>
-<p>修改完后应用清单：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubectl apply -f calico.yaml</span><br><span class="line">$ kubectl get pods -n kube-system</span><br></pre></td></tr></table></figure>
-<h3 id="7-测试kubernetes集群">7. 测试kubernetes集群</h3>
-<ul>
-<li>
-<p>验证Pod工作</p>
-</li>
-<li>
-<p>验证Pod网络通信</p>
-</li>
-<li>
-<p>验证DNS解析</p>
-</li>
-</ul>
-<p>在Kubernetes集群中创建一个pod，验证是否正常运行：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubectl create deployment nginx --image=nginx</span><br><span class="line">$ kubectl expose deployment nginx --port=80 --<span class="built_in">type</span>=NodePort</span><br><span class="line">$ kubectl get pod,svc</span><br></pre></td></tr></table></figure>
-<p>访问地址：<a href="http://NodeIP">http://NodeIP</a>:Port</p>
-<h3 id="8-部署-Dashboard">8. 部署 Dashboard</h3>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ wget https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.3/aio/deploy/recommended.yaml</span><br></pre></td></tr></table></figure>
-<p>默认Dashboard只能集群内部访问，修改Service为NodePort类型，暴露到外部：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ vi recommended.yaml</span><br><span class="line">...</span><br><span class="line">kind: Service</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    k8s-app: kubernetes-dashboard</span><br><span class="line">  name: kubernetes-dashboard</span><br><span class="line">  namespace: kubernetes-dashboard</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">    - port: 443</span><br><span class="line">      targetPort: 8443</span><br><span class="line">      nodePort: 30001</span><br><span class="line">  selector:</span><br><span class="line">    k8s-app: kubernetes-dashboard</span><br><span class="line">  <span class="built_in">type</span>: NodePort</span><br><span class="line">...</span><br><span class="line">$ kubectl apply -f recommended.yaml</span><br><span class="line">$ kubectl get pods -n kubernetes-dashboard</span><br><span class="line">NAME                                         READY   STATUS    RESTARTS   AGE</span><br><span class="line">dashboard-metrics-scraper-6b4884c9d5-gl8nr   1/1     Running   0          13m</span><br><span class="line">kubernetes-dashboard-7f99b75bf4-89cds        1/1     Running   0          13m</span><br></pre></td></tr></table></figure>
-<p>访问地址：<a href="https://NodeIP:30001">https://NodeIP:30001</a></p>
-<p>创建service account并绑定默认cluster-admin管理员集群角色：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 创建用户</span></span><br><span class="line">$ kubectl create serviceaccount dashboard-admin -n kube-system</span><br><span class="line"><span class="comment"># 用户授权</span></span><br><span class="line">$ kubectl create clusterrolebinding dashboard-admin --clusterrole=cluster-admin --serviceaccount=kube-system:dashboard-admin</span><br><span class="line"><span class="comment"># 获取用户Token</span></span><br><span class="line">$ kubectl describe secrets -n kube-system $(kubectl -n kube-system get secret | awk <span class="string">&#x27;/dashboard-admin/&#123;print $1&#125;&#x27;</span>)</span><br></pre></td></tr></table></figure>
-<p>使用输出的token登录Dashboard。</p>
-<p><img src="/images/268C8E2AC7224A1C8F6A0BC88B9B1A0Cclipboard.png" alt></p>
-<h2 id="K8s-CNI网络模型">K8s CNI网络模型</h2>
-<p><img src="/images/77DF44AB43FB4CA0BA6CEF859FCE5CF3clipboard.png" alt></p>
-<p>K8s是一个扁平化网络。</p>
-<p>即所有部署的网络组件都必须满足如下要求：</p>
-<ul>
-<li>
-<p>一个Pod一个IP</p>
-</li>
-<li>
-<p>所有的 Pod 可以与任何其他 Pod 直接通信</p>
-</li>
-<li>
-<p>所有节点可以与所有 Pod 直接通信</p>
-</li>
-<li>
-<p>Pod 内部获取到的 IP 地址与其他 Pod 或节点与其通信时的 IP 地址是同一个</p>
-</li>
-</ul>
-<p>主流网络组件有：Flannel、Calico等</p>
-<h2 id="查看集群状态">查看集群状态</h2>
-<h4 id="查看master组件状态：">查看master组件状态：</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get cs </span><br></pre></td></tr></table></figure>
-<h4 id="查看node状态：">查看node状态：</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get node</span><br></pre></td></tr></table></figure>
-<h4 id="查看Apiserver代理的URL：">查看Apiserver代理的URL：</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl cluster-info </span><br></pre></td></tr></table></figure>
-<h4 id="查看集群详细信息：">查看集群详细信息：</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl cluster-info dump </span><br></pre></td></tr></table></figure>
-<h4 id="查看资源信息：">查看资源信息：</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl describe &lt;资源&gt; &lt;名称&gt;</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>K8S</category>
-      </categories>
-      <tags>
-        <tag>K8S</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>微服务治理istio初探下</title>
     <url>/2023/01/10/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8B/</url>
     <content><![CDATA[<h2 id="Istio-流量管理核心资源">Istio 流量管理核心资源</h2>
@@ -4737,6 +4539,204 @@
 <h2 id="使用Jaeger进行链路追踪">使用Jaeger进行链路追踪</h2>
 <p>Jaeger是Uber开源的分布式追踪系统，用于微服务的监控 和全链路追踪。</p>
 <p><img src="/images/86CF0CD21B4B4236BDB44435A7918C82clipboard.png" alt></p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>快速部署一个K8s集群</title>
+    <url>/2022/06/11/%E5%BF%AB%E9%80%9F%E9%83%A8%E7%BD%B2%E4%B8%80%E4%B8%AAk8s%E9%9B%86%E7%BE%A4/</url>
+    <content><![CDATA[<h2 id="生产环境部署K8s的2种方式">生产环境部署K8s的2种方式</h2>
+<h3 id="kubeadm">kubeadm</h3>
+<p>Kubeadm是一个工具，提供kubeadm init和kubeadm join，用于快速部署Kubernetes集群。</p>
+<p>部署地址：<a href="https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm/">https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm/</a></p>
+<h3 id="二进制">二进制</h3>
+<p>推荐，从官方下载发行版的二进制包，手动部署每个组件，组成Kubernetes集群。</p>
+<p>下载地址：<a href="https://github.com/kubernetes/kubernetes/releases">https://github.com/kubernetes/kubernetes/releases</a></p>
+<h2 id="服务器硬件配置推荐">服务器硬件配置推荐</h2>
+<p><img src="/images/2AB14DBE37A14CEB9A1838BE07C1D5F5clipboard.png" alt></p>
+<h2 id="使用kubeadm快速部署一个K8s集群">使用kubeadm快速部署一个K8s集群</h2>
+<table>
+<thead>
+<tr>
+<th>192.168.0.11/24</th>
+<th>192.168.0.12/24</th>
+<th>192.168.0.13/24</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>k8s-master</td>
+<td>k8s-node1</td>
+<td>k8s-node2</td>
+</tr>
+</tbody>
+</table>
+<p>kubeadm是官方社区推出的一个用于快速部署kubernetes集群的工具。</p>
+<p>这个工具能通过两条指令完成一个kubernetes集群的部署：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 创建一个 Master 节点</span></span><br><span class="line">$ kubeadm init</span><br><span class="line"><span class="comment"># 将一个 Node 节点加入到当前集群中</span></span><br><span class="line">$ kubeadm <span class="built_in">join</span> &lt;Master节点的IP和端口 &gt;</span><br></pre></td></tr></table></figure>
+<p>master：kube-apiserver、scheduler、controller-manager、etcd</p>
+<p>node：kubelet（非容器化）、kube-proxy</p>
+<p>kubeadm不单纯是简化部署k8s集群，采用了容器化方式部署k8s组件。</p>
+<h3 id="1-安装要求">1. 安装要求</h3>
+<p>在开始之前，部署Kubernetes集群机器需要满足以下几个条件：</p>
+<ul>
+<li>
+<p>一台或多台机器，操作系统 CentOS7.x-86_x64</p>
+</li>
+<li>
+<p>硬件配置：2GB或更多RAM，2个CPU或更多CPU，硬盘30GB或更多</p>
+</li>
+<li>
+<p>集群中所有机器之间网络互通</p>
+</li>
+<li>
+<p>可以访问外网，需要拉取镜像</p>
+</li>
+<li>
+<p>禁止swap分区</p>
+</li>
+</ul>
+<h3 id="2-准备环境">2. 准备环境</h3>
+<h4 id="关闭防火墙：">关闭防火墙：</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ systemctl stop firewalld</span><br><span class="line">$ systemctl <span class="built_in">disable</span> firewalld</span><br></pre></td></tr></table></figure>
+<h4 id="关闭selinux：">关闭selinux：</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ sed -i <span class="string">&#x27;s/enforcing/disabled/&#x27;</span> /etc/selinux/config  <span class="comment"># 永久</span></span><br><span class="line">$ setenforce 0  <span class="comment"># 临时</span></span><br></pre></td></tr></table></figure>
+<h4 id="关闭swap：">关闭swap：</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ swapoff -a  <span class="comment"># 临时</span></span><br><span class="line">$ vim /etc/fstab  <span class="comment"># 永久</span></span><br></pre></td></tr></table></figure>
+<h4 id="设置主机名：">设置主机名：</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hostnamectl set-hostname &lt;hostname&gt;</span><br></pre></td></tr></table></figure>
+<h4 id="在master添加hosts：">在master添加hosts：</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> &gt;&gt; /etc/hosts &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">192.168.0.11 k8s-master</span></span><br><span class="line"><span class="string">192.168.0.12 k8s-node1</span></span><br><span class="line"><span class="string">192.168.0.13 k8s-node2</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+<h4 id="将桥接的IPv4流量传递到iptables的链：">将桥接的IPv4流量传递到iptables的链：</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> &gt; /etc/sysctl.d/k8s.conf &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">net.bridge.bridge-nf-call-ip6tables = 1</span></span><br><span class="line"><span class="string">net.bridge.bridge-nf-call-iptables = 1</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line">$ sysctl --system  <span class="comment"># 生效</span></span><br></pre></td></tr></table></figure>
+<h4 id="时间同步：">时间同步：</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ yum install ntpdate -y</span><br><span class="line">$ ntpdate time.windows.com</span><br></pre></td></tr></table></figure>
+<h3 id="3-安装Docker-kubeadm-kubelet【所有节点】">3. 安装Docker/kubeadm/kubelet【所有节点】</h3>
+<p>Kubernetes默认CRI（容器运行时）为Docker，因此先安装Docker。</p>
+<h4 id="3-1-安装Docker">3.1 安装Docker</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ wget https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo -O /etc/yum.repos.d/docker-ce.repo</span><br><span class="line">$ yum -y install docker-ce</span><br><span class="line">$ systemctl <span class="built_in">enable</span> docker &amp;&amp; systemctl start docker</span><br></pre></td></tr></table></figure>
+<p>配置镜像下载加速器：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> &gt; /etc/docker/daemon.json &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">&#123;</span></span><br><span class="line"><span class="string">  &quot;registry-mirrors&quot;: [&quot;https://b9pmyelo.mirror.aliyuncs.com&quot;]</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line">$ systemctl restart docker</span><br><span class="line">$ docker info</span><br></pre></td></tr></table></figure>
+<h4 id="3-2-添加阿里云YUM软件源">3.2 添加阿里云YUM软件源</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ <span class="built_in">cat</span> &gt; /etc/yum.repos.d/kubernetes.repo &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">[kubernetes]</span></span><br><span class="line"><span class="string">name=Kubernetes</span></span><br><span class="line"><span class="string">baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64</span></span><br><span class="line"><span class="string">enabled=1</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">repo_gpgcheck=0</span></span><br><span class="line"><span class="string">gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+<h4 id="3-3-安装kubeadm，kubelet和kubectl">3.3 安装kubeadm，kubelet和kubectl</h4>
+<p>由于版本更新频繁，这里指定版本号部署：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ yum install -y kubelet-1.19.0 kubeadm-1.19.0 kubectl-1.19.0</span><br><span class="line">$ systemctl <span class="built_in">enable</span> kubelet</span><br></pre></td></tr></table></figure>
+<h3 id="4-部署Kubernetes-Master">4. 部署Kubernetes Master</h3>
+<p><a href="https://kubernetes.io/zh/docs/reference/setup-tools/kubeadm/kubeadm-init/#config-file">https://kubernetes.io/zh/docs/reference/setup-tools/kubeadm/kubeadm-init/#config-file</a></p>
+<p><a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#initializing-your-control-plane-node">https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#initializing-your-control-plane-node</a></p>
+<p>在192.168.0.11（Master）执行。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubeadm init \	</span><br><span class="line">  --apiserver-advertise-address=192.168.0.11 \</span><br><span class="line">  --image-repository registry.aliyuncs.com/google_containers \</span><br><span class="line">  --kubernetes-version v1.19.0 \</span><br><span class="line">  --service-cidr=10.96.0.0/12 \</span><br><span class="line">  --pod-network-cidr=10.244.0.0/16 \</span><br><span class="line">  --ignore-preflight-errors=all</span><br></pre></td></tr></table></figure>
+<ul>
+<li>
+<p>–apiserver-advertise-address 集群通告地址</p>
+</li>
+<li>
+<p>–image-repository  由于默认拉取镜像地址k8s.gcr.io国内无法访问，这里指定阿里云镜像仓库地址</p>
+</li>
+<li>
+<p>–kubernetes-version K8s版本，与上面安装的一致</p>
+</li>
+<li>
+<p>–service-cidr 集群内部虚拟网络，Pod统一访问入口</p>
+</li>
+<li>
+<p>–pod-network-cidr Pod网络，，与下面部署的CNI网络组件yaml中保持一致</p>
+</li>
+</ul>
+<p>kubeadm init初始化工作：</p>
+<p>1、[preflight] 环境检查和拉取镜像 kubeadm config /images pull</p>
+<p>2、[certs] 生成k8s证书和etcd证书 /etc/kubernetes/pki</p>
+<p>3、[kubeconfig] 生成kubeconfig文件</p>
+<p>4、[kubelet-start] 生成kubelet配置文件</p>
+<p>5、[control-plane] 部署管理节点组件，用镜像启动容器  kubectl get pods -n kube-system</p>
+<p>6、[etcd] 部署etcd数据库，用镜像启动容器</p>
+<p>7、[upload-config] [kubelet] [upload-certs] 上传配置文件到k8s中</p>
+<p>8、[mark-control-plane] 给管理节点添加一个标签 <a href="http://node-role.kubernetes.io/master=">node-role.kubernetes.io/master=</a>‘’，再添加一个污点[<a href="http://node-role.kubernetes.io/master:NoSchedule">node-role.kubernetes.io/master:NoSchedule</a>]</p>
+<p>9、[bootstrap-token] 自动为kubelet颁发证书</p>
+<p>10、[addons] 部署插件，CoreDNS、kube-proxy</p>
+<p>或者使用配置文件引导：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ vi kubeadm.conf</span><br><span class="line">apiVersion: kubeadm.k8s.io/v1beta2</span><br><span class="line">kind: ClusterConfiguration</span><br><span class="line">kubernetesVersion: v1.18.0</span><br><span class="line">imageRepository: registry.aliyuncs.com/google_containers </span><br><span class="line">networking:</span><br><span class="line">  podSubnet: 10.244.0.0/16 </span><br><span class="line">  serviceSubnet: 10.96.0.0/12 </span><br><span class="line">  </span><br><span class="line">$ kubeadm init --config kubeadm.conf --ignore-preflight-errors=all  </span><br></pre></td></tr></table></figure>
+<p>拷贝kubectl使用的连接k8s认证文件到默认路径：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> -p <span class="variable">$HOME</span>/.kube</span><br><span class="line">sudo <span class="built_in">cp</span> -i /etc/kubernetes/admin.conf <span class="variable">$HOME</span>/.kube/config</span><br><span class="line">sudo <span class="built_in">chown</span> $(<span class="built_in">id</span> -u):$(<span class="built_in">id</span> -g) <span class="variable">$HOME</span>/.kube/config</span><br><span class="line">$ kubectl get nodes</span><br><span class="line">NAME         STATUS   ROLES    AGE   VERSION</span><br><span class="line">k8s-master   Ready    master   2m   v1.18.0</span><br></pre></td></tr></table></figure>
+<h3 id="5-加入Kubernetes-Node">5. 加入Kubernetes Node</h3>
+<p>在192.168.0.11/12（Node）执行。</p>
+<p>向集群添加新节点，执行在kubeadm init输出的kubeadm join命令：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubeadm <span class="built_in">join</span> 192.168.0.11:6443 --token dq52g0.m44tucwrwwyieklo \</span><br><span class="line">  --discovery-token-ca-cert-hash sha256:0f9df6b112b8bd2ca31c6ccfa777ab057158774bd68990e84393b50e0f181572 </span><br></pre></td></tr></table></figure>
+<p>默认token有效期为24小时，当过期之后，该token就不可用了。这时就需要重新创建token，操作如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubeadm token create</span><br><span class="line">$ kubeadm token list</span><br><span class="line">$ openssl x509 -pubkey -<span class="keyword">in</span> /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2&gt;/dev/null | openssl dgst -sha256 -hex | sed <span class="string">&#x27;s/^.* //&#x27;</span></span><br><span class="line">63bca849e0e01691ae14eab449570284f0c3ddeea590f8da988c07fe2729e924</span><br><span class="line"></span><br><span class="line">$ kubeadm <span class="built_in">join</span> 192.168.0.11:6443 --token nuja6n.o3jrhsffiqs9swnu --discovery-token-ca-cert-hash sha256:63bca849e0e01691ae14eab449570284f0c3ddeea590f8da988c07fe2729e924</span><br></pre></td></tr></table></figure>
+<p>或者直接命令快捷生成：kubeadm token create --print-join-command</p>
+<p><a href="https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-join/">https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-join/</a></p>
+<h3 id="6-部署容器网络（CNI）">6. 部署容器网络（CNI）</h3>
+<p><a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#pod-network">https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#pod-network</a></p>
+<p>注意：只需要部署下面其中一个，推荐Calico。</p>
+<p>Calico是一个纯三层的数据中心网络方案，Calico支持广泛的平台，包括Kubernetes、OpenStack等。</p>
+<p>Calico 在每一个计算节点利用 Linux Kernel 实现了一个高效的虚拟路由器（ vRouter） 来负责数据转发，而每个 vRouter 通过 BGP 协议负责把自己上运行的 workload 的路由信息向整个 Calico 网络内传播。</p>
+<p>此外，Calico  项目还实现了 Kubernetes 网络策略，提供ACL功能。</p>
+<p><a href="https://docs.projectcalico.org/getting-started/kubernetes/quickstart">https://docs.projectcalico.org/getting-started/kubernetes/quickstart</a></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ wget https://docs.projectcalico.org/manifests/calico.yaml</span><br></pre></td></tr></table></figure>
+<p>下载完后还需要修改里面定义Pod网络（CALICO_IPV4POOL_CIDR），与前面kubeadm init指定的一样</p>
+<p>修改完后应用清单：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubectl apply -f calico.yaml</span><br><span class="line">$ kubectl get pods -n kube-system</span><br></pre></td></tr></table></figure>
+<h3 id="7-测试kubernetes集群">7. 测试kubernetes集群</h3>
+<ul>
+<li>
+<p>验证Pod工作</p>
+</li>
+<li>
+<p>验证Pod网络通信</p>
+</li>
+<li>
+<p>验证DNS解析</p>
+</li>
+</ul>
+<p>在Kubernetes集群中创建一个pod，验证是否正常运行：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ kubectl create deployment nginx --image=nginx</span><br><span class="line">$ kubectl expose deployment nginx --port=80 --<span class="built_in">type</span>=NodePort</span><br><span class="line">$ kubectl get pod,svc</span><br></pre></td></tr></table></figure>
+<p>访问地址：<a href="http://NodeIP">http://NodeIP</a>:Port</p>
+<h3 id="8-部署-Dashboard">8. 部署 Dashboard</h3>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ wget https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.3/aio/deploy/recommended.yaml</span><br></pre></td></tr></table></figure>
+<p>默认Dashboard只能集群内部访问，修改Service为NodePort类型，暴露到外部：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ vi recommended.yaml</span><br><span class="line">...</span><br><span class="line">kind: Service</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    k8s-app: kubernetes-dashboard</span><br><span class="line">  name: kubernetes-dashboard</span><br><span class="line">  namespace: kubernetes-dashboard</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">    - port: 443</span><br><span class="line">      targetPort: 8443</span><br><span class="line">      nodePort: 30001</span><br><span class="line">  selector:</span><br><span class="line">    k8s-app: kubernetes-dashboard</span><br><span class="line">  <span class="built_in">type</span>: NodePort</span><br><span class="line">...</span><br><span class="line">$ kubectl apply -f recommended.yaml</span><br><span class="line">$ kubectl get pods -n kubernetes-dashboard</span><br><span class="line">NAME                                         READY   STATUS    RESTARTS   AGE</span><br><span class="line">dashboard-metrics-scraper-6b4884c9d5-gl8nr   1/1     Running   0          13m</span><br><span class="line">kubernetes-dashboard-7f99b75bf4-89cds        1/1     Running   0          13m</span><br></pre></td></tr></table></figure>
+<p>访问地址：<a href="https://NodeIP:30001">https://NodeIP:30001</a></p>
+<p>创建service account并绑定默认cluster-admin管理员集群角色：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 创建用户</span></span><br><span class="line">$ kubectl create serviceaccount dashboard-admin -n kube-system</span><br><span class="line"><span class="comment"># 用户授权</span></span><br><span class="line">$ kubectl create clusterrolebinding dashboard-admin --clusterrole=cluster-admin --serviceaccount=kube-system:dashboard-admin</span><br><span class="line"><span class="comment"># 获取用户Token</span></span><br><span class="line">$ kubectl describe secrets -n kube-system $(kubectl -n kube-system get secret | awk <span class="string">&#x27;/dashboard-admin/&#123;print $1&#125;&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p>使用输出的token登录Dashboard。</p>
+<p><img src="/images/268C8E2AC7224A1C8F6A0BC88B9B1A0Cclipboard.png" alt></p>
+<h2 id="K8s-CNI网络模型">K8s CNI网络模型</h2>
+<p><img src="/images/77DF44AB43FB4CA0BA6CEF859FCE5CF3clipboard.png" alt></p>
+<p>K8s是一个扁平化网络。</p>
+<p>即所有部署的网络组件都必须满足如下要求：</p>
+<ul>
+<li>
+<p>一个Pod一个IP</p>
+</li>
+<li>
+<p>所有的 Pod 可以与任何其他 Pod 直接通信</p>
+</li>
+<li>
+<p>所有节点可以与所有 Pod 直接通信</p>
+</li>
+<li>
+<p>Pod 内部获取到的 IP 地址与其他 Pod 或节点与其通信时的 IP 地址是同一个</p>
+</li>
+</ul>
+<p>主流网络组件有：Flannel、Calico等</p>
+<h2 id="查看集群状态">查看集群状态</h2>
+<h4 id="查看master组件状态：">查看master组件状态：</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get cs </span><br></pre></td></tr></table></figure>
+<h4 id="查看node状态：">查看node状态：</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get node</span><br></pre></td></tr></table></figure>
+<h4 id="查看Apiserver代理的URL：">查看Apiserver代理的URL：</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl cluster-info </span><br></pre></td></tr></table></figure>
+<h4 id="查看集群详细信息：">查看集群详细信息：</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl cluster-info dump </span><br></pre></td></tr></table></figure>
+<h4 id="查看资源信息：">查看资源信息：</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl describe &lt;资源&gt; &lt;名称&gt;</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
         <category>K8S</category>
