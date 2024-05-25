@@ -211,7 +211,7 @@
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap protect rbd-pool/image02@snap01</span><br></pre></td></tr></table></figure>
 <p>4、通过快照克隆一个新块设备</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd <span class="built_in">clone</span> rbd-pool/image02@snap01 rbd-pool/image02_clone</span><br><span class="line">rbd info rbd-pool/image02_clone</span><br></pre></td></tr></table></figure>
-<h3 id="5、将克隆的块设备独立于父块设备">5、将克隆的块设备独立于父块设备</h3>
+<p>5、将克隆的块设备独立于父块设备</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd flatten rbd-pool/image02_clone</span><br></pre></td></tr></table></figure>
 <p>基于上述快照之后的步骤</p>
 <p><img src="/images/780F3B0FA1E14F2D8D83EB2778C7374Aclipboard.png" alt></p>
