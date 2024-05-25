@@ -1680,6 +1680,411 @@
       </tags>
   </entry>
   <entry>
+    <title>kubernetes应用包管理器helm上</title>
+    <url>/2023/09/17/kubernetes%E5%BA%94%E7%94%A8%E5%8C%85%E7%AE%A1%E7%90%86%E5%99%A8helm%E4%B8%8A/</url>
+    <content><![CDATA[<h2 id="为什么需要Helm">为什么需要Helm</h2>
+<p><img src="/images/A12312C206C948C188E0EBF96B6C6030clipboard.png" alt></p>
+<p>由于Kubernetes缺少对发布的应用版本管理和控制，使得部署的应 用维护和更新等面临诸多的挑战，主要面临以下问题：</p>
+<ul>
+<li>
+<p>如何将这些服务作为一个整体管理？</p>
+</li>
+<li>
+<p>这些资源文件如何高效复用？</p>
+</li>
+<li>
+<p>不支持应用级别的版本管理</p>
+</li>
+</ul>
+<h2 id="Helm介绍">Helm介绍</h2>
+<p>Helm是一个Kubernetes的包管理工具，就像Linux下的包管理器，如yum/apt等，可以很方便的将之前 打包好的yaml文件部署到kubernetes上。</p>
+<p>Helm有3个重要概念：</p>
+<ul>
+<li>
+<p>helm：一个命令行客户端工具，主要用于Kubernetes应用chart的创建、打包、发布和管理。</p>
+</li>
+<li>
+<p>Chart：应用描述，一系列用于描述 k8s 资源相关文件的集合。</p>
+</li>
+<li>
+<p>Release：基于Chart的部署实体，一个 chart 被 Helm 运行后将会生成对应的一个 release；将在 k8s中创建出真实运行的资源对象。</p>
+</li>
+</ul>
+<p>Helm目前有两个大版本：v2和v3</p>
+<p>2019年11月Helm团队发布v3版本，相比v2版本最 大变化是将Tiller删除，并大部分代码重构。</p>
+<p><img src="/images/9D82D97288634F279D7D6F76D850B518clipboard.png" alt></p>
+<h2 id="Helm客户端">Helm客户端</h2>
+<p>使用helm很简单，你只需要下载一个二进制客户端包即可，会通过kubeconfig配置（通常 $HOME/.kube/config）来连接Kubernetes。</p>
+<p>项目地址：<a href="https://github.com/helm/helm">https://github.com/helm/helm</a></p>
+<p>下载Helm客户端：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://get.helm.sh/helm-v3.4.2-linux-amd64.tar.gz</span><br><span class="line">tar zxvf helm-v3.4.2-linux-amd64.tar.gz</span><br><span class="line"><span class="built_in">mv</span> linux-amd64/helm /usr/bin/</span><br></pre></td></tr></table></figure>
+<p><img src="/images/DA830ABCA12E4BCFAEBA76D1D92979A5clipboard.png" alt></p>
+<h2 id="Helm基本使用">Helm基本使用</h2>
+<p>Helm管理应用生命周期：</p>
+<ul>
+<li>
+<p>helm create 创建Chart示例</p>
+</li>
+<li>
+<p>helm install 部署</p>
+</li>
+<li>
+<p>helm upgrade 更新</p>
+</li>
+<li>
+<p>helm rollback 回滚</p>
+</li>
+<li>
+<p>helm uninstall 卸载</p>
+</li>
+</ul>
+<h2 id="Helm基本使用：创建Chart示例">Helm基本使用：创建Chart示例</h2>
+<p>创建chart：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm create mychart <span class="comment"># 默认示例中部署的是一个nginx服务 </span></span><br></pre></td></tr></table></figure>
+<p>打包chart：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm package mychart</span><br></pre></td></tr></table></figure>
+<ul>
+<li>
+<p>charts：目录里存放这个chart依赖的所有子chart。</p>
+</li>
+<li>
+<p>Chart.yaml：用于描述这个 Chart的基本信息，包括名字、描述信息以及版本等。</p>
+</li>
+<li>
+<p>values.yaml ：用于存储 templates 目录中模板文件中用到变量的值。</p>
+</li>
+<li>
+<p>Templates： 目录里面存放所有yaml模板文件。</p>
+</li>
+<li>
+<p>NOTES.txt ：用于介绍Chart帮助信息， helm install 部署后展示给用户。例如： 如何使用这个 Chart、列出缺省的设置等。</p>
+</li>
+<li>
+<p>_helpers.tpl：放置模板的地方，可以在整个 chart 中重复使用。</p>
+</li>
+</ul>
+<h2 id="Helm基本使用：部署">Helm基本使用：部署</h2>
+<p>部署Chart：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm install web mychart </span><br></pre></td></tr></table></figure>
+<p>查看Release：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm list -n default </span><br></pre></td></tr></table></figure>
+<p>查看部署的Pod：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get pods,svc</span><br></pre></td></tr></table></figure>
+<h2 id="Helm基本使用：升级">Helm基本使用：升级</h2>
+<p>使用Chart升级应用有两种方法：</p>
+<ul>
+<li>
+<p>–values，-f：指定YAML文件覆盖值</p>
+</li>
+<li>
+<p>–set：在命令行上指定覆盖值</p>
+</li>
+</ul>
+<p>注：如果一起使用，–set优先级高</p>
+<p><img src="/images/7C87C5C001B2466EA359EB0666718F9Aclipboard.png" alt></p>
+<p>例如将nginx服务升级到1.17版本：</p>
+<p>第一种方式：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># vi values.yaml #任意路径</span></span><br><span class="line">image:</span><br><span class="line">    tag: <span class="string">&quot;1.17&quot;</span></span><br><span class="line">    </span><br><span class="line"><span class="comment">#helm upgrade -f values.yaml web mychart    </span></span><br></pre></td></tr></table></figure>
+<p>第二种方式：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm upgrade --<span class="built_in">set</span> image.tag=1.17 web mychart</span><br></pre></td></tr></table></figure>
+<h2 id="Helm基本使用：回滚、卸载">Helm基本使用：回滚、卸载</h2>
+<p>回滚到上一个版本：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm rollback web </span><br></pre></td></tr></table></figure>
+<p>查看历史版本：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm <span class="built_in">history</span> web</span><br></pre></td></tr></table></figure>
+<p>回滚到指定版本：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm rollback web 1</span><br></pre></td></tr></table></figure>
+<p><img src="/images/C735AA6FB9AB4C53A3E4666CF79B1ECFclipboard.png" alt></p>
+<p>基于一个chart部署多个release版本</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm install web2 mychart/</span><br><span class="line">helm install --<span class="built_in">set</span> image.tag=1.17 web3 mychart/</span><br><span class="line">helm list </span><br></pre></td></tr></table></figure>
+<p><img src="/images/E56FA451D8884EA281058266613607DBclipboard.png" alt></p>
+<p>获取helm渲染后yaml文件模板</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm get all web     <span class="comment">#获取web这个chart所有的yaml模板</span></span><br><span class="line">helm get all web --revision 3     <span class="comment">#获取web这个chart指定版本yaml模板</span></span><br></pre></td></tr></table></figure>
+<p>卸载应用：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm uninstall web</span><br></pre></td></tr></table></figure>
+<h2 id="Helm基本使用：工作流程">Helm基本使用：工作流程</h2>
+<p><img src="/images/8210A797B51E40F2B0809840241B4CB7clipboard.png" alt></p>
+<h2 id="Chart模板">Chart模板</h2>
+<p>Helm核心是模板，即模板化K8s YAML文件。</p>
+<p>通过模板实现Chart高效复用，当部署多个应用时，可以将差异化的字段进行模板化，在部署时使用-f或 者–set动态覆盖默认值，从而适配多个应用。</p>
+<p><img src="/images/4461E8B0CAC54A90ADC9323F528C0EFEclipboard.png" alt></p>
+<h2 id="Chart模板：内置对象">Chart模板：内置对象</h2>
+<p>在上面示例中，模板文件中.Release、.Values是Helm内置对象，顶级开头写。</p>
+<p>Release对象：获取发布记录信息</p>
+<p><img src="/images/4E796CF368E2410E8B885D71D2425651clipboard.png" alt></p>
+<p>Values对象：为Chart模板提供值，这个对象的值有3个来源：</p>
+<ul>
+<li>
+<p>chart包中的values.yaml文件</p>
+</li>
+<li>
+<p>helm install或者helm upgrade的-f或者–values参数传入的自定义yaml文件</p>
+</li>
+<li>
+<p>–set参数传入值</p>
+</li>
+</ul>
+<p>Chart对象：可以通过Chart对象访问Chart.yaml文件的内容</p>
+<h2 id="Chart模板：调试">Chart模板：调试</h2>
+<p>使用helm install提供了–dry-run和–debug调试参数，帮助你验证模板正确性，并把渲染后的模板打印出来，而 不会真正的去部署。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm install --dry-run web mychart    <span class="comment">#不创建查看模板渲染清单</span></span><br><span class="line">helm get manifest web mychart         <span class="comment">#创建后查看模板渲染清单</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">描述你的操作提示，方便后期查看</span><br><span class="line">helm install web mychart --description <span class="string">&quot;install nginx1.19&quot;</span> -n <span class="built_in">test</span></span><br><span class="line">helm <span class="built_in">history</span> web -n <span class="built_in">test</span>  <span class="comment">#查看描述的信息</span></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>kubernetes应用包管理器helm下</title>
+    <url>/2023/09/25/kubernetes%E5%BA%94%E7%94%A8%E5%8C%85%E7%AE%A1%E7%90%86%E5%99%A8helm%E4%B8%8B/</url>
+    <content><![CDATA[<h2 id="Chart模板：函数与管道">Chart模板：函数与管道</h2>
+<p>常用函数：</p>
+<ul>
+<li>
+<p>quote：将值转换为字符串，即加双引号</p>
+</li>
+<li>
+<p>default：设置默认值，如果获取的值为空则为默认值</p>
+</li>
+<li>
+<p>indent和nindent：缩进字符串</p>
+</li>
+<li>
+<p>toYaml：引用一块YAML内容</p>
+</li>
+<li>
+<p>其他函数：upper、title等</p>
+<pre><code>        upper:  将值修改为大写
+
+        title:  将值首字母修改为大写
+</code></pre>
+</li>
+</ul>
+<p>quote：将值转换为字符串，即加双引号</p>
+<p>示例：nodeSelector标签的值用了true正常使用会报错，这是因为它是关键字，需要加引号才可以。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/values.yaml </span></span><br><span class="line">replicaCount: 1</span><br><span class="line">image:</span><br><span class="line">  repository: nginx</span><br><span class="line">  tag: <span class="string">&quot;latest&quot;</span></span><br><span class="line">selectorLabels: <span class="string">&quot;nginx&quot;</span></span><br><span class="line">nodeSelector:</span><br><span class="line">  gpu: <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/templates/deploy.yaml </span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web2</span><br><span class="line">  name: &#123;&#123; .Release.Name &#125;&#125;</span><br><span class="line">spec:</span><br><span class="line">  replicas: &#123;&#123; .Values.replicaCount &#125;&#125;</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: &#123;&#123; .Values.selectorLabels &#125;&#125;</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: &#123;&#123; .Values.selectorLabels &#125;&#125;</span><br><span class="line">    spec:</span><br><span class="line">      nodeSelector:</span><br><span class="line">        gpu: &#123;&#123; quote .Values.nodeSelector.gpu &#125;&#125;</span><br><span class="line">      containers:</span><br><span class="line">      - image: &#123;&#123; .Values.image.repository &#125;&#125;:&#123;&#123; .Values.image.tag &#125;&#125;</span><br><span class="line">        name: nginx</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: web2</span><br><span class="line">  name: &#123;&#123; .Release.Name &#125;&#125;</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">  - port: 80</span><br><span class="line">    protocol: TCP</span><br><span class="line">    targetPort: 80</span><br><span class="line">  selector:</span><br><span class="line">    app: &#123;&#123; .Values.selectorLabels &#125;&#125;</span><br></pre></td></tr></table></figure>
+<p>验证部署</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm install web2 --dry-run mychart/</span><br><span class="line">helm install web2 mychart/</span><br></pre></td></tr></table></figure>
+<p><img src="/images/28FFC6E76CF74B7998177B37E38B8CC3clipboard.png" alt></p>
+<p><img src="/images/E526BCB26C124AAA827A01F7FC7F8B15clipboard.png" alt></p>
+<p>default：设置默认值，如果获取的值为空则为默认值</p>
+<p>示例：以防止忘记定义而导致模板文件缺少字段无法创建资源，这时可以为字段定义一个默认值。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/values.yaml </span></span><br><span class="line">replicaCount: 1</span><br><span class="line">image:</span><br><span class="line">  repository: nginx</span><br><span class="line">  tag: <span class="string">&quot;latest&quot;</span></span><br><span class="line">selectorLabels: <span class="string">&quot;nginx&quot;</span></span><br><span class="line">nodeSelector:</span><br><span class="line">  gpu: <span class="literal">true</span></span><br><span class="line">labels:</span><br><span class="line">  app: <span class="string">&quot;&quot;</span>   </span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/templates/deploy.yaml </span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: &#123;&#123; .Values.labels.app | default <span class="string">&quot;web2&quot;</span> &#125;&#125;</span><br><span class="line">  name: &#123;&#123; .Release.Name &#125;&#125;</span><br><span class="line">spec:</span><br><span class="line">  replicas: &#123;&#123; .Values.replicaCount &#125;&#125;</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: &#123;&#123; .Values.selectorLabels &#125;&#125;</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: &#123;&#123; .Values.selectorLabels &#125;&#125;</span><br><span class="line">    spec:</span><br><span class="line">      nodeSelector:</span><br><span class="line">        gpu: &#123;&#123; quote .Values.nodeSelector.gpu &#125;&#125;</span><br><span class="line">      containers:</span><br><span class="line">      - image: &#123;&#123; .Values.image.repository &#125;&#125;:&#123;&#123; .Values.image.tag &#125;&#125;</span><br><span class="line">        name: nginx</span><br></pre></td></tr></table></figure>
+<p>验证部署</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm install web3 --dry-run mychart/</span><br><span class="line">helm install web3  mychart/</span><br></pre></td></tr></table></figure>
+<p>这里用到了管道符“|”，前面的值传递后函数验证是否为空。</p>
+<p><img src="/images/F8B6883F8C284B8C8F143E4F7A6A925Cclipboard.png" alt></p>
+<p><img src="/images/85B6BA3875574C0586DE3DD18222F147clipboard.png" alt></p>
+<p>indent和nindent函数都是缩进字符串，主要区别在于nindent会在缩进前多添加一个换行符。</p>
+<p>示例：</p>
+<p><img src="/images/720B9DE3ADAD410FAADA60EAB790C6C8clipboard.png" alt></p>
+<p><img src="/images/329F3745C6FB4031AEDFE1B8C66B888Bclipboard.png" alt></p>
+<p>toYaml：引用一块YAML内容</p>
+<p>示例：在values.yaml里写结构化数据，引用内容块</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/values.yaml </span></span><br><span class="line">replicaCount: 1</span><br><span class="line">image:</span><br><span class="line">  repository: nginx</span><br><span class="line">  tag: <span class="string">&quot;latest&quot;</span></span><br><span class="line">selectorLabels: <span class="string">&quot;nginx&quot;</span></span><br><span class="line">nodeSelector:</span><br><span class="line">  gpu: <span class="literal">true</span></span><br><span class="line">labels:</span><br><span class="line">  app: <span class="string">&quot;&quot;</span></span><br><span class="line">resources:</span><br><span class="line">  limits:</span><br><span class="line">    cpu: 100m</span><br><span class="line">    memory: 128Mi</span><br><span class="line">  requests:</span><br><span class="line">    cpu: 100m</span><br><span class="line">    memory: 128Mi</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/templates/deploy.yaml </span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: &#123;&#123; .Values.labels.app | default <span class="string">&quot;web2&quot;</span> &#125;&#125;</span><br><span class="line">  name: &#123;&#123; .Release.Name &#125;&#125;</span><br><span class="line">spec:</span><br><span class="line">  replicas: &#123;&#123; .Values.replicaCount &#125;&#125;</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: &#123;&#123; .Values.selectorLabels &#125;&#125;</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: &#123;&#123; .Values.selectorLabels &#125;&#125;</span><br><span class="line">    spec:</span><br><span class="line">      nodeSelector:</span><br><span class="line">        gpu: &#123;&#123; quote .Values.nodeSelector.gpu &#125;&#125;</span><br><span class="line">      containers:</span><br><span class="line">      - image: &#123;&#123; .Values.image.repository &#125;&#125;:&#123;&#123; .Values.image.tag &#125;&#125;</span><br><span class="line">        name: nginx</span><br><span class="line">        resources:</span><br><span class="line">          &#123;&#123; toYaml .Values.resources | nindent 10 &#125;&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm  install web4 --dry-run /root/mychart/</span><br></pre></td></tr></table></figure>
+<p><img src="/images/024B2666B3EF4516B6F40DF20E9B263Eclipboard.png" alt></p>
+<p><img src="/images/A1F53D9FA80847F69B3AA20BD5217807clipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm install web4 --<span class="built_in">set</span> resources.limits.cpu=<span class="string">&quot;200m&quot;</span> --dry-run /root/mychart/</span><br></pre></td></tr></table></figure>
+<p><img src="/images/8A84C888BEED4239B65702E7ECA2BE33clipboard.png" alt></p>
+<h2 id="Chart模板：流程控制">Chart模板：流程控制</h2>
+<p>Helm模板语言提供以下流程控制语句：</p>
+<ul>
+<li>
+<p>if/else：条件判断</p>
+</li>
+<li>
+<p>range：循环</p>
+</li>
+<li>
+<p>with：指定变量作用域</p>
+</li>
+</ul>
+<h2 id="Chart模板：流程控制之if-else">Chart模板：流程控制之if/else</h2>
+<p><img src="/images/BC30FBD40ABE48568CB60D65681CFFCDclipboard.png" alt></p>
+<p>条件判断：根据不同的条件做不同的行为</p>
+<p>语法：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">&#123;&#123; <span class="keyword">if</span> &lt;表达式&gt; &#125;&#125; </span><br><span class="line"></span><br><span class="line">    <span class="comment"># 做某事 </span></span><br><span class="line"></span><br><span class="line">&#123;&#123; <span class="keyword">else</span> <span class="keyword">if</span> &lt;表达式&gt; &#125;&#125; </span><br><span class="line"></span><br><span class="line">    <span class="comment"># 做某事 </span></span><br><span class="line"></span><br><span class="line">&#123;&#123; <span class="keyword">else</span> &#125;&#125; </span><br><span class="line"></span><br><span class="line">    <span class="comment"># 默认 </span></span><br><span class="line"></span><br><span class="line">&#123;&#123; end &#125;&#125;</span><br></pre></td></tr></table></figure>
+<p>示例：部署一个应用，在没明确启用ingress时，默认情况下不启用</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># values.yaml</span></span><br><span class="line">ingress:</span><br><span class="line">  enabled: <span class="literal">false</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/templates/ingress.yaml </span></span><br><span class="line">&#123;&#123; <span class="keyword">if</span> .Values.ingress.enabled &#125;&#125;</span><br><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: minimal-ingress</span><br><span class="line">  annotations:</span><br><span class="line">    nginx.ingress.kubernetes.io/rewrite-target: /</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /testpath</span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: <span class="built_in">test</span></span><br><span class="line">            port:</span><br><span class="line">              number: 80</span><br><span class="line">&#123;&#123; end &#125;&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm install web1 --<span class="built_in">set</span> ingress.enabled=<span class="literal">true</span> --dry-run /root/mychart/</span><br></pre></td></tr></table></figure>
+<p><img src="/images/432F32C7016A472E8515A5A99A7467FAclipboard.png" alt></p>
+<p><img src="/images/8673BFB65C27405BAA5F82E4C77E932Bclipboard.png" alt></p>
+<p>如果值为以下几种情况则为false：</p>
+<ul>
+<li>
+<p>一个布尔类型 false</p>
+</li>
+<li>
+<p>一个数字 0</p>
+</li>
+<li>
+<p>一个空的字符串</p>
+</li>
+<li>
+<p>一个 nil（空或 null）</p>
+</li>
+<li>
+<p>一个空的集合（ map、 slice、 tuple、 dict、 array）</p>
+</li>
+</ul>
+<p>条件表达式也支持操作符：</p>
+<ul>
+<li>
+<p>eq 等于</p>
+</li>
+<li>
+<p>ne 不等于</p>
+</li>
+<li>
+<p>lt 小于</p>
+</li>
+<li>
+<p>gt 大于</p>
+</li>
+<li>
+<p>and 逻辑与</p>
+</li>
+<li>
+<p>or 逻辑或</p>
+</li>
+</ul>
+<p>示例：如果是一个空的集合则不启用资源配额</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/values.yaml </span></span><br><span class="line">replicaCount: 1</span><br><span class="line">image:</span><br><span class="line">  repository: nginx</span><br><span class="line">  tag: <span class="string">&quot;latest&quot;</span></span><br><span class="line">selectorLabels: <span class="string">&quot;nginx&quot;</span></span><br><span class="line">nodeSelector:</span><br><span class="line">  gpu: <span class="literal">true</span></span><br><span class="line">labels:</span><br><span class="line">  app: <span class="string">&quot;&quot;</span></span><br><span class="line">resources: &#123;&#125;</span><br><span class="line"><span class="comment">#  limits:</span></span><br><span class="line"><span class="comment">#    cpu: 100m</span></span><br><span class="line"><span class="comment">#    memory: 128Mi</span></span><br><span class="line"><span class="comment">#  requests:</span></span><br><span class="line"><span class="comment">#    cpu: 100m</span></span><br><span class="line"><span class="comment">#    memory: 128Mi</span></span><br><span class="line">ingress:</span><br><span class="line">  enabled: <span class="literal">false</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/templates/deploy.yaml </span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: &#123;&#123; .Values.labels.app | default <span class="string">&quot;web2&quot;</span> &#125;&#125;</span><br><span class="line">  name: &#123;&#123; .Release.Name &#125;&#125;</span><br><span class="line">spec:</span><br><span class="line">  replicas: &#123;&#123; .Values.replicaCount &#125;&#125;</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: &#123;&#123; .Values.selectorLabels &#125;&#125;</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: &#123;&#123; .Values.selectorLabels &#125;&#125;</span><br><span class="line">    spec:</span><br><span class="line">      nodeSelector:</span><br><span class="line">        gpu: &#123;&#123; quote .Values.nodeSelector.gpu &#125;&#125;</span><br><span class="line">      containers:</span><br><span class="line">      - image: &#123;&#123; .Values.image.repository &#125;&#125;:&#123;&#123; .Values.image.tag &#125;&#125;</span><br><span class="line">        name: nginx</span><br><span class="line">        &#123;&#123;- <span class="keyword">if</span> .Values.resources &#125;&#125;</span><br><span class="line">        resources:</span><br><span class="line">          &#123;&#123;- toYaml .Values.resources | nindent 10 &#125;&#125;</span><br><span class="line">        &#123;&#123;- end &#125;&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="验证渲染结果：">验证渲染结果：</h2>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm  install <span class="built_in">test</span> --dry-run mychart/</span><br></pre></td></tr></table></figure>
+<p><img src="/images/8DA9181865E14D00A8FAE00FD7DEA8BCclipboard.png" alt></p>
+<p><img src="/images/C88EA42C67E944AEA3FCC873006AD32Aclipboard.png" alt></p>
+<h2 id="渲染结果会发现有多余的空行，这是因为模板渲染时会将-指令删除，所以原有的位置就空白了。可以使用横杠“-”-消除空">渲染结果会发现有多余的空行，这是因为模板渲染时会将 指令删除，所以原有的位置就空白了。可以使用横杠“-” 消除空</h2>
+<h2 id="Chart模板：流程控制之range">Chart模板：流程控制之range</h2>
+<p><img src="/images/C09FB32391AF46C9B68D6F7E1D2B1B5Dclipboard.png" alt></p>
+<p>循环：一般用于遍历序列结构的数据。例如序列、键值</p>
+<p>语法：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">&#123;&#123; range &lt;值&gt; &#125;&#125; </span><br><span class="line"></span><br><span class="line">    <span class="comment"># 引用内容 </span></span><br><span class="line"></span><br><span class="line">&#123;&#123; end &#125;&#125;</span><br></pre></td></tr></table></figure>
+<p>示例：遍历数据</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/values.yaml </span></span><br><span class="line"><span class="built_in">test</span>:</span><br><span class="line"> - 1</span><br><span class="line"> - 2</span><br><span class="line"> - 3</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/templates/configmap.yaml</span></span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  name: &#123;&#123; .Release.Name &#125;&#125;</span><br><span class="line">data:</span><br><span class="line">  <span class="built_in">test</span>: |</span><br><span class="line">  &#123;&#123;- range.Values.<span class="built_in">test</span> &#125;&#125;</span><br><span class="line">    &#123;&#123; . &#125;&#125;     <span class="comment"># 引用当前元素</span></span><br><span class="line">  &#123;&#123;- end &#125;&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证渲染结果</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm install web1 --dry-run mychart/</span><br></pre></td></tr></table></figure>
+<p><img src="/images/4966CE8B45B34D61BBE81B9D34F0CD78clipboard.png" alt></p>
+<p><img src="/images/BF43CE3AE01B400EB0D563D60A43462Aclipboard.png" alt></p>
+<h2 id="Chart模板：流程控制之with">Chart模板：流程控制之with</h2>
+<p>with：指定变量作用域</p>
+<p>语法：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">&#123;&#123; with &lt;值&gt; &#125;&#125; </span><br><span class="line"></span><br><span class="line">  <span class="comment"># 限制范围 </span></span><br><span class="line"></span><br><span class="line">&#123;&#123; end &#125;&#125;</span><br></pre></td></tr></table></figure>
+<p>with语句可以允许将当前范围 . 设置为特定的对象，比如我们前面一直使用 的 .Values.nodeSelecotr，我们可以使用 with来将 . 范围指向 .Values.nodeSelecotr：</p>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/values.yaml </span></span><br><span class="line">labels:</span><br><span class="line">  project: <span class="string">&quot;ms&quot;</span></span><br><span class="line">  app: <span class="string">&quot;gateway&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/templates/deploy.yaml </span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    &#123;&#123;- with .Values.labels &#125;&#125;</span><br><span class="line">    project: &#123;&#123; .project &#125;&#125;</span><br><span class="line">    app: &#123;&#123; .app &#125;&#125;</span><br><span class="line">    &#123;&#123;- end &#125;&#125;</span><br><span class="line">  name: &#123;&#123; .Release.Name &#125;&#125;</span><br><span class="line">spec:</span><br><span class="line">  replicas: &#123;&#123; .Values.replicaCount &#125;&#125;</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: &#123;&#123; .Values.selectorLabels &#125;&#125;</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: &#123;&#123; .Values.selectorLabels &#125;&#125;</span><br><span class="line">    spec:</span><br><span class="line">      nodeSelector:</span><br><span class="line">        gpu: &#123;&#123; quote .Values.nodeSelector.gpu &#125;&#125;</span><br><span class="line">      containers:</span><br><span class="line">      - image: &#123;&#123; .Values.image.repository &#125;&#125;:&#123;&#123; .Values.image.tag &#125;&#125;</span><br><span class="line">        name: nginx</span><br><span class="line">        &#123;&#123;- <span class="keyword">if</span> .Values.resources &#125;&#125;</span><br><span class="line">        resources:</span><br><span class="line">          &#123;&#123;- toYaml .Values.resources | nindent 10 &#125;&#125;</span><br><span class="line">        &#123;&#123;- end &#125;&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证渲染结果</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm install web1 --dry-run mychart/</span><br></pre></td></tr></table></figure>
+<p><img src="/images/21779EEC6FA14E3BB33B062E0260B6AAclipboard.png" alt></p>
+<p><img src="/images/A8443F325B964323B52B235D31702C73clipboard.png" alt></p>
+<p>with块限制了变量作用域，也就是无法直接引用模板对象，例 如.Values、.Release，如果还想使用，可以定义变量来解决该问题。</p>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/templates/deploy.yaml </span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    &#123;&#123;- <span class="variable">$rs</span> := .Values.replicaCount &#125;&#125;</span><br><span class="line">    &#123;&#123;- with .Values.labels &#125;&#125;</span><br><span class="line">    project: &#123;&#123; .project &#125;&#125;</span><br><span class="line">    app: &#123;&#123; .app &#125;&#125;&#123;&#123; <span class="variable">$rs</span> &#125;&#125;</span><br><span class="line"> <span class="comment">#   test: &#123;&#123; $rs &#125;&#125;</span></span><br><span class="line">    &#123;&#123;- end &#125;&#125;</span><br><span class="line">  name: &#123;&#123; .Release.Name &#125;&#125;</span><br><span class="line">spec:</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>验证</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm install web1 --dry-run mychart/</span><br></pre></td></tr></table></figure>
+<p><img src="/images/1383868802C447B69BDD70FD2259B833clipboard.png" alt></p>
+<p><img src="/images/FD1F081CEEDC4B03AE47FC06CC91C7B8clipboard.png" alt></p>
+<p>或者</p>
+<p><img src="/images/152EFB492576489F915684E9C07FAA2Eclipboard.png" alt></p>
+<h2 id="Chart模板：变量">Chart模板：变量</h2>
+<p>变量是实际应用中不多，但有时候结合with、range能更好处理数据。</p>
+<p>示例：k8s变量是键值，可以range遍历生成</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/values.yaml </span></span><br><span class="line"><span class="built_in">env</span>:</span><br><span class="line">  NAME: <span class="string">&quot;gateway&quot;</span></span><br><span class="line">  JAVA_OPTS: <span class="string">&quot;-Xmx1G&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/templates/deploy.yaml </span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    &#123;&#123;- <span class="variable">$rs</span> := .Values.replicaCount &#125;&#125;</span><br><span class="line">    &#123;&#123;- with .Values.labels &#125;&#125;</span><br><span class="line">    project: &#123;&#123; .project &#125;&#125;</span><br><span class="line">    app: &#123;&#123; .app &#125;&#125;&#123;&#123; $.Values.replicaCount &#125;&#125;</span><br><span class="line"> <span class="comment">#   test: &#123;&#123; $rs &#125;&#125;</span></span><br><span class="line">    &#123;&#123;- end &#125;&#125;</span><br><span class="line">  name: &#123;&#123; .Release.Name &#125;&#125;</span><br><span class="line">spec:</span><br><span class="line">  replicas: &#123;&#123; .Values.replicaCount &#125;&#125;</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: &#123;&#123; .Values.selectorLabels &#125;&#125;</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: &#123;&#123; .Values.selectorLabels &#125;&#125;</span><br><span class="line">    spec:</span><br><span class="line">      nodeSelector:</span><br><span class="line">        gpu: &#123;&#123; quote .Values.nodeSelector.gpu &#125;&#125;</span><br><span class="line">      containers:</span><br><span class="line">      - image: &#123;&#123; .Values.image.repository &#125;&#125;:&#123;&#123; .Values.image.tag &#125;&#125;</span><br><span class="line">        name: nginx</span><br><span class="line">        &#123;&#123;- <span class="keyword">if</span> .Values.resources &#125;&#125;</span><br><span class="line">        resources:</span><br><span class="line">          &#123;&#123;- toYaml .Values.resources | nindent 10 &#125;&#125;</span><br><span class="line">        &#123;&#123;- end &#125;&#125;</span><br><span class="line">        <span class="built_in">env</span>:</span><br><span class="line">        &#123;&#123;- range <span class="variable">$k</span>,<span class="variable">$v</span> := .Values.<span class="built_in">env</span> &#125;&#125;</span><br><span class="line">        - name: &#123;&#123; <span class="variable">$k</span> &#125;&#125;</span><br><span class="line">          value: &#123;&#123; quote <span class="variable">$v</span> &#125;&#125;</span><br><span class="line">        &#123;&#123;- end &#125;&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证渲染结果：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm install web1 --dry-run mychart/</span><br></pre></td></tr></table></figure>
+<p><img src="/images/B72C8E5F6D944A7DB06EE9293FB2E740clipboard.png" alt></p>
+<p><img src="/images/8FEACF78569D490B89E18A61471B971Fclipboard.png" alt></p>
+<h2 id="Chart模板：命名模板">Chart模板：命名模板</h2>
+<p>命名模板类似于开发语言中的函数。指一段可以直接被另一段程序或代码引用的程序或代码。 在编写chart时，可以将一些重复使用的内容写在命名模板文件中供公共使用，这样可减少重 复编写程序段和简化代码结构。</p>
+<p>命名模块使用define定义，template或include引入，在templates目录中默认下划线开头的 文件为公共模板（helpers.tpl）。</p>
+<p>示例：资源名称生成指令放到公共模板文件，作为所有资源名称</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/templates/_helpers.tpl </span></span><br><span class="line">&#123;&#123;- define <span class="string">&quot;fullname&quot;</span> -&#125;&#125;</span><br><span class="line">&#123;&#123;- .Chart.Name -&#125;&#125;-&#123;&#123; .Release.Name &#125;&#125;</span><br><span class="line">&#123;&#123;- end -&#125;&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/templates/deploy.yaml </span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    &#123;&#123;- <span class="variable">$rs</span> := .Values.replicaCount &#125;&#125;</span><br><span class="line">    &#123;&#123;- with .Values.labels &#125;&#125;</span><br><span class="line">    project: &#123;&#123; .project &#125;&#125;</span><br><span class="line">    app: &#123;&#123; .app &#125;&#125;&#123;&#123; $.Values.replicaCount &#125;&#125;</span><br><span class="line"> <span class="comment">#   test: &#123;&#123; $rs &#125;&#125;</span></span><br><span class="line">    &#123;&#123;- end &#125;&#125;</span><br><span class="line">  name: &#123;&#123; template <span class="string">&quot;fullname&quot;</span> . &#125;&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证渲染结果：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm install web1 --dry-run mychart/</span><br></pre></td></tr></table></figure>
+<p><img src="/images/004FB4DA579D42B7B655B62B2D5C5EF9clipboard.png" alt></p>
+<p><img src="/images/DD4111BC15A7435B8705604525DD8D3Fclipboard.png" alt></p>
+<p>template指令是将一个模板包含在另一个模板中的方法。但是，template函 数不能用于Go模板管道。为了解决该问题，引入include指令。</p>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/templates/_helpers.tpl </span></span><br><span class="line">&#123;&#123;- define <span class="string">&quot;labels&quot;</span> -&#125;&#125;</span><br><span class="line">project: &#123;&#123; .Values.labels.project &#125;&#125;</span><br><span class="line">app: &#123;&#123; .Values.labels.app &#125;&#125;</span><br><span class="line">&#123;&#123;- end -&#125;&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#vi mychart/templates/deploy.yaml </span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    &#123;&#123;- include <span class="string">&quot;labels&quot;</span> .| nindent 4 &#125;&#125;</span><br><span class="line">  name: &#123;&#123; template <span class="string">&quot;fullname&quot;</span> . &#125;&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证渲染结果：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm install web1 --dry-run mychart/</span><br></pre></td></tr></table></figure>
+<p><img src="/images/AFC74B98D3B94D7BB2A2AEB879B9CD7Cclipboard.png" alt></p>
+<p><img src="/images/50895149528F4150B032CB05B050795Dclipboard.png" alt></p>
+<h2 id="带你写一个通用的Chart">带你写一个通用的Chart</h2>
+<ol>
+<li>
+<p>先创建模板示例 helm create demo</p>
+</li>
+<li>
+<p>修改Chart.yaml，Values.yaml，参考示例预留变动的字段值</p>
+</li>
+<li>
+<p>在templates目录下准备部署应用所需的yaml文件，并添加指令引用 Values.yaml字段</p>
+</li>
+<li>
+<p>将重复使用的内容作为命名模板</p>
+</li>
+<li>
+<p>使用Chart结合参数部署多个同类服务</p>
+</li>
+</ol>
+<p><a href="/attachments/D1634A79483D4B0F8BAF5730F9A04D5Ademo-0.1.0.tgz">demo-0.1.0.tgz</a></p>
+<h2 id="使用Harbor作为Chart仓库">使用Harbor作为Chart仓库</h2>
+<p>Harbor是一个主流的镜像仓库系统，在 v1.6 版本以后的 harbor 中新增加了 helm charts 的管理功能，可以存储Chart文件。</p>
+<p>使用步骤：</p>
+<p>1、启用Harbor的Chart仓库服务</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># ./install.sh --with-chartmuseum</span></span><br></pre></td></tr></table></figure>
+<p>启用后，默认创建的项目就带有helm charts功能了。</p>
+<p>2、安装push插件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm plugin install https://github.com/chartmuseum/helm-push</span><br><span class="line"><span class="built_in">ls</span> /root/.local/share/helm/plugins/helm-push/  <span class="comment">#家目录</span></span><br></pre></td></tr></table></figure>
+<p>3、推送</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># helm push demo-0.1.0.tgz --username=admin --password=Harbor12345 http://192.168.0.13/chartrepo/library</span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/D0A47CBD70C147A4A0FEAE1FA00CFF70clipboard.png" alt></p>
+<p>4、添加repo</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm repo add myrepo --username=admin --password=Harbor12345 http://192.168.0.13:/chartrepo/library</span><br><span class="line">helm repo update</span><br><span class="line">helm repo list</span><br></pre></td></tr></table></figure>
+<p>5、部署</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># helm install web --version 0.1.0 myrepo/demo   #--version指定chart版本，如果未指定，使用最新版本</span></span><br><span class="line">helm install web1 --<span class="built_in">set</span> service.type=NodePort --<span class="built_in">set</span> service.nodeport=30010 myrepo/demo </span><br></pre></td></tr></table></figure>
+<h2 id="公共Chart仓库">公共Chart仓库</h2>
+<p>国内Chart仓库，可直接使用它们制作好的包：</p>
+<ul>
+<li>
+<p>微软仓库（<a href="http://mirror.azure.cn/kubernetes/charts/%EF%BC%89">http://mirror.azure.cn/kubernetes/charts/）</a></p>
+</li>
+<li>
+<p>阿里云仓库（<a href="https://kubernetes.oss-cn-hangzhou.aliyuncs.com/charts">https://kubernetes.oss-cn-hangzhou.aliyuncs.com/charts</a> ）</p>
+</li>
+<li>
+<p>官方仓库（<a href="https://hub.kubeapps.com/charts/incubator%EF%BC%89">https://hub.kubeapps.com/charts/incubator）</a></p>
+</li>
+</ul>
+<p>添加仓库方式：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">helm repo add stable http://mirror.azure.cn/kubernetes/charts </span><br><span class="line">helm repo add aliyun https://kubernetes.oss-cn-hangzhou.aliyuncs.com/charts </span><br><span class="line">helm repo update </span><br><span class="line">helm repo list</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Kubernetes 弹性伸缩</title>
     <url>/2023/08/20/kubernetes%E5%BC%B9%E6%80%A7%E4%BC%B8%E7%BC%A9/</url>
     <content><![CDATA[<h2 id="弹性伸缩概述">弹性伸缩概述</h2>
