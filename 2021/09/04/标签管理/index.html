@@ -1,0 +1,205 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>标签管理 | 阿哲技术之路</title><meta name="author" content="阿哲"><meta name="copyright" content="阿哲"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="标签作用：Prometheus中存储的数据为时间序列，是由Metric的名字和一系列的标签(键值对)唯一标识的, 不同的标签代表不同的时间序列，即通过指定标签查询指定数据。 Metadata标签 在Prometheus所有的Target实例中，都包含一些默认的Metadata标签信息。可以通过Prometheus UI的 Targets页面中查看这些实例的Metadata标签的内容： • addr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="标签管理">
+<meta property="og:url" content="http://liuzhemax.github.io/2021/09/04/%E6%A0%87%E7%AD%BE%E7%AE%A1%E7%90%86/index.html">
+<meta property="og:site_name" content="阿哲技术之路">
+<meta property="og:description" content="标签作用：Prometheus中存储的数据为时间序列，是由Metric的名字和一系列的标签(键值对)唯一标识的, 不同的标签代表不同的时间序列，即通过指定标签查询指定数据。 Metadata标签 在Prometheus所有的Target实例中，都包含一些默认的Metadata标签信息。可以通过Prometheus UI的 Targets页面中查看这些实例的Metadata标签的内容： • addr">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg">
+<meta property="article:published_time" content="2021-09-04T13:45:32.000Z">
+<meta property="article:modified_time" content="2024-05-25T06:04:37.072Z">
+<meta property="article:author" content="阿哲">
+<meta property="article:tag" content="Prometheus">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="shortcut icon" href="/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="canonical" href="http://liuzhemax.github.io/2021/09/04/%E6%A0%87%E7%AD%BE%E7%AE%A1%E7%90%86/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '标签管理',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: false,
+  postUpdate: '2024-05-25 14:04:37'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">77</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">6</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">6</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="阿哲技术之路"><img class="site-icon" src="/medias/%E6%90%AC%E7%A0%96.jpg"/><span class="site-name">阿哲技术之路</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">标签管理</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2021-09-04T13:45:32.000Z" title="发表于 2021-09-04 21:45:32">2021-09-04</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-05-25T06:04:37.072Z" title="更新于 2024-05-25 14:04:37">2024-05-25</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Prometheus/">Prometheus</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="标签管理"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><p>标签作用：Prometheus中存储的数据为时间序列，是由Metric的名字和一系列的标签(键值对)唯一标识的, 不同的标签代表不同的时间序列，即通过指定标签查询指定数据。</p>
+<p>Metadata标签</p>
+<p>在Prometheus所有的Target实例中，都包含一些默认的Metadata标签信息。可以通过Prometheus UI的 Targets页面中查看这些实例的Metadata标签的内容：</p>
+<p>• <strong>address</strong>：当前Target实例的访问地址:</p>
+<p>• <strong>scheme</strong>：采集目标服务访问地址的HTTP Scheme，HTTP或者HTTPS</p>
+<p>• <strong>metrics_path</strong>：采集目标服务访问地址的访问路径</p>
+<p><img src="/images/0B789DD33F8D4A9CB6CAD026CC746ED3f0e9f9731e54cba7fdd236dad84baab.jpg" alt></p>
+<p>上面这些标签将会告诉Prometheus如何从该Target实例中获取监控数据。除了这些默认的标签以外，我们 还可以为Target添加自定义的标签。</p>
+<p>自定义标签</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">- job_name: <span class="string">&#x27;linux&#x27;</span></span><br><span class="line">    basic_auth:</span><br><span class="line">        username: prometheus</span><br><span class="line">        password: 123.com</span><br><span class="line">    static_configs:</span><br><span class="line">    - targets: [<span class="string">&#x27;192.168.0.12:9100&#x27;</span>]</span><br><span class="line">      labels: </span><br><span class="line">        idc: BJ           <span class="comment">#北京的机房</span></span><br><span class="line">        project: JD    <span class="comment">#京东的项目   </span></span><br></pre></td></tr></table></figure>
+<p>#在这个下面可以任意的添加多个标签</p>
+<p><img src="/images/8C77D0F675884745A62D29DADBF945B5clipboard.png" alt></p>
+<p><img src="/images/9005EECBBC9F4E3EAAE4384C50BBDC20clipboard.png" alt="北京机房京东项目整个cpu使用率"></p>
+<p>重新标记标签</p>
+<p>重新标记目的：为了更好的标识监控指标。</p>
+<p>在两个阶段可以重新标记：</p>
+<p>• relabel_configs ：在采集之前</p>
+<p>• metric_relabel_configs：在存储之前</p>
+<p>准备抓取指标数据时，可以使用relabel_configs添加一些标签、也可以只采集特定目标或过滤目标。 已经抓取到指标数据时，可以使用metric_relabel_configs做最后的重新标记和过滤。</p>
+<p><img src="/images/68593A5F220C4D2A88AB5E0A571414FBclipboard.png" alt></p>
+<p>重新标记标签一般用途：</p>
+<p>• 动态生成新标签</p>
+<p>• 过滤采集的Target</p>
+<p>• 删除不需要或者敏感标签</p>
+<p>• 添加新标签</p>
+<p>action：重新标记标签动作</p>
+<p>• replace：默认，通过regex匹配source_label的值，使用replacement来 引用表达式匹配的分组，分组使用$1,$2…引用</p>
+<p>• keep：删除regex与连接不匹配的目标 source_labels</p>
+<p>• drop：删除regex与连接匹配的目标 source_labels</p>
+<p>• labeldrop：删除regex匹配的标签</p>
+<p>• labelkeep：删除regex不匹配的标签</p>
+<p>• labelmap：匹配regex所有标签名称，并将捕获的内容分组，用第一个分 组内容作为新的标签名</p>
+<p>重新标签的应用</p>
+<p>重新标记标签：重命名标签</p>
+<p>场景1：动态生成添加标签（对已有的标签重新标记）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">- job_name: <span class="string">&#x27;linux&#x27;</span></span><br><span class="line">   basic_auth:</span><br><span class="line">       username: prometheus</span><br><span class="line">       password: 123.com</span><br><span class="line">   static_configs:</span><br><span class="line">   - targets: [<span class="string">&#x27;192.168.0.12:9100&#x27;</span>]</span><br><span class="line">     labels:</span><br><span class="line">       idc: BJ</span><br><span class="line">       project: JD</span><br><span class="line">   metric_relabel_configs:             <span class="comment">#在存储数据之前重新标记 </span></span><br><span class="line">   - action: replace                         <span class="comment">#重新标记标签动作，默认replace</span></span><br><span class="line">     source_labels: [<span class="string">&#x27;instance&#x27;</span>]        <span class="comment">#告诉prometheus基于哪个标签生成新的标签（重新标记）</span></span><br><span class="line">     regex: (.*):([0-9]+)                 <span class="comment">#正则匹配，（.*)代表一组IP，([0-9]+)代表一组数字，通过：分隔</span></span><br><span class="line">     replacement: <span class="variable">$1</span>    <span class="comment"># 赋予生成新标签的值，引用正则匹配值，$1表示第一组，$2表示第二组，可以明确指定值</span></span><br><span class="line">     target_label: <span class="string">&quot;ip&quot;</span>            <span class="comment">#生成的新的标签名叫什么</span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/E1A47462B5D0449E9B7B608CA14DD68Eclipboard.png" alt="动态生成新的标签----&gt;ip"></p>
+<p>重新标记标签：过滤Target</p>
+<p>场景2：选择采集的目标</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">- job_name: <span class="string">&#x27;linux&#x27;</span></span><br><span class="line">  basic_auth:</span><br><span class="line">      username: prometheus</span><br><span class="line">      password: 123.com</span><br><span class="line">  static_configs:</span><br><span class="line">  - targets: [<span class="string">&#x27;192.168.0.12:9100&#x27;</span>]</span><br><span class="line">    labels:</span><br><span class="line">      idc: BJ</span><br><span class="line">      project: JD</span><br><span class="line">  relabel_configs:                     <span class="comment">#在采集之前</span></span><br><span class="line">  - action: drop                        <span class="comment">#重新标记标签动作 ，删除regex与连接匹配的目标 source_labels</span></span><br><span class="line">    regex: <span class="string">&quot;192.168.0.12.*&quot;</span>      <span class="comment">#意思就是通过正则过滤掉这个target实例</span></span><br><span class="line">    source_labels: [<span class="string">&quot;__address__&quot;</span>]      <span class="comment">#基于哪个标签过滤</span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/CF7CC5B4D4FC4FAEA8D031289B5E2FBCclipboard.png" alt="过滤掉192.168.0.12这个target实例了"></p>
+<p>注意：</p>
+<p><strong>address</strong>  ：这个标签是在采集之前</p>
+<p>instance : 这个标签是在存储之前</p>
+<p>prometheus采集之前使用的是__address__ 这个标签，采集到之后（入库之前），可能生成了一个新的标签，也就是instance这个标签。</p>
+<p>重新标记标签：删除标签</p>
+<p>场景3：删除不需要或者敏感的标签</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">- job_name: <span class="string">&#x27;linux&#x27;</span></span><br><span class="line">  basic_auth:</span><br><span class="line">      username: prometheus</span><br><span class="line">      password: 123.com</span><br><span class="line">  static_configs:</span><br><span class="line">  - targets: [<span class="string">&#x27;192.168.0.12:9100&#x27;</span>]</span><br><span class="line">    labels:</span><br><span class="line">      idc: BJ</span><br><span class="line">      project: JD</span><br><span class="line">  metric_relabel_configs:                 <span class="comment">#在存储之前(入库之前）</span></span><br><span class="line">  - action: labeldrop                         <span class="comment">#重新标记标签动作 , 删除regex匹配的标签</span></span><br><span class="line">    regex: <span class="string">&quot;job&quot;</span>                                 <span class="comment">#通过正则删除job这个标签</span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/9E5647F9F962452BAA99216C24132FFDclipboard.png" alt="会发现库里没有job这个标签"></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io">阿哲</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io/2021/09/04/%E6%A0%87%E7%AD%BE%E7%AE%A1%E7%90%86/">http://liuzhemax.github.io/2021/09/04/%E6%A0%87%E7%AD%BE%E7%AE%A1%E7%90%86/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://liuzhemax.github.io" target="_blank">阿哲技术之路</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Prometheus/">Prometheus</a></div><div class="post_share"><div class="social-share" data-image="/medias/%E6%90%AC%E7%A0%96.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2021/09/03/%E7%9B%91%E6%8E%A7docker%E4%B8%BB%E6%9C%BA/" title="监控docker主机"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">监控docker主机</div></div></a></div><div class="next-post pull-right"><a href="/2021/09/05/%E6%9C%8D%E5%8A%A1%E5%8F%91%E7%8E%B0/" title="Console服务发现"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Console服务发现</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2021/09/06/alertmanager%E5%91%8A%E8%AD%A6%E6%94%B6%E6%95%9B/" title="Alertmanager告警收敛"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-06</div><div class="title">Alertmanager告警收敛</div></div></a></div><div><a href="/2021/09/12/grafana%E5%8F%AF%E8%A7%86%E5%8C%96%E5%B1%95%E7%A4%BA/" title="Grafana可视化展示"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-12</div><div class="title">Grafana可视化展示</div></div></a></div><div><a href="/2021/09/08/promql%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8/" title="PromQL基本使用"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-08</div><div class="title">PromQL基本使用</div></div></a></div><div><a href="/2021/09/07/%E5%91%8A%E8%AD%A6%E8%A7%A6%E5%8F%91%E6%B5%81%E7%A8%8B/" title="告警触发流程"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-07</div><div class="title">告警触发流程</div></div></a></div><div><a href="/2021/09/10/%E5%9F%BA%E4%BA%8Eansible%E7%9B%91%E6%8E%A7100%E5%8F%B0%E6%9C%BA%E5%99%A8/" title="基于ansible监控100台机器"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-10</div><div class="title">基于ansible监控100台机器</div></div></a></div><div><a href="/2021/09/13/%E5%A6%82%E4%BD%95%E8%87%AA%E5%B7%B1%E5%86%99metrice%E6%8E%A5%E5%8F%A3/" title="如何自己写metrice接口?"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-09-13</div><div class="title">如何自己写metrice接口?</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">阿哲</div><div class="author-info__description">强大自己是解决问题的唯一办法</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">77</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">6</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">6</div></a></div><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1437626743@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">分享个人经验总结</div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/05/25/alertmanager%E5%91%8A%E8%AD%A6%E5%88%A9%E5%99%A8/" title="无题">无题</a><time datetime="2024-05-25T06:04:37.072Z" title="发表于 2024-05-25 14:04:37">2024-05-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/01/10/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8B/" title="微服务治理istio初探下">微服务治理istio初探下</a><time datetime="2024-01-10T13:45:32.000Z" title="发表于 2024-01-10 21:45:32">2024-01-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/25/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8A/" title="微服务治理istio初探上">微服务治理istio初探上</a><time datetime="2023-12-25T13:45:32.000Z" title="发表于 2023-12-25 21:45:32">2023-12-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/15/%E5%9F%BA%E4%BA%8Ejenkins%E6%9E%84%E5%BB%BA%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8F%91%E5%B8%83%E5%B9%B3%E5%8F%B0/" title="基于Jenkins构建微服务发布平台">基于Jenkins构建微服务发布平台</a><time datetime="2023-12-15T13:45:32.000Z" title="发表于 2023-12-15 21:45:32">2023-12-15</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/11/28/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E8%BF%81%E7%A7%BB/" title="微服务容器化迁移">微服务容器化迁移</a><time datetime="2023-11-28T13:45:32.000Z" title="发表于 2023-11-28 21:45:32">2023-11-28</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="footer_custom_text">阿哲技术之路</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.13.0"></script></div></div></body></html>
