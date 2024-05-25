@@ -94,545 +94,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Ceph分布式存储</title>
-    <url>/2023/11/08/ceph%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/</url>
-    <content><![CDATA[<h2 id="Ceph概述">Ceph概述</h2>
-<h3 id="Ceph介绍">Ceph介绍</h3>
-<p>Ceph是一个开源的分布式存储系统，具有高扩展性、高性能、高可靠性等特点，提 供良好的性能、可靠性和可扩展性。支持对象存储、块存储和文件系统。 是目前为云平台提供存储的理想方案</p>
-<p><img src="/images/EDB87B969CC3495B9BFCEF3EDA5467EEclipboard.png" alt></p>
-<h3 id="Ceph架构">Ceph架构</h3>
-<ul>
-<li>
-<p>RBD（RADOS Block Device）：块存储接口</p>
-</li>
-<li>
-<p>RGW（RADOS Gateway））：对象存储网关，接口与S3和Swift兼容</p>
-</li>
-<li>
-<p>CephFS（Ceph File System）：文件级存储接口</p>
-</li>
-<li>
-<p>RADOS（Reliable Autonomic Distributed Object Store）：抽象的 对象存储集群，Ceph核心，实现用户数据分配、故障转移等集群操作</p>
-</li>
-<li>
-<p>MON：集群状态维护，例如OSD是否健康、PG状态等</p>
-</li>
-<li>
-<p>MDS （Metadata Server） ：CephFS服务依赖的元数据服务</p>
-</li>
-<li>
-<p>OSD（Object Storage Daemon）：对象存储设备，主要存储数据</p>
-</li>
-</ul>
-<p><img src="/images/9D2BDF53EFF44536A3658AF85C227324clipboard.png" alt></p>
-<h3 id="Ceph核心概念">Ceph核心概念</h3>
-<p>Pool：存储池，是存储对象的逻辑分区，它规定了数据冗余的类型和对应的副本 分布策略；支持两种类型：副本（replicated）和 纠删码（Erasure Code）</p>
-<p>PG（ placement group）：放置策略组，对象的集合，该集合里的所有对象都 具有相同的放置策略；简单点说就是相同PG内的对象都会放到相同的硬盘上； PG 是ceph的核心概念， 服务端数据均衡和恢复的最小粒度；引入PG这一层其实是为 了更好的分配数据和定位数据。</p>
-<p>右边这张图描述了它们之间的关系：</p>
-<ul>
-<li>
-<p>一个Pool里有很多PG；</p>
-</li>
-<li>
-<p>一个PG里包含一堆对象；一个对象只能属于一个PG；</p>
-</li>
-<li>
-<p>PG属于多个OSD，分布在不同的OSD上；</p>
-</li>
-</ul>
-<p><img src="/images/F12F5EFAC24B45A2ABAB3BFEC92DA2C1clipboard.png" alt></p>
-<h2 id="部署Ceph集群">部署Ceph集群</h2>
-<h3 id="Ceph版本选择">Ceph版本选择</h3>
-<p>Ceph目前最新版本16（P版），市面上应用最广泛的是12（L版）</p>
-<p>参考：<a href="https://docs.ceph.com/en/latest/releases/">https://docs.ceph.com/en/latest/releases/</a></p>
-<p><img src="/images/F43A32B6AD424611B3F3B3EB94111AD8clipboard.png" alt></p>
-<h3 id="Ceph服务器配置推荐">Ceph服务器配置推荐</h3>
-<p><img src="/images/4B0E5F7B935A43249DE36E1F971A8130clipboard.png" alt></p>
-<h3 id="Ceph集群部署规划">Ceph集群部署规划</h3>
-<ul>
-<li>
-<p>ceph-deploy：ceph集群部署节点，负责集群整体部署， 这里复用node1节点，也可以单独找一台服务器作为部署 节点。</p>
-</li>
-<li>
-<p>monitor：Ceph监视管理节点，承担Ceph集群重要的管 理任务，负责集群状态维护，例如存储池副本数、PG状 态、OSD数量等，至少部署1个，一般需要3或5个节点组 建高可用。</p>
-</li>
-<li>
-<p>osd：Ceph存储节点，实际负责数据存储的节点，集群 中至少有3个OSD，不少于默认副本数，每个OSD对应一 块硬盘。</p>
-</li>
-</ul>
-<p><img src="/images/978109F0AA7A42C4AF692F96AD9C49E0clipboard.png" alt></p>
-<p><img src="/images/7C09054CB62A4EC286BD3974E10EDA02clipboard.png" alt></p>
-<h3 id="Ceph集群部署：操作系统初始化">Ceph集群部署：操作系统初始化</h3>
-<p>ps：3台机器全部操作</p>
-<h4 id="关闭防火墙">关闭防火墙</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl stop firewalld</span><br><span class="line">systemctl <span class="built_in">disable</span> firewalld</span><br></pre></td></tr></table></figure>
-<h4 id="关闭selinux">关闭selinux</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">sed -i <span class="string">&#x27;s/enforcing/disabled/&#x27;</span> /etc/selinux/config <span class="comment"># 永久，重启生效</span></span><br><span class="line">setenforce 0 <span class="comment"># 临时</span></span><br></pre></td></tr></table></figure>
-<h4 id="关闭swap">关闭swap</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">swapoff -a <span class="comment"># 临时</span></span><br><span class="line">sed -ri <span class="string">&#x27;s/.*swap.*/#&amp;/&#x27;</span> /etc/fstab <span class="comment"># 永久，重启生效</span></span><br></pre></td></tr></table></figure>
-<h4 id="根据规划设置主机名">根据规划设置主机名</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hostnamectl set-hostname &lt;hostname&gt;</span><br></pre></td></tr></table></figure>
-<h4 id="在node添加hosts">在node添加hosts</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> &gt;&gt; /etc/hosts &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">192.168.0.11 ceph-node01</span></span><br><span class="line"><span class="string">192.168.0.12 ceph-node02</span></span><br><span class="line"><span class="string">192.168.0.13 ceph-node03</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
-<h4 id="设置文件描述符">设置文件描述符</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">ulimit</span> -SHn 102400</span><br><span class="line"><span class="built_in">cat</span> &gt;&gt; /etc/security/limits.conf &lt;&lt; <span class="string">EOF </span></span><br><span class="line"><span class="string">* soft nofile 65535 * hard nofile 65535 </span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
-<h4 id="时间同步">时间同步</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install ntpdate -y</span><br><span class="line">ntpdate time.windows.com</span><br></pre></td></tr></table></figure>
-<h4 id="配置SSH免交互认证">配置SSH免交互认证</h4>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t rsa</span><br><span class="line">ssh-copy-id root@ceph-node01</span><br><span class="line">ssh-copy-id root@ceph-node02</span><br><span class="line">ssh-copy-id root@ceph-node03</span><br></pre></td></tr></table></figure>
-<h3 id="Ceph集群部署">Ceph集群部署</h3>
-<p>Ceph集群部署方式：</p>
-<ul>
-<li>
-<p>yum：常规的部署方式</p>
-</li>
-<li>
-<p>ceph-ansible：官方基于ansible写的自动化部署工具</p>
-</li>
-</ul>
-<p><a href="https://docs.ceph.com/projects/ceph-ansible/en/latest/">https://docs.ceph.com/projects/ceph-ansible/en/latest/</a></p>
-<ul>
-<li>ceph-deploy：ceph提供的简易部署工具，可以非常方便部署ceph集群。（推荐）</li>
-</ul>
-<p><a href="https://docs.ceph.com/projects/ceph-deploy/en/latest/">https://docs.ceph.com/projects/ceph-deploy/en/latest/</a></p>
-<p>Ceph集群部署步骤：</p>
-<p>1、配置阿里云yum仓库 （所有节点安装）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> &gt; /etc/yum.repos.d/ceph.repo &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">[Ceph]</span></span><br><span class="line"><span class="string">name=Ceph packages for $basearch</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-octopus/el7/\$basearch</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">[Ceph-noarch]</span></span><br><span class="line"><span class="string">name=Ceph noarch packages</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-octopus/el7/noarch</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">[ceph-source]</span></span><br><span class="line"><span class="string">name=Ceph source packages</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-octopus/el7/SRPMS</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
-<p>注：如果部署别的版本，将octopus替换为对应版本号即可。</p>
-<p>2、安装ceph-deploy工具 （ceph-deploy节点安装）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum -y install ceph-deploy    </span><br></pre></td></tr></table></figure>
-<p>3、创建集群  （ceph-deploy节点安装）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#创建一个my-cluster目录，所有命令在此目录下进行：</span></span><br><span class="line"><span class="built_in">mkdir</span> my-cluster </span><br><span class="line"><span class="built_in">cd</span> my-cluster</span><br><span class="line"><span class="comment">#安装集群缺少的模块</span></span><br><span class="line">yum install epel-release -y     <span class="comment">#所有节点安装</span></span><br><span class="line">yum install python2-pip -y </span><br><span class="line"><span class="comment">#创建一个Ceph集群：</span></span><br><span class="line">ceph-deploy new ceph-node01 ceph-node02 ceph-node03</span><br></pre></td></tr></table></figure>
-<p>4、安装Ceph （ceph-deploy节点安装）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装Ceph包到指定节点：</span></span><br><span class="line">ceph-deploy install --no-adjust-repos ceph-node01 ceph-node02 ceph-node03</span><br><span class="line"><span class="comment">#注：–no-adjust-repos参数是直接使用本地源，不使用官方默认源</span></span><br></pre></td></tr></table></figure>
-<p>5、部署Monitor服务 （ceph-deploy节点安装）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#初始化并部署monitor，收集所有密钥：</span></span><br><span class="line">ceph-deploy mon create-initial</span><br><span class="line"><span class="comment">#使用ceph-deploy命令将配置文件和 admin key复制到管理节点和Ceph节点，以便每次执行ceph CLI命令无需 指定monitor地址和 ceph.client.admin.keyring。</span></span><br><span class="line">ceph-deploy admin ceph-node01 ceph-node02 ceph-node03</span><br></pre></td></tr></table></figure>
-<p>6、部署OSD服务并添加硬盘 （ceph-deploy节点安装）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#创建6个OSD，分别对应每个节点未使用的硬盘：</span></span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node01</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node01</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node02</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node02</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node03</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node03</span><br></pre></td></tr></table></figure>
-<p>7、部署MGR服务（ceph-deploy节点安装）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-deploy mgr create ceph-node01 ceph-node02 ceph-node03</span><br></pre></td></tr></table></figure>
-<p>注：MGR是Ceph L版本新增加的组件，主要作用是分担和扩展monitor的部分功能，减轻monitor的负担。 建议每台monitor节点都部署一个mgr，以实现相同级别的高可用。</p>
-<p>查看Ceph集群状态：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph -s</span><br></pre></td></tr></table></figure>
-<p><img src="/images/B6B3728400CD4B29B5225EDB4267552Eclipboard.png" alt></p>
-<p>解决办法：(3台节点都操作）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装缺少的模块</span></span><br><span class="line">pip3 install pecan werkzeug</span><br><span class="line"><span class="comment">#禁用安全模式</span></span><br><span class="line">ceph config <span class="built_in">set</span> mon auth_allow_insecure_global_id_reclaim <span class="literal">false</span></span><br><span class="line"><span class="comment">#重启mgr服务</span></span><br><span class="line">systemctl restart ceph-mgr.target</span><br></pre></td></tr></table></figure>
-<p>查看Ceph版本：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph -v</span><br></pre></td></tr></table></figure>
-<h3 id="Ceph集群服务管理">Ceph集群服务管理</h3>
-<p>1、启动所有守护进程</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># systemctl restart ceph.target </span></span><br></pre></td></tr></table></figure>
-<p>2、按类型启动守护进程</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># systemctl restart ceph-osd@id </span></span><br><span class="line"><span class="comment"># systemctl restart ceph-mon.target </span></span><br><span class="line"><span class="comment"># systemctl restart ceph-mds.target </span></span><br><span class="line"><span class="comment"># systemctl restart ceph-mgr.target</span></span><br></pre></td></tr></table></figure>
-<h3 id="Ceph集群常用管理命令">Ceph集群常用管理命令</h3>
-<p><img src="/images/7F1083160E9D463883F3A2931A5768E0clipboard.png" alt></p>
-<h2 id="Ceph存储使用">Ceph存储使用</h2>
-<h3 id="三种存储类型介绍">三种存储类型介绍</h3>
-<p>块存储（RBD）</p>
-<p>优点：存储速度较快</p>
-<p>缺点：不支持共享存储</p>
-<p>应用场景：虚拟机硬盘</p>
-<p>典型设备：硬盘、Raid</p>
-<p>文件存储（CephFS）</p>
-<p>优点：支持共享存储</p>
-<p>缺点：读写速度较慢（需要经过操作系统处理再转为块存储）</p>
-<p>应用场景：文件共享，多台服务器共享使用同一个存储</p>
-<p>典型设备：FTP、NFS</p>
-<p>对象存储（Object）</p>
-<p>优点：具备块存储的读写性能和文件存储的共享特性</p>
-<p>缺点：操作系统不能直接访问，只能通过应用程序级别的API访问</p>
-<p>应用场景：图片存储，视频存储</p>
-<p>典型设备：阿里云OSS，腾讯云COS</p>
-<h3 id="RBD块存储：RBD工作流程">RBD块存储：RBD工作流程</h3>
-<p>1、客户端创建一个pool，并指定pg数量，创建rbd设备并挂载到文件系统；</p>
-<p>2、用户写入数据，ceph进行对数据切块，每个块的大小默认为4M，每个 块名字是object+序号； 3、将每个object通过pg进行副本位置的分配；</p>
-<p>4、pg根据crush算法会寻找3个osd，把这object分别保存在这3个osd上 存储；</p>
-<p>5、osd实际把硬盘格式化为xfs文件系统，object存储在这个文件系统就相 当于存储了一个文件rbd0.object1.file。</p>
-<p><img src="/images/C1F833C8BF1A42C8BB6FF71D4209EC74clipboard.png" alt></p>
-<h3 id="RBD块存储：常用管理命令">RBD块存储：常用管理命令</h3>
-<p><img src="/images/408D7E50905B40F491EBC9D864864D67clipboard.png" alt></p>
-<h3 id="RBD块存储：RBD创建并使用">RBD块存储：RBD创建并使用</h3>
-<p>1、创建存储池</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph osd pool create rbd-pool 128 <span class="comment"># 格式：ceph osd pool create &lt;pool-name&gt; &lt;pg-num&gt;</span></span><br><span class="line">ceph osd pool <span class="built_in">ls</span></span><br></pre></td></tr></table></figure>
-<p>PG数量设置计算公式：PG数量=(OSD数量*100)/副本数（3）</p>
-<p>例如我们的环境：(6*100)/3=200，一般设置是结果向上取2的N次方，所以pool指定的pg数量就是256</p>
-<p>2、指定存储池使用存储类型</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph osd pool application <span class="built_in">enable</span> rbd-pool rbd</span><br></pre></td></tr></table></figure>
-<p>3、创建一个10G的块设备</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd create --size 10240 rbd-pool/image01 <span class="comment"># 格式：rbd create --size &#123;megabytes&#125; &#123;pool-name&#125;/&#123;image-name&#125;</span></span><br></pre></td></tr></table></figure>
-<p>4、查看块设备</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd <span class="built_in">ls</span> rbd-pool</span><br><span class="line">rbd info rbd-pool/image01</span><br></pre></td></tr></table></figure>
-<p>节点本地挂载使用块设备：</p>
-<p>1、映射</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd map rbd-pool/image01</span><br></pre></td></tr></table></figure>
-<p>2、格式化块设备</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mkfs.xfs /dev/rbd0</span><br></pre></td></tr></table></figure>
-<p>3、挂载</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mount /dev/rbd0 /mnt</span><br></pre></td></tr></table></figure>
-<p><img src="/images/864B295E82BE4568AC1FEF86F5C98A98clipboard.png" alt></p>
-<p>4、取消挂载和内核映射</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">umount /mnt</span><br><span class="line">rbd unmap rbd-pool/image01</span><br></pre></td></tr></table></figure>
-<p>远程挂载使用块设备：</p>
-<p>1、拷贝配置文件和秘钥</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> my-cluster/</span><br><span class="line">scp ceph.conf root@192.168.0.14:/etc/ceph/</span><br><span class="line">scp ceph.client.admin.keyring root@192.168.0.14:/etc/ceph/</span><br></pre></td></tr></table></figure>
-<p>2、安装Ceph客户端</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install epel-release -y</span><br><span class="line">scp /etc/yum.repos.d/ceph.repo root@192.168.0.14:/etc/yum.repos.d/</span><br><span class="line">yum -y install ceph-common</span><br></pre></td></tr></table></figure>
-<p>3、剩余操作就与上面一样了</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd create --size 20480 rbd-pool/image02</span><br><span class="line">rbd <span class="built_in">ls</span> rbd-pool</span><br><span class="line">rbd map rbd-pool/image02</span><br><span class="line">rbd map rbd-pool/image02</span><br><span class="line">mkfs.xfs /dev/rbd0</span><br><span class="line">mount /dev/rbd0 /mnt/</span><br><span class="line"><span class="built_in">df</span> -h</span><br><span class="line">umount  /mnt/</span><br><span class="line">rbd unmap rbd-pool/image02</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p><img src="/images/7A83483B4F564FFCB93DAB7F16B6B381clipboard.png" alt></p>
-<h3 id="RBD块存储：快照">RBD块存储：快照</h3>
-<p>快照：在某个时间点的副本，当系统出现问题，可以通过恢复快照恢复之前副本状态。</p>
-<p>1、创建快照</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap create rbd-pool/image01@snap01</span><br></pre></td></tr></table></figure>
-<p>2、查看快照</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap list rbd-pool/image01</span><br></pre></td></tr></table></figure>
-<p>3、还原快照</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">umount  /mnt/</span><br><span class="line">rbd unmap rbd-pool/image01</span><br><span class="line">rbd snap rollback rbd-pool/image01@snap01</span><br><span class="line">注：还原快照前需先取消挂载和内核映射，否则会出错</span><br></pre></td></tr></table></figure>
-<p>4、重新映射并挂载验证</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd map rbd-pool/image01</span><br><span class="line">mount /dev/rbd0 /mnt/</span><br></pre></td></tr></table></figure>
-<p>5、删除快照</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap <span class="built_in">rm</span> rbd-pool/image01@snap01</span><br></pre></td></tr></table></figure>
-<p><img src="/images/DCC1F8703F004C94931B35D322DE5913clipboard.png" alt></p>
-<p><img src="/images/5CC3159040964F778A9ECE84B505D823clipboard.png" alt></p>
-<h3 id="RBD块存储：克隆">RBD块存储：克隆</h3>
-<p>克隆：基于指定的块设备克隆出相同的一份出来</p>
-<p>1、创建一个块设备</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd create --size 10240 rbd-pool/image02</span><br></pre></td></tr></table></figure>
-<p>2、创建快照</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap create rbd-pool/image02@snap01</span><br></pre></td></tr></table></figure>
-<p>3、设置快照处于被保护状态</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap protect rbd-pool/image02@snap01</span><br></pre></td></tr></table></figure>
-<p>4、通过快照克隆一个新块设备</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd <span class="built_in">clone</span> rbd-pool/image02@snap01 rbd-pool/image02_clone</span><br><span class="line">rbd info rbd-pool/image02_clone</span><br></pre></td></tr></table></figure>
-<p>5、将克隆的块设备独立于父块设备</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd flatten rbd-pool/image02_clone</span><br></pre></td></tr></table></figure>
-<p>基于上述快照之后的步骤</p>
-<p><img src="/images/780F3B0FA1E14F2D8D83EB2778C7374Aclipboard.png" alt></p>
-<p><img src="/images/44921CAF73254AE79C845AC9FF60312Aclipboard.png" alt></p>
-<p>由于克隆的uuid一致，需要在其他机器上挂载验证克隆的镜像是否可用</p>
-<p><img src="/images/AB395B73E9C44D609201473CCDC0013Fclipboard.png" alt></p>
-<h3 id="CephFS文件系统">CephFS文件系统</h3>
-<p>CephFS 是一个基于 ceph 集群且兼容POSIX标准的文件系统。</p>
-<p>创建 cephfs 文件系统时需要在 ceph 集群中添加 mds 服务，该服务 负责处理 POSIX 文件系统中的 metadata 部分，实际的数据部分交由 ceph 集群中的OSD处理。</p>
-<p>cephfs 支持以内核模块方式加载也支持 fuse 方式加载。无论是内核 模式还是 fuse 模式，都是通过调用 libcephfs 库来实现 cephfs 文件 系统的加载，而 libcephfs 库又调用 librados 库与 ceph 集群进行通 信，从而实现 cephfs 的加载。</p>
-<p><img src="/images/C106DA8250B74E1E9116CE0BEE91F50Dclipboard.png" alt></p>
-<h3 id="CephFS文件系统：部署MDS服务">CephFS文件系统：部署MDS服务</h3>
-<p>部署MDS实例：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-deploy mds create ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph mds <span class="built_in">stat</span> <span class="comment"># 查看MDS节点状态</span></span><br></pre></td></tr></table></figure>
-<h3 id="CephFS文件系统：创建文件系统">CephFS文件系统：创建文件系统</h3>
-<p>1、创建存储池</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph osd pool create cephfs_data &lt;pg_num&gt;</span><br><span class="line">ceph osd pool create cephfs_metadata &lt;pg_num&gt;</span><br><span class="line">ceph fs <span class="built_in">ls</span></span><br></pre></td></tr></table></figure>
-<p>2、创建文件系统</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph fs new cephfs cephfs_metadata cephfs_data <span class="comment"># 格式：ceph fs new &lt;fs_name&gt; &lt;metadata&gt; &lt;data&gt; </span></span><br><span class="line">ceph fs <span class="built_in">ls</span> <span class="comment">#查看创建后的cephfs</span></span><br></pre></td></tr></table></figure>
-<h3 id="CephFS文件系统：挂载并使用">CephFS文件系统：挂载并使用</h3>
-<p>内核模块方式挂载：</p>
-<p>1、安装Ceph客户端 （前面已经安装客户端啦）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install epel-release -y</span><br><span class="line">yum -y install ceph-common</span><br></pre></td></tr></table></figure>
-<p>2、获取账号名与秘钥</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph auth list |grep admin -A1</span><br></pre></td></tr></table></figure>
-<p>3、挂载本地目录</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mount -t ceph 192.168.0.11:6789,192.168.0.12:6789,192.168.0.13:6789:/ /mnt/ -o name=admin,secret=AQDPhU5hxkfUHRAAQUcQHyrXTTJCRmBPONmVzg==</span><br><span class="line"><span class="comment">#或者将密钥指定到文件</span></span><br><span class="line">vim /etc/ceph/admin.secret </span><br><span class="line">mount -t ceph 192.168.0.11:6789,192.168.0.12:6789,192.168.0.13:6789:/ /tmp/ -o name=admin,secretfile=/etc/ceph/admin.secret </span><br></pre></td></tr></table></figure>
-<p>4、取消挂载</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">umount /mnt</span><br></pre></td></tr></table></figure>
-<p>fuse方式挂载：</p>
-<p>1、安装fuse</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y ceph-fuse</span><br></pre></td></tr></table></figure>
-<p>2、挂载本地目录</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-fuse -m 192.168.0.11:6789,192.168.0.12:6789,192.168.0.13:6789 /mnt/</span><br><span class="line"><span class="comment">#这里没有指定密钥是因为它默认读取的是/etc/ceph/ceph.client.admin.keyring </span></span><br><span class="line">[root@localhost ~]<span class="comment"># cat /etc/ceph/ceph.client.admin.keyring </span></span><br><span class="line">[client.admin]</span><br><span class="line">	key = AQDPhU5hxkfUHRAAQUcQHyrXTTJCRmBPONmVzg==</span><br><span class="line">	caps mds = <span class="string">&quot;allow *&quot;</span></span><br><span class="line">	caps mgr = <span class="string">&quot;allow *&quot;</span></span><br><span class="line">	caps mon = <span class="string">&quot;allow *&quot;</span></span><br><span class="line">	caps osd = <span class="string">&quot;allow *&quot;</span></span><br></pre></td></tr></table></figure>
-<p>3、取消卸载</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">fusermount -u /mnt/</span><br></pre></td></tr></table></figure>
-<h3 id="对象存储">对象存储</h3>
-<p>Ceph对象存储不能像RBD、CephFS那样方式访问，它是通 过Restfulapi方式进行访问和使用。兼容S3/Swift接口，由 radosgw组件提供服务。所以需要安装这个服务。</p>
-<p><img src="/images/8AD3A5006168462C82C97E9640613903clipboard.png" alt></p>
-<h3 id="对象存储：部署RGW服务">对象存储：部署RGW服务</h3>
-<p>部署RGW服务：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-deploy rgw create ceph-node01 ceph-node02</span><br></pre></td></tr></table></figure>
-<p>验证访问，RGW默认7480端口，浏览器访问：<a href="http://192.168.31.71:7480">http://192.168.31.71:7480</a></p>
-<p>返回anonymous说明服务正常。</p>
-<h3 id="对象存储：使用">对象存储：使用</h3>
-<p>radosgw-admin 是 RADOS 网关用户管理工具。</p>
-<p>1、创建S3账号</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">radosgw-admin user create --uid=<span class="string">&quot;azhe&quot;</span> --display-name=<span class="string">&quot;azhe&quot;</span></span><br><span class="line">注：记住输出的keys中的access_key和secret_key的值，用于接口访问认证。</span><br><span class="line">如果忘记 也可以通过这个命令查看：radosgw-admin user info --uid=azhe</span><br></pre></td></tr></table></figure>
-<p>2、编写Python脚本测试</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">安装连接boto模块，用于连接S3接口：</span><br><span class="line">pip3 install boto</span><br><span class="line">参考示例：https://docs.ceph.com/en/nautilus/radosgw/s3/python/</span><br></pre></td></tr></table></figure>
-<h2 id="Kubernetes使用Ceph作为Pod存储">Kubernetes使用Ceph作为Pod存储</h2>
-<h3 id="PV与PVC概述">PV与PVC概述</h3>
-<p>PersistentVolume（PV）：持久卷，对外部存储资源创建和使用的抽象， 使得存储作为集群中的资源管理；PV又分为静态供给和动态供给，由于静态 供给需要提前创建一堆PV，维护成本较高，所以企业一般使用动态供给。</p>
-<p>PersistentVolumeClaim（PVC）：持久卷申请，让用户不需要关心具体 的Volume实现细节，只需要定义PVC需要多少磁盘容量即可。</p>
-<p><img src="/images/E6625444C3824E1EA14FE22591E0DE9Cclipboard.png" alt></p>
-<h3 id="ceph-csi供给程序">ceph-csi供给程序</h3>
-<p>ceph-csi是ceph官方维护的PV供给程序，专门用于在 Kubernetes中使用RBD、CephFS为Pod提供存储。</p>
-<p>项目地址：<a href="https://github.com/ceph/ceph-csi">https://github.com/ceph/ceph-csi</a></p>
-<p><img src="/images/1F2BE3EE5A734C83A078D4780336D56Fclipboard.png" alt></p>
-<h3 id="Pod使用RBD块存储">Pod使用RBD块存储</h3>
-<p>关于部署，RBD YAML文件在deploy/rbd/kubernetes目录，课件中YAML改动如下：</p>
-<ul>
-<li>
-<p>全部统一命名空间到ceph-csi</p>
-</li>
-<li>
-<p>将镜像转存到docker hub</p>
-</li>
-<li>
-<p>增加secret.yaml和storageclass.yaml文件</p>
-</li>
-<li>
-<p>将csi-rbdplugin-provisioner.yaml 和 csi-rbdplugin.yaml 中 关于kms配置注释</p>
-</li>
-</ul>
-<p>在使用中，还需要根据自己集群环境修改：</p>
-<ul>
-<li>
-<p>csi-config-map.yaml 修改连接ceph集群信息</p>
-</li>
-<li>
-<p>secret.yaml 修改秘钥</p>
-</li>
-<li>
-<p>storageclass.yaml 修改集群ID和存储池</p>
-</li>
-</ul>
-<h3 id="Pod使用CephFS文件系统">Pod使用CephFS文件系统</h3>
-<p>关于部署，RBD YAML文件在deploy/cephfs/kubernetes目录，课件中YAML改动如下：</p>
-<ul>
-<li>
-<p>全部统一命名空间到ceph-csi-cephfs</p>
-</li>
-<li>
-<p>将镜像转存到docker hub</p>
-</li>
-<li>
-<p>增加secret.yaml和storageclass.yaml文件</p>
-</li>
-<li>
-<p>将csi-rbdplugin-provisioner.yaml 和 csi-rbdplugin.yaml 中 关于kms配置注释</p>
-</li>
-</ul>
-<p>在使用中，还需要根据自己集群环境修改：</p>
-<ul>
-<li>
-<p>csi-config-map.yaml 修改连接ceph集群信息</p>
-</li>
-<li>
-<p>secret.yaml 修改秘钥</p>
-</li>
-<li>
-<p>storageclass.yaml 修改集群ID和文件系统名称</p>
-</li>
-</ul>
-<h3 id="小结">小结</h3>
-<p><img src="/images/FFC5666BFF9B4DACB117A5B0B5F69C5Dclipboard.png" alt></p>
-<p>RBD：</p>
-<p>优点：读写性能好，支持镜像快照、克隆</p>
-<p>缺点：不支持多节点挂载</p>
-<p>适用场景：对读写性能要求高，且无多节点同时读写数据需求的应用，例如数据库</p>
-<p>CephFS：</p>
-<p>优点：支持K8s所有访问模式，支持多节点同时读写数据</p>
-<p>缺点：读写性能一般，延迟时间不稳定</p>
-<p>适用场景：对读写性能要求不高，I/O延迟不敏感的应用，例如文件共享</p>
-<h2 id="Ceph-监控">Ceph 监控</h2>
-<h3 id="Dashboard">Dashboard</h3>
-<p>从L版本开始，Ceph 提供了原生的Dashboard功能，通过Dashboard对Ceph集群状态查看和基本管理。</p>
-<p>使用Dashboard需要在MGR节点安装软件包： yum install ceph-mgr-dashboard –y</p>
-<p>如果是按课程用的O版本会出现下面缺少依赖包提示：</p>
-<p><img src="/images/5659B49493B946FF978BA7211DDC481Aclipboard.png" alt></p>
-<p>原因分析：这是由于从O版本开始，MGR改为Python3编写，而默认库没有这3个模块包，即使单独找包安装也可能 不生效或者安装不上。从社区得知，这是已知问题，建议使用CentOS8系统或者使用cephadm容器化部署Ceph。 或者降低Ceph版本也可以，例如H版本，这个版本还是Python2编写的，不存在缺包问题。</p>
-<p>这里选择降低到H版本，重新部署Ceph集群。</p>
-<p>1、清理Ceph集群环境</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 从远程主机卸载ceph包并清理所有数据</span></span><br><span class="line">ceph-deploy purge ceph-node01 ceph-node02 ceph-node03</span><br><span class="line"><span class="comment"># 清理ceph所有数据（/var/lib/ceph）</span></span><br><span class="line">ceph-deploy purgedata ceph-node01 ceph-node02 ceph-node03</span><br><span class="line"><span class="comment"># 从本地目录移出认证秘钥（my-cluster目录），可选</span></span><br><span class="line">ceph-deploy forgetkeys</span><br><span class="line"><span class="comment"># 彻底清理ceph相关软件包</span></span><br><span class="line">rpm -qa |grep 15.2.13 |xargs -i yum remove &#123;&#125; -y</span><br><span class="line"><span class="comment"># 取消OSD盘创建的LVM逻辑卷映射关系</span></span><br><span class="line">dmsetup info -C |awk <span class="string">&#x27;/ceph/&#123;print $1&#125;&#x27;</span> |xargs -i dmsetup remove &#123;&#125;</span><br><span class="line"><span class="comment"># 清除OSD盘GPT数据结构</span></span><br><span class="line">yum install gdisk -y</span><br><span class="line">sgdisk --zap-all /dev/sdb</span><br></pre></td></tr></table></figure>
-<p>2、与之前部署方式一样</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> &gt; /etc/yum.repos.d/ceph.repo &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">[Ceph]</span></span><br><span class="line"><span class="string">name=Ceph packages for $basearch</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/\$basearch</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">[Ceph-noarch]</span></span><br><span class="line"><span class="string">name=Ceph noarch packages</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/noarch</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">[ceph-source]</span></span><br><span class="line"><span class="string">name=Ceph source packages</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/SRPMS</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum -y install ceph-deploy   </span><br><span class="line"><span class="built_in">mkdir</span> my-cluster </span><br><span class="line"><span class="built_in">cd</span> my-cluster</span><br><span class="line">yum install epel-release -y </span><br><span class="line">yum install python2-pip -y </span><br><span class="line">ceph-deploy new ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph-deploy install --no-adjust-repos ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph-deploy mon create-initial</span><br><span class="line">ceph-deploy admin ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node01</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node01</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node02</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node02</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node03</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node03</span><br><span class="line">ceph-deploy mgr create ceph-node01 ceph-node02 ceph-node03</span><br></pre></td></tr></table></figure>
-<p>3、添加RBD块设备和CephFS文件系统测试</p>
-<p>添加RBD块设备：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph osd pool create rbd-pool 128</span><br><span class="line">ceph osd pool application <span class="built_in">enable</span> rbd-pool rbd</span><br><span class="line">rbd create --size 10240 rbd-pool/image01 </span><br><span class="line">rbd map rbd-pool/image01</span><br><span class="line">mkfs.xfs /dev/rbd0</span><br><span class="line">mount /dev/rbd0 /mnt</span><br></pre></td></tr></table></figure>
-<p>添加CephFS文件系统：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-deploy mds create ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph osd pool create cephfs_data 128</span><br><span class="line">ceph osd pool create cephfs_metadata 128</span><br><span class="line">ceph fs new cephfs cephfs_metadata cephfs_data </span><br><span class="line">mount -t ceph 192.168.0.11:6789,192.168.0.12:6789,192.168.0.13:6789:/ /mnt -o </span><br><span class="line">name=admin,secret=AQBwS9Vgow1+OBAA0eMOK8v5LlU7m+/cg+wIng==</span><br></pre></td></tr></table></figure>
-<p>1、在每个MGR节点安装</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install ceph-mgr-dashboard –y</span><br></pre></td></tr></table></figure>
-<p>2、开启MGR功能</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph mgr module <span class="built_in">enable</span> dashboard</span><br></pre></td></tr></table></figure>
-<p>3、修改默认配置</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph config <span class="built_in">set</span> mgr mgr/dashboard/server_addr 0.0.0.0</span><br><span class="line">ceph config <span class="built_in">set</span> mgr mgr/dashboard/server_port 7000 </span><br><span class="line">ceph config <span class="built_in">set</span> mgr mgr/dashboard/ssl <span class="literal">false</span></span><br></pre></td></tr></table></figure>
-<p>4、创建一个dashboard登录用户名密码</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph dashboard ac-user-create admin administrator -i password.txt</span><br><span class="line">格式：dashboard ac-user-create &lt;username&gt; &#123;&lt;rolename&gt;&#125; &#123;&lt;name&gt;&#125;</span><br></pre></td></tr></table></figure>
-<p>5、查看服务访问方式</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph mgr services</span><br></pre></td></tr></table></figure>
-<p>后面如果修改配置，重启生效：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph mgr module <span class="built_in">disable</span> dashboard</span><br><span class="line">ceph mgr module <span class="built_in">enable</span> dashboard</span><br></pre></td></tr></table></figure>
-<p><img src="/images/60E4C32C13634E9F943183C8B5D8CB53clipboard.png" alt></p>
-<h3 id="Prometheus-Grafana监控Ceph">Prometheus+Grafana监控Ceph</h3>
-<ul>
-<li>Prometheus（普罗米修斯）：容器监控系统。</li>
-</ul>
-<p>官网：<a href="https://prometheus.io">https://prometheus.io</a></p>
-<ul>
-<li>Grafana：是一个开源的度量分析和可视化系统。</li>
-</ul>
-<p>官网：<a href="https://grafana.com/grafana">https://grafana.com/grafana</a></p>
-<p>1、Docker部署Prometheus+Grafana</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo -O /etc/yum.repos.d/docker-ce.repo</span><br><span class="line">yum install docker-ce -y</span><br><span class="line">systemctl start docker</span><br><span class="line">systemctl <span class="built_in">enable</span> docker</span><br><span class="line">docker run -d --name=grafana -p 3000:3000 grafana/grafana</span><br><span class="line">docker run -d --name=prometheus -p 9090:9090 prom/prometheus</span><br></pre></td></tr></table></figure>
-<p>2、启用MGR Prometheus插件</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph mgr module <span class="built_in">enable</span> prometheus </span><br><span class="line">curl 127.0.0.1:9283/metrics <span class="comment"># # 测试promtheus指标接口</span></span><br></pre></td></tr></table></figure>
-<p>3、配置Prometheus采集</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -it prometheus sh</span><br><span class="line">vi /etc/prometheus/prometheus.yml</span><br><span class="line">- job_name: <span class="string">&#x27;ceph&#x27;</span> </span><br><span class="line">static_configs: </span><br><span class="line">- targets: [<span class="string">&#x27;192.168.31.71:9283&#x27;</span>] </span><br><span class="line">docker restart prometheus</span><br></pre></td></tr></table></figure>
-<p>4、访问Grafana仪表盘</p>
-<p><a href="http://IP:3000">http://IP:3000</a></p>
-<p>默认用户名密码均为admin</p>
-<ol>
-<li>
-<p>添加Prometheus为数据源：Configuration -&gt; Data sources -&gt; Promethes -&gt; 输入URL <a href="http://IP:9090">http://IP:9090</a></p>
-</li>
-<li>
-<p>导入Ceph监控仪表盘：Dashboards -&gt; Manage -&gt; Import -&gt; 输入仪表盘ID，加载</p>
-</li>
-</ol>
-<ul>
-<li>
-<p>Ceph-Cluster ID：2842</p>
-</li>
-<li>
-<p>Ceph-OSD ID：5336</p>
-</li>
-<li>
-<p>Ceph-Pool ID：5342</p>
-</li>
-</ul>
-<p><img src="/images/708F09AB64F74A36A68B51DD463540CAclipboard.png" alt></p>
-]]></content>
-      <categories>
-        <category>Ceph</category>
-      </categories>
-      <tags>
-        <tag>Ceph</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>ELK Stack收集Kubernetes应用日志</title>
-    <url>/2023/06/10/elk-stack%E6%94%B6%E9%9B%86kubernetes%E5%BA%94%E7%94%A8%E6%97%A5%E5%BF%97/</url>
-    <content><![CDATA[<h2 id="需求背景">需求背景</h2>
-<ul>
-<li>
-<p>业务发展越来越庞大，服务器越来越多</p>
-</li>
-<li>
-<p>各种访问日志、应用日志、错误日志量越来越多</p>
-</li>
-<li>
-<p>开发人员排查问题，需要到服务器上查日志，效率低、权限不好控制</p>
-</li>
-<li>
-<p>运维需实时关注业务访问情况</p>
-</li>
-</ul>
-<h2 id="容器特性给日志采集带来的难度">容器特性给日志采集带来的难度</h2>
-<p>容器特性给日志采集带来的难度：</p>
-<ul>
-<li>
-<p>K8s弹性伸缩性：导致不能预先确定采集的目标</p>
-</li>
-<li>
-<p>容器隔离性：容器的文件系统与宿主机是隔离，导致 日志采集器读取日志文件受阻</p>
-</li>
-</ul>
-<h2 id="日志按体现方式分类">日志按体现方式分类</h2>
-<p>应用程序日志记录体现方式分为两类：</p>
-<ul>
-<li>
-<p>标准输出：输出到控制台，使用kubectl logs可以看到</p>
-</li>
-<li>
-<p>日志文件：写到容器的文件系统的文件</p>
-</li>
-</ul>
-<p>示例：标准输出</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl run nginx --image=nginx </span><br><span class="line">kubectl get pod -o wide</span><br><span class="line">curl -I 10.244.36.65</span><br><span class="line">kubectl <span class="built_in">exec</span> -it nginx -- bash</span><br></pre></td></tr></table></figure>
-<p><img src="/images/1AD8668512ED40C7982F71EEF7578947clipboard.png" alt></p>
-<p><img src="/images/BCA6E0A58E0B4B57864D0463C3A40454clipboard.png" alt></p>
-<p>日志文件在宿主机上的路径</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get pod -o wide     <span class="comment">#查看pod所在节点</span></span><br></pre></td></tr></table></figure>
-<p><img src="/images/AC3C714989FF4404BD41B4DFF6EE4508clipboard.png" alt></p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#采集所有容器的日志</span></span><br><span class="line">/var/lib/docker/containers/*/*-json.log</span><br></pre></td></tr></table></figure>
-<p>示例：日志文件</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl run tomcat --image=tomcat</span><br><span class="line">kubectl get pod -o wide</span><br><span class="line">curl 10.244.36.66:8080</span><br><span class="line">kubectl <span class="built_in">exec</span> -it tomcat -- bash</span><br></pre></td></tr></table></figure>
-<p><img src="/images/ABF0ED03F8B84009870BC9853D2F5CFAclipboard.png" alt></p>
-<p>方式一：使用emptyDir数据卷挂载容器日志路径到宿主机上，DaemonSet方式部署，在每个节点部署日志采集器采集日志。</p>
-<p>vim tomcat.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: tomcat-web</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - image: tomcat</span><br><span class="line">    name: web</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: logs</span><br><span class="line">      mountPath: /usr/local/tomcat/logs</span><br><span class="line"></span><br><span class="line">  volumes:</span><br><span class="line">  - name: logs</span><br><span class="line">    emptyDir: &#123;&#125;</span><br></pre></td></tr></table></figure>
-<p><img src="/images/792129A318954414A785DF716F403E67clipboard.png" alt></p>
-<p><img src="/images/B39AB402B525404DB60FF061FFE148D0clipboard.png" alt></p>
-<p>方式二：使用emptyDir数据卷共享应用容器的日志让日志采集器容器能够采集到</p>
-<p>vim tomcat.yaml</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: tomcat-web</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - image: tomcat</span><br><span class="line">    name: web</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: logs</span><br><span class="line">      mountPath: /usr/local/tomcat/logs</span><br><span class="line">  - image: busybox</span><br><span class="line">    name: <span class="built_in">test</span></span><br><span class="line">    <span class="built_in">command</span>: [/bin/sh,-c,<span class="string">&#x27;tail -f /tmp/localhost_access_log.2021-02-26.txt&#x27;</span>]</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: logs</span><br><span class="line">      mountPath: /tmp</span><br><span class="line"></span><br><span class="line">  volumes:</span><br><span class="line">  - name: logs</span><br><span class="line">    emptyDir: &#123;&#125;</span><br></pre></td></tr></table></figure>
-<p><img src="/images/DCE9C4C11E3D48AFBD309303774D4515clipboard.png" alt></p>
-<h2 id="Kubernetes应用日志收集">Kubernetes应用日志收集</h2>
-<p><img src="/images/AD6A4A61D93642979FC4597F279971CEclipboard.png" alt></p>
-<h2 id="ELK-Stack日志系统">ELK Stack日志系统</h2>
-<p>ELK 是三个开源软件的缩写，提供一套完整的企业级日 志平台解决方案。</p>
-<p>分别是：</p>
-<ul>
-<li>
-<p>Elasticsearch：搜索、分析和存储数据</p>
-</li>
-<li>
-<p>Logstash ：采集日志、格式化、过滤，最后将数据 推送到Elasticsearch存储</p>
-</li>
-<li>
-<p>Kibana：数据可视化</p>
-</li>
-<li>
-<p>Beats ：集合了多种单一用途数据采集器，用于实 现从边缘机器向 Logstash 和 Elasticsearch 发送数 据。里面应用最多的是Filebeat，是一个轻量级日 志采集器</p>
-</li>
-</ul>
-<p><img src="/images/F17E6A5760E5440D935C1A2AE3DCC9CBclipboard.png" alt></p>
-<p>部署nfs-pv自动供给</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装nfs安装包（每个k8s节点都要安装）</span></span><br><span class="line">yum install nfs-utils</span><br><span class="line"><span class="comment">#创建nfs共享目录</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /nfs/kubernetes</span><br><span class="line"><span class="comment">#修改nfs配置文件</span></span><br><span class="line">vim /etc/exports</span><br><span class="line">/nfs/kubernetes *(rw,no_root_squash)</span><br><span class="line"><span class="comment">#启动nfs并加入开机自启</span></span><br><span class="line">systemctl start nfs</span><br><span class="line">systemctl <span class="built_in">enable</span> nfs</span><br><span class="line"></span><br><span class="line"><span class="comment">#部署NFS实现自动创建PV插件：</span></span><br><span class="line">git <span class="built_in">clone</span> https://github.com/kubernetes-incubator/external-storage </span><br><span class="line"><span class="built_in">cd</span> nfs-client/deploy </span><br><span class="line">kubectl apply -f rbac.yaml <span class="comment"># 授权访问apiserver </span></span><br><span class="line">kubectl apply -f deployment.yaml <span class="comment"># 部署插件，需修改里面NFS服务器地址与共享目录 </span></span><br><span class="line">kubectl apply -f class.yaml <span class="comment"># 创建存储类</span></span><br><span class="line">kubectl get sc  <span class="comment"># 查看存储类</span></span><br></pre></td></tr></table></figure>
-<p><a href="/attachments/C51F66682474432DB8DEEF207364AA3Delk.zip">elk.zip</a></p>
-<p>搭建日志系统：</p>
-<ul>
-<li>
-<p>elasticsearch.yaml # ES数据库</p>
-</li>
-<li>
-<p>kibana.yaml # 可视化展示</p>
-</li>
-</ul>
-<p>日志收集：</p>
-<ul>
-<li>
-<p>filebeat-kubernetes.yaml # 采集所有容器标准输出</p>
-</li>
-<li>
-<p>app-log-stdout.yaml # 标准输出测试应用</p>
-</li>
-<li>
-<p>app-log-logfile.yaml # 日志文件测试应用</p>
-</li>
-</ul>
-<p>可视化展示日志：</p>
-<ol>
-<li>
-<p>查看索引（日志记录集合）：Management -&gt; Stack Management -&gt; 索引管理</p>
-</li>
-<li>
-<p>将索引关联到Kibana：索引模式 -&gt; 创建 -&gt; 匹配模式 -&gt; 选择时间戳</p>
-</li>
-<li>
-<p>在Discover选择索引模式查看日志</p>
-</li>
-</ol>
-<p><img src="/images/BBE56CA4DD2C4075B8E673533B732201clipboard.png" alt></p>
-<p><img src="/images/6C71CC0FD2EC42A998135CB4485B01B2clipboard.png" alt></p>
-<p><img src="/images/4CB047B4EFBC4538A62072AC9D70C419clipboard.png" alt></p>
-]]></content>
-      <categories>
-        <category>K8S</category>
-      </categories>
-      <tags>
-        <tag>K8S</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>ELK 系统架构优化</title>
     <url>/2021/07/11/elk%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E4%BC%98%E5%8C%96/</url>
     <content><![CDATA[<p>增加数据缓冲队列</p>
@@ -4041,6 +3502,36 @@
       </tags>
   </entry>
   <entry>
+    <title>基于Jenkins发布微服务</title>
+    <url>/2021/10/02/%E5%9F%BA%E4%BA%8Ejenkins%E5%8F%91%E5%B8%83%E5%BE%AE%E6%9C%8D%E5%8A%A1/</url>
+    <content><![CDATA[<p><img src="/images/38E37D9AE37B4AE0A516F9D23F6B4FB8clipboard.png" alt></p>
+<p>ansible-yum源：</p>
+<p>wget -O /etc/yum.repos.d/epel.repo <a href="http://mirrors.aliyun.com/repo/epel-7.repo">http://mirrors.aliyun.com/repo/epel-7.repo</a></p>
+<p>1.安装相关的插件</p>
+<p>pipeline、git、git parameter 、extended choice parameter、ansible</p>
+<p>2.生成相关插件的语法：</p>
+<p>git parameter</p>
+<p><img src="/images/A378D5F638884B04B75B74FB98903F93clipboard.png" alt></p>
+<p>extended choice parameter</p>
+<p><img src="/images/E245E8D05142429D9E69B929CA50A8BAclipboard.png" alt></p>
+<p>choice选项参数</p>
+<p><img src="/images/3992492938B147ED90FD3CD1C5A8049Eclipboard.png" alt></p>
+<p>git</p>
+<p><img src="/images/162EB39984224B9598AA25D28A787DE5clipboard.png" alt></p>
+<p>3.编写流水线脚本</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">pipeline &#123;</span><br><span class="line">    agent &#123;</span><br><span class="line">        label <span class="string">&quot;test1&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">    environment &#123;</span><br><span class="line">        git_address = <span class="string">&quot;http://192.168.0.11/my-group/ms.git&quot;</span></span><br><span class="line">        git_password = <span class="string">&quot;c601674b-44e0-45a2-aaba-3f476e2c3c51&quot;</span></span><br><span class="line">        ansible_ssh_auth = <span class="string">&quot;242dbf20-4e53-4fa1-b8e7-1479e0a51572&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">    parameters &#123;</span><br><span class="line">        gitParameter branch: <span class="string">&#x27;&#x27;</span>, branchFilter: <span class="string">&#x27;origin/(.*)&#x27;</span>, defaultValue: <span class="string">&#x27;origin/master&#x27;</span>, description: <span class="string">&#x27;请选择你要发布的分支：&#x27;</span>, name: <span class="string">&#x27;branch&#x27;</span>, quickFilterEnabled: <span class="literal">false</span>, selectedValue: <span class="string">&#x27;NONE&#x27;</span>, sortMode: <span class="string">&#x27;NONE&#x27;</span>, tagFilter: <span class="string">&#x27;*&#x27;</span>, <span class="built_in">type</span>: <span class="string">&#x27;PT_BRANCH&#x27;</span></span><br><span class="line">        extendedChoice description: <span class="string">&#x27;请选择你要发布的微服务:&#x27;</span>, multiSelectDelimiter: <span class="string">&#x27;,&#x27;</span>, name: <span class="string">&#x27;Service&#x27;</span>, quoteValue: <span class="literal">false</span>, saveJSONParameterToFile: <span class="literal">false</span>, <span class="built_in">type</span>: <span class="string">&#x27;PT_CHECKBOX&#x27;</span>, value: <span class="string">&#x27;portal,gateway,product,stock,order&#x27;</span>, visibleItemCount: 5</span><br><span class="line">        choice choices: [<span class="string">&#x27;webservers1&#x27;</span>, <span class="string">&#x27;webservers2&#x27;</span>], description: <span class="string">&#x27;&#x27;</span><span class="string">&#x27;请选择你要发布的服务器组：</span></span><br><span class="line"><span class="string">        [webservers1]</span></span><br><span class="line"><span class="string">        192.168.0.14</span></span><br><span class="line"><span class="string">        [webservers2]</span></span><br><span class="line"><span class="string">        192.168.0.15&#x27;</span><span class="string">&#x27;&#x27;</span>, name: <span class="string">&#x27;Servers&#x27;</span></span><br><span class="line">    &#125;</span><br><span class="line">    stages &#123;</span><br><span class="line">        stage(<span class="string">&#x27;拉去取代码&#x27;</span>) &#123;</span><br><span class="line">            steps &#123;</span><br><span class="line">             checkout([<span class="variable">$class</span>: <span class="string">&#x27;GitSCM&#x27;</span>, branches: [[name: <span class="string">&quot;<span class="variable">$&#123;params.branch&#125;</span>&quot;</span>]], extensions: [], userRemoteConfigs: [[credentialsId: <span class="string">&quot;<span class="variable">$&#123;git_password&#125;</span>&quot;</span>, url: <span class="string">&quot;<span class="variable">$&#123;git_address&#125;</span>&quot;</span>]]])</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        stage(<span class="string">&#x27;编译构建&#x27;</span>)&#123;</span><br><span class="line">            steps &#123;</span><br><span class="line">                sh <span class="string">&quot;export JAVA_HOME=/usr/local/jdk&quot;</span></span><br><span class="line">                sh <span class="string">&quot;/usr/local/maven/bin/mvn clean package -Dmaven.skip.test=true&quot;</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        stage(<span class="string">&#x27;部署并启动&#x27;</span>)&#123;</span><br><span class="line">            steps &#123;</span><br><span class="line">                 // 将用户选择的微服务的构建文件拷贝到临时目录，以便ansible统一推送</span><br><span class="line">                // Service=portal,gateway,product,stock,order</span><br><span class="line">                script &#123;</span><br><span class="line">                    def tmp_dir = <span class="string">&quot;<span class="variable">$WORKSPACE</span>/tmp&quot;</span></span><br><span class="line">                    def services = <span class="string">&quot;<span class="variable">$Service</span>&quot;</span>.<span class="built_in">split</span>(<span class="string">&quot;,&quot;</span>)</span><br><span class="line">                    <span class="keyword">for</span>(name <span class="keyword">in</span> services) &#123;</span><br><span class="line">                        sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">                        echo <span class="variable">$name</span></span></span><br><span class="line"><span class="string">                        pwd</span></span><br><span class="line"><span class="string">                        ls</span></span><br><span class="line"><span class="string">                        mkdir <span class="variable">$tmp_dir</span> |true</span></span><br><span class="line"><span class="string">                        cd <span class="variable">$name</span>-service</span></span><br><span class="line"><span class="string">                        if ls |grep biz &amp;&gt;/dev/null;then</span></span><br><span class="line"><span class="string">                           cd <span class="variable">$name</span>-service-biz</span></span><br><span class="line"><span class="string">                        fi</span></span><br><span class="line"><span class="string">                        mv target/*.jar <span class="variable">$tmp_dir</span></span></span><br><span class="line"><span class="string">                        ls <span class="variable">$tmp_dir</span></span></span><br><span class="line"><span class="string">                        &quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                // 生成主机清单文件和playbook</span><br><span class="line">                sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">cat &gt; /opt/jenkins/.hosts &lt;&lt; EOF</span></span><br><span class="line"><span class="string">[webservers1]</span></span><br><span class="line"><span class="string">192.168.0.14</span></span><br><span class="line"><span class="string">[webservers2]</span></span><br><span class="line"><span class="string">192.168.0.15</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"><span class="string">cat &gt; /opt/jenkins/.playbook.yaml &lt;&lt;EOF</span></span><br><span class="line"><span class="string">- hosts: <span class="variable">$Servers</span></span></span><br><span class="line"><span class="string">  gather_facts: no</span></span><br><span class="line"><span class="string">  vars:</span></span><br><span class="line"><span class="string">    workspace: <span class="variable">$WORKSPACE</span></span></span><br><span class="line"><span class="string">    work_dir: &quot;</span>/data/ms<span class="string">&quot;</span></span><br><span class="line"><span class="string">    service_name: <span class="variable">$Service</span>  # Service=portal,gateway,product,stock,order</span></span><br><span class="line"><span class="string">  tasks:</span></span><br><span class="line"><span class="string">  - name: 推送构建文件 </span></span><br><span class="line"><span class="string">    copy:</span></span><br><span class="line"><span class="string">      src=&#123;&#123; item &#125;&#125;</span></span><br><span class="line"><span class="string">      dest=&#123;&#123; work_dir &#125;&#125;/&#123;&#123; item.split(&quot;</span>/<span class="string">&quot;)[-1].split(&quot;</span>-<span class="string">&quot;)[0] &#125;&#125;           #取的是最后一个数组中的第一个字符串</span></span><br><span class="line"><span class="string">    with_fileglob:</span></span><br><span class="line"><span class="string">      - &quot;</span>&#123;&#123; workspace &#125;&#125;/tmp/*.jar<span class="string">&quot;      #/opt/jenkins/workspace/weifuwu为工作目录</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">  - name: 重启服务</span></span><br><span class="line"><span class="string">    systemd: name=&#123;&#123; item &#125;&#125; state=restarted</span></span><br><span class="line"><span class="string">    loop: &quot;</span>&#123;&#123; service_name.split(<span class="string">&#x27;,&#x27;</span>) &#125;&#125;<span class="string">&quot;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"><span class="string">                &quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">                ansiblePlaybook(</span><br><span class="line">                  playbook: <span class="string">&quot;/opt/jenkins/.playbook.yaml&quot;</span>,</span><br><span class="line">                  inventory: <span class="string">&quot;/opt/jenkins/.hosts&quot;</span>,</span><br><span class="line">                  credentialsId: <span class="string">&quot;<span class="variable">$&#123;ansible_ssh_auth&#125;</span>&quot;</span></span><br><span class="line">                )</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>最终效果图如下：</p>
+<p><img src="/images/9872827C3AEA48E7AC16CA0095DADAE6clipboard.png" alt></p>
+<p>根据用户选择的微服务进行发布升级等操作。</p>
+]]></content>
+      <categories>
+        <category>微服务</category>
+      </categories>
+      <tags>
+        <tag>微服务</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>基于Jenkins构建微服务发布平台</title>
     <url>/2023/12/15/%E5%9F%BA%E4%BA%8Ejenkins%E6%9E%84%E5%BB%BA%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8F%91%E5%B8%83%E5%B9%B3%E5%8F%B0/</url>
     <content><![CDATA[<h2 id="发布流程设计">发布流程设计</h2>
@@ -5683,6 +5174,69 @@
       </tags>
   </entry>
   <entry>
+    <title>微服务部署</title>
+    <url>/2021/10/01/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2/</url>
+    <content><![CDATA[<p><img src="/images/FFAA9D94DE594B9284FF61D8DA22A7A5clipboard.png" alt></p>
+<p>项目架构原理：</p>
+<p>用户使用手机端或电脑端访问前端程序，前端程序来调用服务端的服务接口，前端一般是在客户端完成的，处理数据，渲染数据，服务端提供一个统一的接口（负载均衡提供的统一接口）供前端去调用，接下来到网关，网关不是网络的网关，它是一个反向的路由，例如使用nginx做反向代理网关，那么nginx（API接口）作用是为后端微服务提供一个统一的入口，来实现不同的功能，不单是路由功能，还有安全认证，限流，负载均衡等功能，那么请求来到网关会帮你转发到后端的微服务，它帮你转发的时候，会去请求注册中心（集中管理每个微服务实例IP）里面的微服务，这个微服务下有哪些实例IP，拿到之后根据自己的调度算法帮你转发到其中的一个微服务实例IP，然后微服务都会调用后端的数据库（数据库，分布式存储），存储用户的相关信息。配置中心呢，是集中管理每个微服务相关的配置文件。</p>
+<p>为什么要用注册中心呢？（主流注册中心：eureka, consul, nacos)</p>
+<p>1.集中帮你记录每个微服务对应的多副本实例IP，像每个微服务都有很多实例IP</p>
+<p>2.实现对每个微服务对应的多副本实例IP负载均衡</p>
+<p>3.保证对每个微服务对应的多副本实例IP的一个可用性，通过基本的健康检查功能实现</p>
+<hr>
+<p><img src="/images/015006CBA41445AA979641DBA56359C0clipboard.png" alt></p>
+<p>eureka服务内部的一个调用：</p>
+<p>每个微服务实例启动之后都会注册到注册中心，首先，一个用户浏览一个商品，加入了购物车，准备支付，那么支付服务请求去eureka服务端查询这个微服务对应哪些实例IP，然后将请求转发其中的一个实例IP上提供服务。</p>
+<hr>
+<p><img src="/images/52F209AB20FD4F2BB0C3BBB8166A4D16clipboard.png" alt></p>
+<table>
+<thead>
+<tr>
+<th>服务器IP</th>
+<th>端口</th>
+<th>服务</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>192.168.0.11<br>    192.168.0.12<br>    192.168.0.13</td>
+<td>8888</td>
+<td>eureka</td>
+<td>注册中心</td>
+</tr>
+<tr>
+<td>192.168.0.11</td>
+<td>3306<br>---------------------------------<br>           80</td>
+<td>mariadb<br>---------------------------------<br>          nginx</td>
+<td>数据库<br>---------------------------------<br>        负载均衡器</td>
+</tr>
+<tr>
+<td>192.168.0.12<br>    192.168.0.13</td>
+<td>8010<br>---------------------------------<br>          8020<br>---------------------------------<br>          8030<br>---------------------------------<br>          8080<br>---------------------------------<br>          9999</td>
+<td>product<br>---------------------------------<br>          order<br>---------------------------------<br>          stock<br>---------------------------------<br>          portal<br>---------------------------------<br>          gateway</td>
+<td>商品服务<br>---------------------------------<br>        订单服务<br>---------------------------------<br>        库存服务<br>---------------------------------<br>          前端<br>---------------------------------<br>          网关</td>
+</tr>
+</tbody>
+</table>
+<pre><code>                                                项目环境信息表
+</code></pre>
+<hr>
+<p>192.168.0.11</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">1.部署jdk maven环境</span><br><span class="line">2.拷贝源码包到服务器上解压</span><br><span class="line">3.修改源码相关的配置文件以及相关连接数据库的地址用户名密码</span><br><span class="line">添加eureka注册地址</span><br><span class="line">http://192.168.0.11:8888/eureka/,http://192.168.0.12:8888/eureka/,http://192.168.0.13:8888/eureka/</span><br><span class="line">4.配置eureka集群,修改配置文件打成jar包，添加工作目录<span class="built_in">mkdir</span> /data/ms/eureka -p ，将jar移动到工作目录，</span><br><span class="line">生成systemd service 配置文件，并启动服务，然后将jar包推送到另两台服务器</span><br><span class="line">mvn clean package -Dmaven.test.skip</span><br><span class="line"><span class="comment">#生成systemd service 配置文件</span></span><br><span class="line"><span class="built_in">cat</span> &gt; /usr/lib/systemd/system/eureka.service &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">[Unit]</span></span><br><span class="line"><span class="string">Description=Eureka</span></span><br><span class="line"><span class="string">Documentation=eureka</span></span><br><span class="line"><span class="string">[Service]</span></span><br><span class="line"><span class="string">ExecStart=/usr/local/jdk/bin/java -jar /data/ms/eureka/eureka-service.jar</span></span><br><span class="line"><span class="string">ExecReload=/bin/kill -HUP $MAINPID</span></span><br><span class="line"><span class="string">KillMode=process</span></span><br><span class="line"><span class="string">Restart=on-failure</span></span><br><span class="line"><span class="string">[Install]</span></span><br><span class="line"><span class="string">WantedBy=multi-user.target</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#查看是否启动相关的服务</span></span><br><span class="line">jps -l</span><br><span class="line">5.批量拷贝文件(eureka jar包)</span><br><span class="line"><span class="keyword">for</span> ip <span class="keyword">in</span> 192.168.0.12 192.168.0.13;<span class="keyword">do</span></span><br><span class="line">	scp eureka-service/target/eureka-service.jar root@<span class="variable">$ip</span>:/data/ms/eureka</span><br><span class="line"><span class="keyword">done</span> </span><br><span class="line">批量拷贝文件(product order stock jar包）</span><br><span class="line"><span class="keyword">for</span> ip <span class="keyword">in</span> 192.168.0.12 192.168.0.13;<span class="keyword">do</span></span><br><span class="line">	<span class="keyword">for</span> name <span class="keyword">in</span> product order stock ;<span class="keyword">do</span></span><br><span class="line">		scp <span class="variable">$name</span>-service/<span class="variable">$name</span>-service-biz/target/<span class="variable">$name</span>-service-biz.jar root@<span class="variable">$ip</span>:/data/ms/<span class="variable">$name</span></span><br><span class="line">	<span class="keyword">done</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line">批量拷贝文件(portal gateway jar包）</span><br><span class="line"><span class="keyword">for</span> ip <span class="keyword">in</span> 192.168.0.12 192.168.0.13;<span class="keyword">do</span></span><br><span class="line">	<span class="keyword">for</span> name <span class="keyword">in</span> portal gateway;<span class="keyword">do</span></span><br><span class="line">	scp <span class="variable">$name</span>-service/target/<span class="variable">$name</span>-service.jar  root@<span class="variable">$ip</span>:/data/ms/<span class="variable">$name</span></span><br><span class="line">	<span class="keyword">done</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line">6.安装Mariadb数据库：</span><br><span class="line">yum install mariadb-server</span><br><span class="line">systemctl start mariadb</span><br><span class="line">systemctl <span class="built_in">enable</span> mariadb</span><br><span class="line">mysqladmin -uroot password <span class="string">&#x27;123456&#x27;</span></span><br><span class="line">创建一个账号并授权，该账户用于微服务连接：</span><br><span class="line">grant all on *.* to <span class="string">&#x27;ms&#x27;</span>@<span class="string">&#x27;%&#x27;</span> identified by <span class="string">&#x27;123456&#x27;</span>;</span><br><span class="line">将源代码目录里sql文件拷贝到数据库服务器并导入：</span><br><span class="line">mysql -uroot –p</span><br><span class="line"></span><br><span class="line">mysql&gt; create database tb_stock;</span><br><span class="line">mysql&gt; use tb_stock;</span><br><span class="line">mysql&gt; <span class="built_in">source</span> /root/simple-microservice/db/stock.sql</span><br><span class="line"></span><br><span class="line">mysql&gt; create database tb_product;</span><br><span class="line">mysql&gt; use tb_product;</span><br><span class="line">mysql&gt; <span class="built_in">source</span> /root/simple-microservice/db/product.sql</span><br><span class="line"></span><br><span class="line">mysql&gt; create database tb_order;</span><br><span class="line">mysql&gt; use tb_order;</span><br><span class="line">mysql&gt; <span class="built_in">source</span> /root/simple-microservice/db/order.sql</span><br><span class="line"></span><br><span class="line">7.安装nginx</span><br><span class="line">[root@localhost yum.repos.d]<span class="comment"># cat nginx.repo </span></span><br><span class="line">[nginx]</span><br><span class="line">name=nginx repo</span><br><span class="line">baseurl=http://nginx.org/packages/centos/7/<span class="variable">$basearch</span>/</span><br><span class="line">gpgcheck=0</span><br><span class="line">enabled=1</span><br><span class="line"></span><br><span class="line">修改配置nginx虚拟目录文件</span><br><span class="line">[root@localhost ~]<span class="comment"># cat  /etc/nginx/conf.d/default.conf </span></span><br><span class="line">upstream gateway &#123;</span><br><span class="line">server 192.168.0.12:9999;</span><br><span class="line">server 192.168.0.13:9999;</span><br><span class="line">&#125;</span><br><span class="line">server &#123;</span><br><span class="line">listen 80;</span><br><span class="line">server_name gateway.ctnrs.com;</span><br><span class="line">access_log /var/log/nginx/gateway-access.log main;</span><br><span class="line">location / &#123;</span><br><span class="line">proxy_pass http://gateway;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line">upstream portal &#123;</span><br><span class="line">server 192.168.0.12:8080;</span><br><span class="line">server 192.168.0.13:8080;</span><br><span class="line">&#125;</span><br><span class="line">server &#123;</span><br><span class="line">listen 80;</span><br><span class="line">server_name portal.ctnrs.com;</span><br><span class="line">access_log /var/log/nginx/portal-access.log main;</span><br><span class="line">location / &#123;</span><br><span class="line">proxy_pass http://portal;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line">重启nginx服务，对外访问</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>192.168.0.12  192.168.0.13</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">1.部署jdk环境</span><br><span class="line">2.创建工作目录</span><br><span class="line"><span class="built_in">mkdir</span> /data/ms/&#123;product,order,stock,eureka,gateway,portal&#125; -p</span><br><span class="line">3.批量生成systemd service 配置文件(gateway portal eureka)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> name <span class="keyword">in</span> eureka gateway portal ;<span class="keyword">do</span></span><br><span class="line"><span class="built_in">cat</span> &gt; /usr/lib/systemd/system/<span class="variable">$name</span>.service &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">[Unit]</span></span><br><span class="line"><span class="string">Description=$name</span></span><br><span class="line"><span class="string">Documentation=$name</span></span><br><span class="line"><span class="string">[Service]</span></span><br><span class="line"><span class="string">ExecStart=/usr/local/jdk/bin/java -jar /data/ms/$name/$name-service.jar</span></span><br><span class="line"><span class="string">ExecReload=/bin/kill -HUP $MAINPID</span></span><br><span class="line"><span class="string">KillMode=process</span></span><br><span class="line"><span class="string">Restart=on-failure</span></span><br><span class="line"><span class="string">[Install]</span></span><br><span class="line"><span class="string">WantedBy=multi-user.target</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line">批量生成systemd service 配置文件(product order stock)</span><br><span class="line"><span class="keyword">for</span> name <span class="keyword">in</span> product order stock;<span class="keyword">do</span></span><br><span class="line"><span class="built_in">cat</span> &gt; /usr/lib/systemd/system/<span class="variable">$name</span>.service &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">[Unit]</span></span><br><span class="line"><span class="string">Description=$name</span></span><br><span class="line"><span class="string">Documentation=$name</span></span><br><span class="line"><span class="string">[Service]</span></span><br><span class="line"><span class="string">ExecStart=/usr/local/jdk/bin/java -jar /data/ms/$name/$name-service-biz.jar</span></span><br><span class="line"><span class="string">ExecReload=/bin/kill -HUP $MAINPID</span></span><br><span class="line"><span class="string">KillMode=process</span></span><br><span class="line"><span class="string">Restart=on-failure</span></span><br><span class="line"><span class="string">[Install]</span></span><br><span class="line"><span class="string">WantedBy=multi-user.target</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line">4.批量启动服务并加入开机自启(product order stock gateway portal eureka)</span><br><span class="line"><span class="keyword">for</span> name <span class="keyword">in</span> eureka product order stock gateway portal;<span class="keyword">do</span></span><br><span class="line">	systemctl start <span class="variable">$name</span></span><br><span class="line">	systemctl <span class="built_in">enable</span> <span class="variable">$name</span> </span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line">5.查看是否启动相关的服务</span><br><span class="line">jps -l</span><br></pre></td></tr></table></figure>
+<p>如果遇到访问nginx报错502，可能是selinux权限问题。</p>
+<p>setenforce 0</p>
+]]></content>
+      <categories>
+        <category>微服务</category>
+      </categories>
+      <tags>
+        <tag>微服务</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>快速部署一个K8s集群</title>
     <url>/2022/06/11/%E5%BF%AB%E9%80%9F%E9%83%A8%E7%BD%B2%E4%B8%80%E4%B8%AAk8s%E9%9B%86%E7%BE%A4/</url>
     <content><![CDATA[<h2 id="生产环境部署K8s的2种方式">生产环境部署K8s的2种方式</h2>
@@ -7209,6 +6763,545 @@ at com.example.myproject.Bootstrap.main(Bootstrap.java:14)
       </categories>
       <tags>
         <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Ceph分布式存储</title>
+    <url>/2023/11/08/ceph%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/</url>
+    <content><![CDATA[<h2 id="Ceph概述">Ceph概述</h2>
+<h3 id="Ceph介绍">Ceph介绍</h3>
+<p>Ceph是一个开源的分布式存储系统，具有高扩展性、高性能、高可靠性等特点，提 供良好的性能、可靠性和可扩展性。支持对象存储、块存储和文件系统。 是目前为云平台提供存储的理想方案</p>
+<p><img src="/images/EDB87B969CC3495B9BFCEF3EDA5467EEclipboard.png" alt></p>
+<h3 id="Ceph架构">Ceph架构</h3>
+<ul>
+<li>
+<p>RBD（RADOS Block Device）：块存储接口</p>
+</li>
+<li>
+<p>RGW（RADOS Gateway））：对象存储网关，接口与S3和Swift兼容</p>
+</li>
+<li>
+<p>CephFS（Ceph File System）：文件级存储接口</p>
+</li>
+<li>
+<p>RADOS（Reliable Autonomic Distributed Object Store）：抽象的 对象存储集群，Ceph核心，实现用户数据分配、故障转移等集群操作</p>
+</li>
+<li>
+<p>MON：集群状态维护，例如OSD是否健康、PG状态等</p>
+</li>
+<li>
+<p>MDS （Metadata Server） ：CephFS服务依赖的元数据服务</p>
+</li>
+<li>
+<p>OSD（Object Storage Daemon）：对象存储设备，主要存储数据</p>
+</li>
+</ul>
+<p><img src="/images/9D2BDF53EFF44536A3658AF85C227324clipboard.png" alt></p>
+<h3 id="Ceph核心概念">Ceph核心概念</h3>
+<p>Pool：存储池，是存储对象的逻辑分区，它规定了数据冗余的类型和对应的副本 分布策略；支持两种类型：副本（replicated）和 纠删码（Erasure Code）</p>
+<p>PG（ placement group）：放置策略组，对象的集合，该集合里的所有对象都 具有相同的放置策略；简单点说就是相同PG内的对象都会放到相同的硬盘上； PG 是ceph的核心概念， 服务端数据均衡和恢复的最小粒度；引入PG这一层其实是为 了更好的分配数据和定位数据。</p>
+<p>右边这张图描述了它们之间的关系：</p>
+<ul>
+<li>
+<p>一个Pool里有很多PG；</p>
+</li>
+<li>
+<p>一个PG里包含一堆对象；一个对象只能属于一个PG；</p>
+</li>
+<li>
+<p>PG属于多个OSD，分布在不同的OSD上；</p>
+</li>
+</ul>
+<p><img src="/images/F12F5EFAC24B45A2ABAB3BFEC92DA2C1clipboard.png" alt></p>
+<h2 id="部署Ceph集群">部署Ceph集群</h2>
+<h3 id="Ceph版本选择">Ceph版本选择</h3>
+<p>Ceph目前最新版本16（P版），市面上应用最广泛的是12（L版）</p>
+<p>参考：<a href="https://docs.ceph.com/en/latest/releases/">https://docs.ceph.com/en/latest/releases/</a></p>
+<p><img src="/images/F43A32B6AD424611B3F3B3EB94111AD8clipboard.png" alt></p>
+<h3 id="Ceph服务器配置推荐">Ceph服务器配置推荐</h3>
+<p><img src="/images/4B0E5F7B935A43249DE36E1F971A8130clipboard.png" alt></p>
+<h3 id="Ceph集群部署规划">Ceph集群部署规划</h3>
+<ul>
+<li>
+<p>ceph-deploy：ceph集群部署节点，负责集群整体部署， 这里复用node1节点，也可以单独找一台服务器作为部署 节点。</p>
+</li>
+<li>
+<p>monitor：Ceph监视管理节点，承担Ceph集群重要的管 理任务，负责集群状态维护，例如存储池副本数、PG状 态、OSD数量等，至少部署1个，一般需要3或5个节点组 建高可用。</p>
+</li>
+<li>
+<p>osd：Ceph存储节点，实际负责数据存储的节点，集群 中至少有3个OSD，不少于默认副本数，每个OSD对应一 块硬盘。</p>
+</li>
+</ul>
+<p><img src="/images/978109F0AA7A42C4AF692F96AD9C49E0clipboard.png" alt></p>
+<p><img src="/images/7C09054CB62A4EC286BD3974E10EDA02clipboard.png" alt></p>
+<h3 id="Ceph集群部署：操作系统初始化">Ceph集群部署：操作系统初始化</h3>
+<p>ps：3台机器全部操作</p>
+<h4 id="关闭防火墙">关闭防火墙</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl stop firewalld</span><br><span class="line">systemctl <span class="built_in">disable</span> firewalld</span><br></pre></td></tr></table></figure>
+<h4 id="关闭selinux">关闭selinux</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">sed -i <span class="string">&#x27;s/enforcing/disabled/&#x27;</span> /etc/selinux/config <span class="comment"># 永久，重启生效</span></span><br><span class="line">setenforce 0 <span class="comment"># 临时</span></span><br></pre></td></tr></table></figure>
+<h4 id="关闭swap">关闭swap</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">swapoff -a <span class="comment"># 临时</span></span><br><span class="line">sed -ri <span class="string">&#x27;s/.*swap.*/#&amp;/&#x27;</span> /etc/fstab <span class="comment"># 永久，重启生效</span></span><br></pre></td></tr></table></figure>
+<h4 id="根据规划设置主机名">根据规划设置主机名</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hostnamectl set-hostname &lt;hostname&gt;</span><br></pre></td></tr></table></figure>
+<h4 id="在node添加hosts">在node添加hosts</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> &gt;&gt; /etc/hosts &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">192.168.0.11 ceph-node01</span></span><br><span class="line"><span class="string">192.168.0.12 ceph-node02</span></span><br><span class="line"><span class="string">192.168.0.13 ceph-node03</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+<h4 id="设置文件描述符">设置文件描述符</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">ulimit</span> -SHn 102400</span><br><span class="line"><span class="built_in">cat</span> &gt;&gt; /etc/security/limits.conf &lt;&lt; <span class="string">EOF </span></span><br><span class="line"><span class="string">* soft nofile 65535 * hard nofile 65535 </span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+<h4 id="时间同步">时间同步</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install ntpdate -y</span><br><span class="line">ntpdate time.windows.com</span><br></pre></td></tr></table></figure>
+<h4 id="配置SSH免交互认证">配置SSH免交互认证</h4>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t rsa</span><br><span class="line">ssh-copy-id root@ceph-node01</span><br><span class="line">ssh-copy-id root@ceph-node02</span><br><span class="line">ssh-copy-id root@ceph-node03</span><br></pre></td></tr></table></figure>
+<h3 id="Ceph集群部署">Ceph集群部署</h3>
+<p>Ceph集群部署方式：</p>
+<ul>
+<li>
+<p>yum：常规的部署方式</p>
+</li>
+<li>
+<p>ceph-ansible：官方基于ansible写的自动化部署工具</p>
+</li>
+</ul>
+<p><a href="https://docs.ceph.com/projects/ceph-ansible/en/latest/">https://docs.ceph.com/projects/ceph-ansible/en/latest/</a></p>
+<ul>
+<li>ceph-deploy：ceph提供的简易部署工具，可以非常方便部署ceph集群。（推荐）</li>
+</ul>
+<p><a href="https://docs.ceph.com/projects/ceph-deploy/en/latest/">https://docs.ceph.com/projects/ceph-deploy/en/latest/</a></p>
+<p>Ceph集群部署步骤：</p>
+<p>1、配置阿里云yum仓库 （所有节点安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> &gt; /etc/yum.repos.d/ceph.repo &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">[Ceph]</span></span><br><span class="line"><span class="string">name=Ceph packages for $basearch</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-octopus/el7/\$basearch</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">[Ceph-noarch]</span></span><br><span class="line"><span class="string">name=Ceph noarch packages</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-octopus/el7/noarch</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">[ceph-source]</span></span><br><span class="line"><span class="string">name=Ceph source packages</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-octopus/el7/SRPMS</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+<p>注：如果部署别的版本，将octopus替换为对应版本号即可。</p>
+<p>2、安装ceph-deploy工具 （ceph-deploy节点安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum -y install ceph-deploy    </span><br></pre></td></tr></table></figure>
+<p>3、创建集群  （ceph-deploy节点安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#创建一个my-cluster目录，所有命令在此目录下进行：</span></span><br><span class="line"><span class="built_in">mkdir</span> my-cluster </span><br><span class="line"><span class="built_in">cd</span> my-cluster</span><br><span class="line"><span class="comment">#安装集群缺少的模块</span></span><br><span class="line">yum install epel-release -y     <span class="comment">#所有节点安装</span></span><br><span class="line">yum install python2-pip -y </span><br><span class="line"><span class="comment">#创建一个Ceph集群：</span></span><br><span class="line">ceph-deploy new ceph-node01 ceph-node02 ceph-node03</span><br></pre></td></tr></table></figure>
+<p>4、安装Ceph （ceph-deploy节点安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装Ceph包到指定节点：</span></span><br><span class="line">ceph-deploy install --no-adjust-repos ceph-node01 ceph-node02 ceph-node03</span><br><span class="line"><span class="comment">#注：–no-adjust-repos参数是直接使用本地源，不使用官方默认源</span></span><br></pre></td></tr></table></figure>
+<p>5、部署Monitor服务 （ceph-deploy节点安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#初始化并部署monitor，收集所有密钥：</span></span><br><span class="line">ceph-deploy mon create-initial</span><br><span class="line"><span class="comment">#使用ceph-deploy命令将配置文件和 admin key复制到管理节点和Ceph节点，以便每次执行ceph CLI命令无需 指定monitor地址和 ceph.client.admin.keyring。</span></span><br><span class="line">ceph-deploy admin ceph-node01 ceph-node02 ceph-node03</span><br></pre></td></tr></table></figure>
+<p>6、部署OSD服务并添加硬盘 （ceph-deploy节点安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#创建6个OSD，分别对应每个节点未使用的硬盘：</span></span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node01</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node01</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node02</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node02</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node03</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node03</span><br></pre></td></tr></table></figure>
+<p>7、部署MGR服务（ceph-deploy节点安装）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-deploy mgr create ceph-node01 ceph-node02 ceph-node03</span><br></pre></td></tr></table></figure>
+<p>注：MGR是Ceph L版本新增加的组件，主要作用是分担和扩展monitor的部分功能，减轻monitor的负担。 建议每台monitor节点都部署一个mgr，以实现相同级别的高可用。</p>
+<p>查看Ceph集群状态：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph -s</span><br></pre></td></tr></table></figure>
+<p><img src="/images/B6B3728400CD4B29B5225EDB4267552Eclipboard.png" alt></p>
+<p>解决办法：(3台节点都操作）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装缺少的模块</span></span><br><span class="line">pip3 install pecan werkzeug</span><br><span class="line"><span class="comment">#禁用安全模式</span></span><br><span class="line">ceph config <span class="built_in">set</span> mon auth_allow_insecure_global_id_reclaim <span class="literal">false</span></span><br><span class="line"><span class="comment">#重启mgr服务</span></span><br><span class="line">systemctl restart ceph-mgr.target</span><br></pre></td></tr></table></figure>
+<p>查看Ceph版本：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph -v</span><br></pre></td></tr></table></figure>
+<h3 id="Ceph集群服务管理">Ceph集群服务管理</h3>
+<p>1、启动所有守护进程</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># systemctl restart ceph.target </span></span><br></pre></td></tr></table></figure>
+<p>2、按类型启动守护进程</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># systemctl restart ceph-osd@id </span></span><br><span class="line"><span class="comment"># systemctl restart ceph-mon.target </span></span><br><span class="line"><span class="comment"># systemctl restart ceph-mds.target </span></span><br><span class="line"><span class="comment"># systemctl restart ceph-mgr.target</span></span><br></pre></td></tr></table></figure>
+<h3 id="Ceph集群常用管理命令">Ceph集群常用管理命令</h3>
+<p><img src="/images/7F1083160E9D463883F3A2931A5768E0clipboard.png" alt></p>
+<h2 id="Ceph存储使用">Ceph存储使用</h2>
+<h3 id="三种存储类型介绍">三种存储类型介绍</h3>
+<p>块存储（RBD）</p>
+<p>优点：存储速度较快</p>
+<p>缺点：不支持共享存储</p>
+<p>应用场景：虚拟机硬盘</p>
+<p>典型设备：硬盘、Raid</p>
+<p>文件存储（CephFS）</p>
+<p>优点：支持共享存储</p>
+<p>缺点：读写速度较慢（需要经过操作系统处理再转为块存储）</p>
+<p>应用场景：文件共享，多台服务器共享使用同一个存储</p>
+<p>典型设备：FTP、NFS</p>
+<p>对象存储（Object）</p>
+<p>优点：具备块存储的读写性能和文件存储的共享特性</p>
+<p>缺点：操作系统不能直接访问，只能通过应用程序级别的API访问</p>
+<p>应用场景：图片存储，视频存储</p>
+<p>典型设备：阿里云OSS，腾讯云COS</p>
+<h3 id="RBD块存储：RBD工作流程">RBD块存储：RBD工作流程</h3>
+<p>1、客户端创建一个pool，并指定pg数量，创建rbd设备并挂载到文件系统；</p>
+<p>2、用户写入数据，ceph进行对数据切块，每个块的大小默认为4M，每个 块名字是object+序号； 3、将每个object通过pg进行副本位置的分配；</p>
+<p>4、pg根据crush算法会寻找3个osd，把这object分别保存在这3个osd上 存储；</p>
+<p>5、osd实际把硬盘格式化为xfs文件系统，object存储在这个文件系统就相 当于存储了一个文件rbd0.object1.file。</p>
+<p><img src="/images/C1F833C8BF1A42C8BB6FF71D4209EC74clipboard.png" alt></p>
+<h3 id="RBD块存储：常用管理命令">RBD块存储：常用管理命令</h3>
+<p><img src="/images/408D7E50905B40F491EBC9D864864D67clipboard.png" alt></p>
+<h3 id="RBD块存储：RBD创建并使用">RBD块存储：RBD创建并使用</h3>
+<p>1、创建存储池</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph osd pool create rbd-pool 128 <span class="comment"># 格式：ceph osd pool create &lt;pool-name&gt; &lt;pg-num&gt;</span></span><br><span class="line">ceph osd pool <span class="built_in">ls</span></span><br></pre></td></tr></table></figure>
+<p>PG数量设置计算公式：PG数量=(OSD数量*100)/副本数（3）</p>
+<p>例如我们的环境：(6*100)/3=200，一般设置是结果向上取2的N次方，所以pool指定的pg数量就是256</p>
+<p>2、指定存储池使用存储类型</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph osd pool application <span class="built_in">enable</span> rbd-pool rbd</span><br></pre></td></tr></table></figure>
+<p>3、创建一个10G的块设备</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd create --size 10240 rbd-pool/image01 <span class="comment"># 格式：rbd create --size &#123;megabytes&#125; &#123;pool-name&#125;/&#123;image-name&#125;</span></span><br></pre></td></tr></table></figure>
+<p>4、查看块设备</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd <span class="built_in">ls</span> rbd-pool</span><br><span class="line">rbd info rbd-pool/image01</span><br></pre></td></tr></table></figure>
+<p>节点本地挂载使用块设备：</p>
+<p>1、映射</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd map rbd-pool/image01</span><br></pre></td></tr></table></figure>
+<p>2、格式化块设备</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mkfs.xfs /dev/rbd0</span><br></pre></td></tr></table></figure>
+<p>3、挂载</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mount /dev/rbd0 /mnt</span><br></pre></td></tr></table></figure>
+<p><img src="/images/864B295E82BE4568AC1FEF86F5C98A98clipboard.png" alt></p>
+<p>4、取消挂载和内核映射</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">umount /mnt</span><br><span class="line">rbd unmap rbd-pool/image01</span><br></pre></td></tr></table></figure>
+<p>远程挂载使用块设备：</p>
+<p>1、拷贝配置文件和秘钥</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> my-cluster/</span><br><span class="line">scp ceph.conf root@192.168.0.14:/etc/ceph/</span><br><span class="line">scp ceph.client.admin.keyring root@192.168.0.14:/etc/ceph/</span><br></pre></td></tr></table></figure>
+<p>2、安装Ceph客户端</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install epel-release -y</span><br><span class="line">scp /etc/yum.repos.d/ceph.repo root@192.168.0.14:/etc/yum.repos.d/</span><br><span class="line">yum -y install ceph-common</span><br></pre></td></tr></table></figure>
+<p>3、剩余操作就与上面一样了</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd create --size 20480 rbd-pool/image02</span><br><span class="line">rbd <span class="built_in">ls</span> rbd-pool</span><br><span class="line">rbd map rbd-pool/image02</span><br><span class="line">rbd map rbd-pool/image02</span><br><span class="line">mkfs.xfs /dev/rbd0</span><br><span class="line">mount /dev/rbd0 /mnt/</span><br><span class="line"><span class="built_in">df</span> -h</span><br><span class="line">umount  /mnt/</span><br><span class="line">rbd unmap rbd-pool/image02</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><img src="/images/7A83483B4F564FFCB93DAB7F16B6B381clipboard.png" alt></p>
+<h3 id="RBD块存储：快照">RBD块存储：快照</h3>
+<p>快照：在某个时间点的副本，当系统出现问题，可以通过恢复快照恢复之前副本状态。</p>
+<p>1、创建快照</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap create rbd-pool/image01@snap01</span><br></pre></td></tr></table></figure>
+<p>2、查看快照</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap list rbd-pool/image01</span><br></pre></td></tr></table></figure>
+<p>3、还原快照</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">umount  /mnt/</span><br><span class="line">rbd unmap rbd-pool/image01</span><br><span class="line">rbd snap rollback rbd-pool/image01@snap01</span><br><span class="line">注：还原快照前需先取消挂载和内核映射，否则会出错</span><br></pre></td></tr></table></figure>
+<p>4、重新映射并挂载验证</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd map rbd-pool/image01</span><br><span class="line">mount /dev/rbd0 /mnt/</span><br></pre></td></tr></table></figure>
+<p>5、删除快照</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap <span class="built_in">rm</span> rbd-pool/image01@snap01</span><br></pre></td></tr></table></figure>
+<p><img src="/images/DCC1F8703F004C94931B35D322DE5913clipboard.png" alt></p>
+<p><img src="/images/5CC3159040964F778A9ECE84B505D823clipboard.png" alt></p>
+<h3 id="RBD块存储：克隆">RBD块存储：克隆</h3>
+<p>克隆：基于指定的块设备克隆出相同的一份出来</p>
+<p>1、创建一个块设备</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd create --size 10240 rbd-pool/image02</span><br></pre></td></tr></table></figure>
+<p>2、创建快照</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap create rbd-pool/image02@snap01</span><br></pre></td></tr></table></figure>
+<p>3、设置快照处于被保护状态</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd snap protect rbd-pool/image02@snap01</span><br></pre></td></tr></table></figure>
+<p>4、通过快照克隆一个新块设备</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd <span class="built_in">clone</span> rbd-pool/image02@snap01 rbd-pool/image02_clone</span><br><span class="line">rbd info rbd-pool/image02_clone</span><br></pre></td></tr></table></figure>
+<p>5、将克隆的块设备独立于父块设备</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rbd flatten rbd-pool/image02_clone</span><br></pre></td></tr></table></figure>
+<p>基于上述快照之后的步骤</p>
+<p><img src="/images/780F3B0FA1E14F2D8D83EB2778C7374Aclipboard.png" alt></p>
+<p><img src="/images/44921CAF73254AE79C845AC9FF60312Aclipboard.png" alt></p>
+<p>由于克隆的uuid一致，需要在其他机器上挂载验证克隆的镜像是否可用</p>
+<p><img src="/images/AB395B73E9C44D609201473CCDC0013Fclipboard.png" alt></p>
+<h3 id="CephFS文件系统">CephFS文件系统</h3>
+<p>CephFS 是一个基于 ceph 集群且兼容POSIX标准的文件系统。</p>
+<p>创建 cephfs 文件系统时需要在 ceph 集群中添加 mds 服务，该服务 负责处理 POSIX 文件系统中的 metadata 部分，实际的数据部分交由 ceph 集群中的OSD处理。</p>
+<p>cephfs 支持以内核模块方式加载也支持 fuse 方式加载。无论是内核 模式还是 fuse 模式，都是通过调用 libcephfs 库来实现 cephfs 文件 系统的加载，而 libcephfs 库又调用 librados 库与 ceph 集群进行通 信，从而实现 cephfs 的加载。</p>
+<p><img src="/images/C106DA8250B74E1E9116CE0BEE91F50Dclipboard.png" alt></p>
+<h3 id="CephFS文件系统：部署MDS服务">CephFS文件系统：部署MDS服务</h3>
+<p>部署MDS实例：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-deploy mds create ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph mds <span class="built_in">stat</span> <span class="comment"># 查看MDS节点状态</span></span><br></pre></td></tr></table></figure>
+<h3 id="CephFS文件系统：创建文件系统">CephFS文件系统：创建文件系统</h3>
+<p>1、创建存储池</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph osd pool create cephfs_data &lt;pg_num&gt;</span><br><span class="line">ceph osd pool create cephfs_metadata &lt;pg_num&gt;</span><br><span class="line">ceph fs <span class="built_in">ls</span></span><br></pre></td></tr></table></figure>
+<p>2、创建文件系统</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph fs new cephfs cephfs_metadata cephfs_data <span class="comment"># 格式：ceph fs new &lt;fs_name&gt; &lt;metadata&gt; &lt;data&gt; </span></span><br><span class="line">ceph fs <span class="built_in">ls</span> <span class="comment">#查看创建后的cephfs</span></span><br></pre></td></tr></table></figure>
+<h3 id="CephFS文件系统：挂载并使用">CephFS文件系统：挂载并使用</h3>
+<p>内核模块方式挂载：</p>
+<p>1、安装Ceph客户端 （前面已经安装客户端啦）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install epel-release -y</span><br><span class="line">yum -y install ceph-common</span><br></pre></td></tr></table></figure>
+<p>2、获取账号名与秘钥</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph auth list |grep admin -A1</span><br></pre></td></tr></table></figure>
+<p>3、挂载本地目录</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mount -t ceph 192.168.0.11:6789,192.168.0.12:6789,192.168.0.13:6789:/ /mnt/ -o name=admin,secret=AQDPhU5hxkfUHRAAQUcQHyrXTTJCRmBPONmVzg==</span><br><span class="line"><span class="comment">#或者将密钥指定到文件</span></span><br><span class="line">vim /etc/ceph/admin.secret </span><br><span class="line">mount -t ceph 192.168.0.11:6789,192.168.0.12:6789,192.168.0.13:6789:/ /tmp/ -o name=admin,secretfile=/etc/ceph/admin.secret </span><br></pre></td></tr></table></figure>
+<p>4、取消挂载</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">umount /mnt</span><br></pre></td></tr></table></figure>
+<p>fuse方式挂载：</p>
+<p>1、安装fuse</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y ceph-fuse</span><br></pre></td></tr></table></figure>
+<p>2、挂载本地目录</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-fuse -m 192.168.0.11:6789,192.168.0.12:6789,192.168.0.13:6789 /mnt/</span><br><span class="line"><span class="comment">#这里没有指定密钥是因为它默认读取的是/etc/ceph/ceph.client.admin.keyring </span></span><br><span class="line">[root@localhost ~]<span class="comment"># cat /etc/ceph/ceph.client.admin.keyring </span></span><br><span class="line">[client.admin]</span><br><span class="line">	key = AQDPhU5hxkfUHRAAQUcQHyrXTTJCRmBPONmVzg==</span><br><span class="line">	caps mds = <span class="string">&quot;allow *&quot;</span></span><br><span class="line">	caps mgr = <span class="string">&quot;allow *&quot;</span></span><br><span class="line">	caps mon = <span class="string">&quot;allow *&quot;</span></span><br><span class="line">	caps osd = <span class="string">&quot;allow *&quot;</span></span><br></pre></td></tr></table></figure>
+<p>3、取消卸载</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">fusermount -u /mnt/</span><br></pre></td></tr></table></figure>
+<h3 id="对象存储">对象存储</h3>
+<p>Ceph对象存储不能像RBD、CephFS那样方式访问，它是通 过Restfulapi方式进行访问和使用。兼容S3/Swift接口，由 radosgw组件提供服务。所以需要安装这个服务。</p>
+<p><img src="/images/8AD3A5006168462C82C97E9640613903clipboard.png" alt></p>
+<h3 id="对象存储：部署RGW服务">对象存储：部署RGW服务</h3>
+<p>部署RGW服务：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-deploy rgw create ceph-node01 ceph-node02</span><br></pre></td></tr></table></figure>
+<p>验证访问，RGW默认7480端口，浏览器访问：<a href="http://192.168.31.71:7480">http://192.168.31.71:7480</a></p>
+<p>返回anonymous说明服务正常。</p>
+<h3 id="对象存储：使用">对象存储：使用</h3>
+<p>radosgw-admin 是 RADOS 网关用户管理工具。</p>
+<p>1、创建S3账号</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">radosgw-admin user create --uid=<span class="string">&quot;azhe&quot;</span> --display-name=<span class="string">&quot;azhe&quot;</span></span><br><span class="line">注：记住输出的keys中的access_key和secret_key的值，用于接口访问认证。</span><br><span class="line">如果忘记 也可以通过这个命令查看：radosgw-admin user info --uid=azhe</span><br></pre></td></tr></table></figure>
+<p>2、编写Python脚本测试</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">安装连接boto模块，用于连接S3接口：</span><br><span class="line">pip3 install boto</span><br><span class="line">参考示例：https://docs.ceph.com/en/nautilus/radosgw/s3/python/</span><br></pre></td></tr></table></figure>
+<h2 id="Kubernetes使用Ceph作为Pod存储">Kubernetes使用Ceph作为Pod存储</h2>
+<h3 id="PV与PVC概述">PV与PVC概述</h3>
+<p>PersistentVolume（PV）：持久卷，对外部存储资源创建和使用的抽象， 使得存储作为集群中的资源管理；PV又分为静态供给和动态供给，由于静态 供给需要提前创建一堆PV，维护成本较高，所以企业一般使用动态供给。</p>
+<p>PersistentVolumeClaim（PVC）：持久卷申请，让用户不需要关心具体 的Volume实现细节，只需要定义PVC需要多少磁盘容量即可。</p>
+<p><img src="/images/E6625444C3824E1EA14FE22591E0DE9Cclipboard.png" alt></p>
+<h3 id="ceph-csi供给程序">ceph-csi供给程序</h3>
+<p>ceph-csi是ceph官方维护的PV供给程序，专门用于在 Kubernetes中使用RBD、CephFS为Pod提供存储。</p>
+<p>项目地址：<a href="https://github.com/ceph/ceph-csi">https://github.com/ceph/ceph-csi</a></p>
+<p><img src="/images/1F2BE3EE5A734C83A078D4780336D56Fclipboard.png" alt></p>
+<h3 id="Pod使用RBD块存储">Pod使用RBD块存储</h3>
+<p>关于部署，RBD YAML文件在deploy/rbd/kubernetes目录，课件中YAML改动如下：</p>
+<ul>
+<li>
+<p>全部统一命名空间到ceph-csi</p>
+</li>
+<li>
+<p>将镜像转存到docker hub</p>
+</li>
+<li>
+<p>增加secret.yaml和storageclass.yaml文件</p>
+</li>
+<li>
+<p>将csi-rbdplugin-provisioner.yaml 和 csi-rbdplugin.yaml 中 关于kms配置注释</p>
+</li>
+</ul>
+<p>在使用中，还需要根据自己集群环境修改：</p>
+<ul>
+<li>
+<p>csi-config-map.yaml 修改连接ceph集群信息</p>
+</li>
+<li>
+<p>secret.yaml 修改秘钥</p>
+</li>
+<li>
+<p>storageclass.yaml 修改集群ID和存储池</p>
+</li>
+</ul>
+<h3 id="Pod使用CephFS文件系统">Pod使用CephFS文件系统</h3>
+<p>关于部署，RBD YAML文件在deploy/cephfs/kubernetes目录，课件中YAML改动如下：</p>
+<ul>
+<li>
+<p>全部统一命名空间到ceph-csi-cephfs</p>
+</li>
+<li>
+<p>将镜像转存到docker hub</p>
+</li>
+<li>
+<p>增加secret.yaml和storageclass.yaml文件</p>
+</li>
+<li>
+<p>将csi-rbdplugin-provisioner.yaml 和 csi-rbdplugin.yaml 中 关于kms配置注释</p>
+</li>
+</ul>
+<p>在使用中，还需要根据自己集群环境修改：</p>
+<ul>
+<li>
+<p>csi-config-map.yaml 修改连接ceph集群信息</p>
+</li>
+<li>
+<p>secret.yaml 修改秘钥</p>
+</li>
+<li>
+<p>storageclass.yaml 修改集群ID和文件系统名称</p>
+</li>
+</ul>
+<h3 id="小结">小结</h3>
+<p><img src="/images/FFC5666BFF9B4DACB117A5B0B5F69C5Dclipboard.png" alt></p>
+<p>RBD：</p>
+<p>优点：读写性能好，支持镜像快照、克隆</p>
+<p>缺点：不支持多节点挂载</p>
+<p>适用场景：对读写性能要求高，且无多节点同时读写数据需求的应用，例如数据库</p>
+<p>CephFS：</p>
+<p>优点：支持K8s所有访问模式，支持多节点同时读写数据</p>
+<p>缺点：读写性能一般，延迟时间不稳定</p>
+<p>适用场景：对读写性能要求不高，I/O延迟不敏感的应用，例如文件共享</p>
+<h2 id="Ceph-监控">Ceph 监控</h2>
+<h3 id="Dashboard">Dashboard</h3>
+<p>从L版本开始，Ceph 提供了原生的Dashboard功能，通过Dashboard对Ceph集群状态查看和基本管理。</p>
+<p>使用Dashboard需要在MGR节点安装软件包： yum install ceph-mgr-dashboard –y</p>
+<p>如果是按课程用的O版本会出现下面缺少依赖包提示：</p>
+<p><img src="/images/5659B49493B946FF978BA7211DDC481Aclipboard.png" alt></p>
+<p>原因分析：这是由于从O版本开始，MGR改为Python3编写，而默认库没有这3个模块包，即使单独找包安装也可能 不生效或者安装不上。从社区得知，这是已知问题，建议使用CentOS8系统或者使用cephadm容器化部署Ceph。 或者降低Ceph版本也可以，例如H版本，这个版本还是Python2编写的，不存在缺包问题。</p>
+<p>这里选择降低到H版本，重新部署Ceph集群。</p>
+<p>1、清理Ceph集群环境</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 从远程主机卸载ceph包并清理所有数据</span></span><br><span class="line">ceph-deploy purge ceph-node01 ceph-node02 ceph-node03</span><br><span class="line"><span class="comment"># 清理ceph所有数据（/var/lib/ceph）</span></span><br><span class="line">ceph-deploy purgedata ceph-node01 ceph-node02 ceph-node03</span><br><span class="line"><span class="comment"># 从本地目录移出认证秘钥（my-cluster目录），可选</span></span><br><span class="line">ceph-deploy forgetkeys</span><br><span class="line"><span class="comment"># 彻底清理ceph相关软件包</span></span><br><span class="line">rpm -qa |grep 15.2.13 |xargs -i yum remove &#123;&#125; -y</span><br><span class="line"><span class="comment"># 取消OSD盘创建的LVM逻辑卷映射关系</span></span><br><span class="line">dmsetup info -C |awk <span class="string">&#x27;/ceph/&#123;print $1&#125;&#x27;</span> |xargs -i dmsetup remove &#123;&#125;</span><br><span class="line"><span class="comment"># 清除OSD盘GPT数据结构</span></span><br><span class="line">yum install gdisk -y</span><br><span class="line">sgdisk --zap-all /dev/sdb</span><br></pre></td></tr></table></figure>
+<p>2、与之前部署方式一样</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cat</span> &gt; /etc/yum.repos.d/ceph.repo &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">[Ceph]</span></span><br><span class="line"><span class="string">name=Ceph packages for $basearch</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/\$basearch</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">[Ceph-noarch]</span></span><br><span class="line"><span class="string">name=Ceph noarch packages</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/noarch</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">[ceph-source]</span></span><br><span class="line"><span class="string">name=Ceph source packages</span></span><br><span class="line"><span class="string">baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/SRPMS</span></span><br><span class="line"><span class="string">gpgcheck=0</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum -y install ceph-deploy   </span><br><span class="line"><span class="built_in">mkdir</span> my-cluster </span><br><span class="line"><span class="built_in">cd</span> my-cluster</span><br><span class="line">yum install epel-release -y </span><br><span class="line">yum install python2-pip -y </span><br><span class="line">ceph-deploy new ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph-deploy install --no-adjust-repos ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph-deploy mon create-initial</span><br><span class="line">ceph-deploy admin ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node01</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node01</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node02</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node02</span><br><span class="line">ceph-deploy osd create --data /dev/sdb ceph-node03</span><br><span class="line">ceph-deploy osd create --data /dev/sdc ceph-node03</span><br><span class="line">ceph-deploy mgr create ceph-node01 ceph-node02 ceph-node03</span><br></pre></td></tr></table></figure>
+<p>3、添加RBD块设备和CephFS文件系统测试</p>
+<p>添加RBD块设备：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph osd pool create rbd-pool 128</span><br><span class="line">ceph osd pool application <span class="built_in">enable</span> rbd-pool rbd</span><br><span class="line">rbd create --size 10240 rbd-pool/image01 </span><br><span class="line">rbd map rbd-pool/image01</span><br><span class="line">mkfs.xfs /dev/rbd0</span><br><span class="line">mount /dev/rbd0 /mnt</span><br></pre></td></tr></table></figure>
+<p>添加CephFS文件系统：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph-deploy mds create ceph-node01 ceph-node02 ceph-node03</span><br><span class="line">ceph osd pool create cephfs_data 128</span><br><span class="line">ceph osd pool create cephfs_metadata 128</span><br><span class="line">ceph fs new cephfs cephfs_metadata cephfs_data </span><br><span class="line">mount -t ceph 192.168.0.11:6789,192.168.0.12:6789,192.168.0.13:6789:/ /mnt -o </span><br><span class="line">name=admin,secret=AQBwS9Vgow1+OBAA0eMOK8v5LlU7m+/cg+wIng==</span><br></pre></td></tr></table></figure>
+<p>1、在每个MGR节点安装</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install ceph-mgr-dashboard –y</span><br></pre></td></tr></table></figure>
+<p>2、开启MGR功能</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph mgr module <span class="built_in">enable</span> dashboard</span><br></pre></td></tr></table></figure>
+<p>3、修改默认配置</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph config <span class="built_in">set</span> mgr mgr/dashboard/server_addr 0.0.0.0</span><br><span class="line">ceph config <span class="built_in">set</span> mgr mgr/dashboard/server_port 7000 </span><br><span class="line">ceph config <span class="built_in">set</span> mgr mgr/dashboard/ssl <span class="literal">false</span></span><br></pre></td></tr></table></figure>
+<p>4、创建一个dashboard登录用户名密码</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph dashboard ac-user-create admin administrator -i password.txt</span><br><span class="line">格式：dashboard ac-user-create &lt;username&gt; &#123;&lt;rolename&gt;&#125; &#123;&lt;name&gt;&#125;</span><br></pre></td></tr></table></figure>
+<p>5、查看服务访问方式</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph mgr services</span><br></pre></td></tr></table></figure>
+<p>后面如果修改配置，重启生效：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph mgr module <span class="built_in">disable</span> dashboard</span><br><span class="line">ceph mgr module <span class="built_in">enable</span> dashboard</span><br></pre></td></tr></table></figure>
+<p><img src="/images/60E4C32C13634E9F943183C8B5D8CB53clipboard.png" alt></p>
+<h3 id="Prometheus-Grafana监控Ceph">Prometheus+Grafana监控Ceph</h3>
+<ul>
+<li>Prometheus（普罗米修斯）：容器监控系统。</li>
+</ul>
+<p>官网：<a href="https://prometheus.io">https://prometheus.io</a></p>
+<ul>
+<li>Grafana：是一个开源的度量分析和可视化系统。</li>
+</ul>
+<p>官网：<a href="https://grafana.com/grafana">https://grafana.com/grafana</a></p>
+<p>1、Docker部署Prometheus+Grafana</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo -O /etc/yum.repos.d/docker-ce.repo</span><br><span class="line">yum install docker-ce -y</span><br><span class="line">systemctl start docker</span><br><span class="line">systemctl <span class="built_in">enable</span> docker</span><br><span class="line">docker run -d --name=grafana -p 3000:3000 grafana/grafana</span><br><span class="line">docker run -d --name=prometheus -p 9090:9090 prom/prometheus</span><br></pre></td></tr></table></figure>
+<p>2、启用MGR Prometheus插件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ceph mgr module <span class="built_in">enable</span> prometheus </span><br><span class="line">curl 127.0.0.1:9283/metrics <span class="comment"># # 测试promtheus指标接口</span></span><br></pre></td></tr></table></figure>
+<p>3、配置Prometheus采集</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -it prometheus sh</span><br><span class="line">vi /etc/prometheus/prometheus.yml</span><br><span class="line">- job_name: <span class="string">&#x27;ceph&#x27;</span> </span><br><span class="line">static_configs: </span><br><span class="line">- targets: [<span class="string">&#x27;192.168.31.71:9283&#x27;</span>] </span><br><span class="line">docker restart prometheus</span><br></pre></td></tr></table></figure>
+<p>4、访问Grafana仪表盘</p>
+<p><a href="http://IP:3000">http://IP:3000</a></p>
+<p>默认用户名密码均为admin</p>
+<ol>
+<li>
+<p>添加Prometheus为数据源：Configuration -&gt; Data sources -&gt; Promethes -&gt; 输入URL <a href="http://IP:9090">http://IP:9090</a></p>
+</li>
+<li>
+<p>导入Ceph监控仪表盘：Dashboards -&gt; Manage -&gt; Import -&gt; 输入仪表盘ID，加载</p>
+</li>
+</ol>
+<ul>
+<li>
+<p>Ceph-Cluster ID：2842</p>
+</li>
+<li>
+<p>Ceph-OSD ID：5336</p>
+</li>
+<li>
+<p>Ceph-Pool ID：5342</p>
+</li>
+</ul>
+<p><img src="/images/708F09AB64F74A36A68B51DD463540CAclipboard.png" alt></p>
+]]></content>
+      <categories>
+        <category>Ceph</category>
+      </categories>
+      <tags>
+        <tag>Ceph</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>ELK Stack收集Kubernetes应用日志</title>
+    <url>/2023/06/10/elk-stack%E6%94%B6%E9%9B%86kubernetes%E5%BA%94%E7%94%A8%E6%97%A5%E5%BF%97/</url>
+    <content><![CDATA[<h2 id="需求背景">需求背景</h2>
+<ul>
+<li>
+<p>业务发展越来越庞大，服务器越来越多</p>
+</li>
+<li>
+<p>各种访问日志、应用日志、错误日志量越来越多</p>
+</li>
+<li>
+<p>开发人员排查问题，需要到服务器上查日志，效率低、权限不好控制</p>
+</li>
+<li>
+<p>运维需实时关注业务访问情况</p>
+</li>
+</ul>
+<h2 id="容器特性给日志采集带来的难度">容器特性给日志采集带来的难度</h2>
+<p>容器特性给日志采集带来的难度：</p>
+<ul>
+<li>
+<p>K8s弹性伸缩性：导致不能预先确定采集的目标</p>
+</li>
+<li>
+<p>容器隔离性：容器的文件系统与宿主机是隔离，导致 日志采集器读取日志文件受阻</p>
+</li>
+</ul>
+<h2 id="日志按体现方式分类">日志按体现方式分类</h2>
+<p>应用程序日志记录体现方式分为两类：</p>
+<ul>
+<li>
+<p>标准输出：输出到控制台，使用kubectl logs可以看到</p>
+</li>
+<li>
+<p>日志文件：写到容器的文件系统的文件</p>
+</li>
+</ul>
+<p>示例：标准输出</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl run nginx --image=nginx </span><br><span class="line">kubectl get pod -o wide</span><br><span class="line">curl -I 10.244.36.65</span><br><span class="line">kubectl <span class="built_in">exec</span> -it nginx -- bash</span><br></pre></td></tr></table></figure>
+<p><img src="/images/1AD8668512ED40C7982F71EEF7578947clipboard.png" alt></p>
+<p><img src="/images/BCA6E0A58E0B4B57864D0463C3A40454clipboard.png" alt></p>
+<p>日志文件在宿主机上的路径</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl get pod -o wide     <span class="comment">#查看pod所在节点</span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/AC3C714989FF4404BD41B4DFF6EE4508clipboard.png" alt></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#采集所有容器的日志</span></span><br><span class="line">/var/lib/docker/containers/*/*-json.log</span><br></pre></td></tr></table></figure>
+<p>示例：日志文件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">kubectl run tomcat --image=tomcat</span><br><span class="line">kubectl get pod -o wide</span><br><span class="line">curl 10.244.36.66:8080</span><br><span class="line">kubectl <span class="built_in">exec</span> -it tomcat -- bash</span><br></pre></td></tr></table></figure>
+<p><img src="/images/ABF0ED03F8B84009870BC9853D2F5CFAclipboard.png" alt></p>
+<p>方式一：使用emptyDir数据卷挂载容器日志路径到宿主机上，DaemonSet方式部署，在每个节点部署日志采集器采集日志。</p>
+<p>vim tomcat.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: tomcat-web</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - image: tomcat</span><br><span class="line">    name: web</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: logs</span><br><span class="line">      mountPath: /usr/local/tomcat/logs</span><br><span class="line"></span><br><span class="line">  volumes:</span><br><span class="line">  - name: logs</span><br><span class="line">    emptyDir: &#123;&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="/images/792129A318954414A785DF716F403E67clipboard.png" alt></p>
+<p><img src="/images/B39AB402B525404DB60FF061FFE148D0clipboard.png" alt></p>
+<p>方式二：使用emptyDir数据卷共享应用容器的日志让日志采集器容器能够采集到</p>
+<p>vim tomcat.yaml</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: tomcat-web</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - image: tomcat</span><br><span class="line">    name: web</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: logs</span><br><span class="line">      mountPath: /usr/local/tomcat/logs</span><br><span class="line">  - image: busybox</span><br><span class="line">    name: <span class="built_in">test</span></span><br><span class="line">    <span class="built_in">command</span>: [/bin/sh,-c,<span class="string">&#x27;tail -f /tmp/localhost_access_log.2021-02-26.txt&#x27;</span>]</span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: logs</span><br><span class="line">      mountPath: /tmp</span><br><span class="line"></span><br><span class="line">  volumes:</span><br><span class="line">  - name: logs</span><br><span class="line">    emptyDir: &#123;&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="/images/DCE9C4C11E3D48AFBD309303774D4515clipboard.png" alt></p>
+<h2 id="Kubernetes应用日志收集">Kubernetes应用日志收集</h2>
+<p><img src="/images/AD6A4A61D93642979FC4597F279971CEclipboard.png" alt></p>
+<h2 id="ELK-Stack日志系统">ELK Stack日志系统</h2>
+<p>ELK 是三个开源软件的缩写，提供一套完整的企业级日 志平台解决方案。</p>
+<p>分别是：</p>
+<ul>
+<li>
+<p>Elasticsearch：搜索、分析和存储数据</p>
+</li>
+<li>
+<p>Logstash ：采集日志、格式化、过滤，最后将数据 推送到Elasticsearch存储</p>
+</li>
+<li>
+<p>Kibana：数据可视化</p>
+</li>
+<li>
+<p>Beats ：集合了多种单一用途数据采集器，用于实 现从边缘机器向 Logstash 和 Elasticsearch 发送数 据。里面应用最多的是Filebeat，是一个轻量级日 志采集器</p>
+</li>
+</ul>
+<p><img src="/images/F17E6A5760E5440D935C1A2AE3DCC9CBclipboard.png" alt></p>
+<p>部署nfs-pv自动供给</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#安装nfs安装包（每个k8s节点都要安装）</span></span><br><span class="line">yum install nfs-utils</span><br><span class="line"><span class="comment">#创建nfs共享目录</span></span><br><span class="line"><span class="built_in">mkdir</span> -p /nfs/kubernetes</span><br><span class="line"><span class="comment">#修改nfs配置文件</span></span><br><span class="line">vim /etc/exports</span><br><span class="line">/nfs/kubernetes *(rw,no_root_squash)</span><br><span class="line"><span class="comment">#启动nfs并加入开机自启</span></span><br><span class="line">systemctl start nfs</span><br><span class="line">systemctl <span class="built_in">enable</span> nfs</span><br><span class="line"></span><br><span class="line"><span class="comment">#部署NFS实现自动创建PV插件：</span></span><br><span class="line">git <span class="built_in">clone</span> https://github.com/kubernetes-incubator/external-storage </span><br><span class="line"><span class="built_in">cd</span> nfs-client/deploy </span><br><span class="line">kubectl apply -f rbac.yaml <span class="comment"># 授权访问apiserver </span></span><br><span class="line">kubectl apply -f deployment.yaml <span class="comment"># 部署插件，需修改里面NFS服务器地址与共享目录 </span></span><br><span class="line">kubectl apply -f class.yaml <span class="comment"># 创建存储类</span></span><br><span class="line">kubectl get sc  <span class="comment"># 查看存储类</span></span><br></pre></td></tr></table></figure>
+<p><a href="/attachments/C51F66682474432DB8DEEF207364AA3Delk.zip">elk.zip</a></p>
+<p>搭建日志系统：</p>
+<ul>
+<li>
+<p>elasticsearch.yaml # ES数据库</p>
+</li>
+<li>
+<p>kibana.yaml # 可视化展示</p>
+</li>
+</ul>
+<p>日志收集：</p>
+<ul>
+<li>
+<p>filebeat-kubernetes.yaml # 采集所有容器标准输出</p>
+</li>
+<li>
+<p>app-log-stdout.yaml # 标准输出测试应用</p>
+</li>
+<li>
+<p>app-log-logfile.yaml # 日志文件测试应用</p>
+</li>
+</ul>
+<p>可视化展示日志：</p>
+<ol>
+<li>
+<p>查看索引（日志记录集合）：Management -&gt; Stack Management -&gt; 索引管理</p>
+</li>
+<li>
+<p>将索引关联到Kibana：索引模式 -&gt; 创建 -&gt; 匹配模式 -&gt; 选择时间戳</p>
+</li>
+<li>
+<p>在Discover选择索引模式查看日志</p>
+</li>
+</ol>
+<p><img src="/images/BBE56CA4DD2C4075B8E673533B732201clipboard.png" alt></p>
+<p><img src="/images/6C71CC0FD2EC42A998135CB4485B01B2clipboard.png" alt></p>
+<p><img src="/images/4CB047B4EFBC4538A62072AC9D70C419clipboard.png" alt></p>
+]]></content>
+      <categories>
+        <category>K8S</category>
+      </categories>
+      <tags>
+        <tag>K8S</tag>
       </tags>
   </entry>
 </search>

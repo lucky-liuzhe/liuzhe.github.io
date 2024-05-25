@@ -1,0 +1,175 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>基于Jenkins发布微服务 | 阿哲技术之路</title><meta name="author" content="阿哲"><meta name="copyright" content="阿哲"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="ansible-yum源： wget -O &#x2F;etc&#x2F;yum.repos.d&#x2F;epel.repo http:&#x2F;&#x2F;mirrors.aliyun.com&#x2F;repo&#x2F;epel-7.repo 1.安装相关的插件 pipeline、git、git parameter 、extended choice parameter、ansible 2.生成相关插件的语法： git parameter  extende">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于Jenkins发布微服务">
+<meta property="og:url" content="http://liuzhemax.github.io/2021/10/02/%E5%9F%BA%E4%BA%8Ejenkins%E5%8F%91%E5%B8%83%E5%BE%AE%E6%9C%8D%E5%8A%A1/index.html">
+<meta property="og:site_name" content="阿哲技术之路">
+<meta property="og:description" content="ansible-yum源： wget -O &#x2F;etc&#x2F;yum.repos.d&#x2F;epel.repo http:&#x2F;&#x2F;mirrors.aliyun.com&#x2F;repo&#x2F;epel-7.repo 1.安装相关的插件 pipeline、git、git parameter 、extended choice parameter、ansible 2.生成相关插件的语法： git parameter  extende">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg">
+<meta property="article:published_time" content="2021-10-02T13:45:32.000Z">
+<meta property="article:modified_time" content="2024-05-25T06:21:39.371Z">
+<meta property="article:author" content="阿哲">
+<meta property="article:tag" content="微服务">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="shortcut icon" href="/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="canonical" href="http://liuzhemax.github.io/2021/10/02/%E5%9F%BA%E4%BA%8Ejenkins%E5%8F%91%E5%B8%83%E5%BE%AE%E6%9C%8D%E5%8A%A1/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '基于Jenkins发布微服务',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: false,
+  postUpdate: '2024-05-25 14:21:39'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">79</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">7</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">7</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="阿哲技术之路"><img class="site-icon" src="/medias/%E6%90%AC%E7%A0%96.jpg"/><span class="site-name">阿哲技术之路</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">基于Jenkins发布微服务</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2021-10-02T13:45:32.000Z" title="发表于 2021-10-02 21:45:32">2021-10-02</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-05-25T06:21:39.371Z" title="更新于 2024-05-25 14:21:39">2024-05-25</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="基于Jenkins发布微服务"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><p><img src="/images/38E37D9AE37B4AE0A516F9D23F6B4FB8clipboard.png" alt></p>
+<p>ansible-yum源：</p>
+<p>wget -O /etc/yum.repos.d/epel.repo <a target="_blank" rel="noopener" href="http://mirrors.aliyun.com/repo/epel-7.repo">http://mirrors.aliyun.com/repo/epel-7.repo</a></p>
+<p>1.安装相关的插件</p>
+<p>pipeline、git、git parameter 、extended choice parameter、ansible</p>
+<p>2.生成相关插件的语法：</p>
+<p>git parameter</p>
+<p><img src="/images/A378D5F638884B04B75B74FB98903F93clipboard.png" alt></p>
+<p>extended choice parameter</p>
+<p><img src="/images/E245E8D05142429D9E69B929CA50A8BAclipboard.png" alt></p>
+<p>choice选项参数</p>
+<p><img src="/images/3992492938B147ED90FD3CD1C5A8049Eclipboard.png" alt></p>
+<p>git</p>
+<p><img src="/images/162EB39984224B9598AA25D28A787DE5clipboard.png" alt></p>
+<p>3.编写流水线脚本</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">pipeline &#123;</span><br><span class="line">    agent &#123;</span><br><span class="line">        label <span class="string">&quot;test1&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">    environment &#123;</span><br><span class="line">        git_address = <span class="string">&quot;http://192.168.0.11/my-group/ms.git&quot;</span></span><br><span class="line">        git_password = <span class="string">&quot;c601674b-44e0-45a2-aaba-3f476e2c3c51&quot;</span></span><br><span class="line">        ansible_ssh_auth = <span class="string">&quot;242dbf20-4e53-4fa1-b8e7-1479e0a51572&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">    parameters &#123;</span><br><span class="line">        gitParameter branch: <span class="string">&#x27;&#x27;</span>, branchFilter: <span class="string">&#x27;origin/(.*)&#x27;</span>, defaultValue: <span class="string">&#x27;origin/master&#x27;</span>, description: <span class="string">&#x27;请选择你要发布的分支：&#x27;</span>, name: <span class="string">&#x27;branch&#x27;</span>, quickFilterEnabled: <span class="literal">false</span>, selectedValue: <span class="string">&#x27;NONE&#x27;</span>, sortMode: <span class="string">&#x27;NONE&#x27;</span>, tagFilter: <span class="string">&#x27;*&#x27;</span>, <span class="built_in">type</span>: <span class="string">&#x27;PT_BRANCH&#x27;</span></span><br><span class="line">        extendedChoice description: <span class="string">&#x27;请选择你要发布的微服务:&#x27;</span>, multiSelectDelimiter: <span class="string">&#x27;,&#x27;</span>, name: <span class="string">&#x27;Service&#x27;</span>, quoteValue: <span class="literal">false</span>, saveJSONParameterToFile: <span class="literal">false</span>, <span class="built_in">type</span>: <span class="string">&#x27;PT_CHECKBOX&#x27;</span>, value: <span class="string">&#x27;portal,gateway,product,stock,order&#x27;</span>, visibleItemCount: 5</span><br><span class="line">        choice choices: [<span class="string">&#x27;webservers1&#x27;</span>, <span class="string">&#x27;webservers2&#x27;</span>], description: <span class="string">&#x27;&#x27;</span><span class="string">&#x27;请选择你要发布的服务器组：</span></span><br><span class="line"><span class="string">        [webservers1]</span></span><br><span class="line"><span class="string">        192.168.0.14</span></span><br><span class="line"><span class="string">        [webservers2]</span></span><br><span class="line"><span class="string">        192.168.0.15&#x27;</span><span class="string">&#x27;&#x27;</span>, name: <span class="string">&#x27;Servers&#x27;</span></span><br><span class="line">    &#125;</span><br><span class="line">    stages &#123;</span><br><span class="line">        stage(<span class="string">&#x27;拉去取代码&#x27;</span>) &#123;</span><br><span class="line">            steps &#123;</span><br><span class="line">             checkout([<span class="variable">$class</span>: <span class="string">&#x27;GitSCM&#x27;</span>, branches: [[name: <span class="string">&quot;<span class="variable">$&#123;params.branch&#125;</span>&quot;</span>]], extensions: [], userRemoteConfigs: [[credentialsId: <span class="string">&quot;<span class="variable">$&#123;git_password&#125;</span>&quot;</span>, url: <span class="string">&quot;<span class="variable">$&#123;git_address&#125;</span>&quot;</span>]]])</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        stage(<span class="string">&#x27;编译构建&#x27;</span>)&#123;</span><br><span class="line">            steps &#123;</span><br><span class="line">                sh <span class="string">&quot;export JAVA_HOME=/usr/local/jdk&quot;</span></span><br><span class="line">                sh <span class="string">&quot;/usr/local/maven/bin/mvn clean package -Dmaven.skip.test=true&quot;</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        stage(<span class="string">&#x27;部署并启动&#x27;</span>)&#123;</span><br><span class="line">            steps &#123;</span><br><span class="line">                 // 将用户选择的微服务的构建文件拷贝到临时目录，以便ansible统一推送</span><br><span class="line">                // Service=portal,gateway,product,stock,order</span><br><span class="line">                script &#123;</span><br><span class="line">                    def tmp_dir = <span class="string">&quot;<span class="variable">$WORKSPACE</span>/tmp&quot;</span></span><br><span class="line">                    def services = <span class="string">&quot;<span class="variable">$Service</span>&quot;</span>.<span class="built_in">split</span>(<span class="string">&quot;,&quot;</span>)</span><br><span class="line">                    <span class="keyword">for</span>(name <span class="keyword">in</span> services) &#123;</span><br><span class="line">                        sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">                        echo <span class="variable">$name</span></span></span><br><span class="line"><span class="string">                        pwd</span></span><br><span class="line"><span class="string">                        ls</span></span><br><span class="line"><span class="string">                        mkdir <span class="variable">$tmp_dir</span> |true</span></span><br><span class="line"><span class="string">                        cd <span class="variable">$name</span>-service</span></span><br><span class="line"><span class="string">                        if ls |grep biz &amp;&gt;/dev/null;then</span></span><br><span class="line"><span class="string">                           cd <span class="variable">$name</span>-service-biz</span></span><br><span class="line"><span class="string">                        fi</span></span><br><span class="line"><span class="string">                        mv target/*.jar <span class="variable">$tmp_dir</span></span></span><br><span class="line"><span class="string">                        ls <span class="variable">$tmp_dir</span></span></span><br><span class="line"><span class="string">                        &quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                // 生成主机清单文件和playbook</span><br><span class="line">                sh <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">cat &gt; /opt/jenkins/.hosts &lt;&lt; EOF</span></span><br><span class="line"><span class="string">[webservers1]</span></span><br><span class="line"><span class="string">192.168.0.14</span></span><br><span class="line"><span class="string">[webservers2]</span></span><br><span class="line"><span class="string">192.168.0.15</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"><span class="string">cat &gt; /opt/jenkins/.playbook.yaml &lt;&lt;EOF</span></span><br><span class="line"><span class="string">- hosts: <span class="variable">$Servers</span></span></span><br><span class="line"><span class="string">  gather_facts: no</span></span><br><span class="line"><span class="string">  vars:</span></span><br><span class="line"><span class="string">    workspace: <span class="variable">$WORKSPACE</span></span></span><br><span class="line"><span class="string">    work_dir: &quot;</span>/data/ms<span class="string">&quot;</span></span><br><span class="line"><span class="string">    service_name: <span class="variable">$Service</span>  # Service=portal,gateway,product,stock,order</span></span><br><span class="line"><span class="string">  tasks:</span></span><br><span class="line"><span class="string">  - name: 推送构建文件 </span></span><br><span class="line"><span class="string">    copy:</span></span><br><span class="line"><span class="string">      src=&#123;&#123; item &#125;&#125;</span></span><br><span class="line"><span class="string">      dest=&#123;&#123; work_dir &#125;&#125;/&#123;&#123; item.split(&quot;</span>/<span class="string">&quot;)[-1].split(&quot;</span>-<span class="string">&quot;)[0] &#125;&#125;           #取的是最后一个数组中的第一个字符串</span></span><br><span class="line"><span class="string">    with_fileglob:</span></span><br><span class="line"><span class="string">      - &quot;</span>&#123;&#123; workspace &#125;&#125;/tmp/*.jar<span class="string">&quot;      #/opt/jenkins/workspace/weifuwu为工作目录</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">  - name: 重启服务</span></span><br><span class="line"><span class="string">    systemd: name=&#123;&#123; item &#125;&#125; state=restarted</span></span><br><span class="line"><span class="string">    loop: &quot;</span>&#123;&#123; service_name.split(<span class="string">&#x27;,&#x27;</span>) &#125;&#125;<span class="string">&quot;</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"><span class="string">                &quot;</span><span class="string">&quot;&quot;</span></span><br><span class="line">                ansiblePlaybook(</span><br><span class="line">                  playbook: <span class="string">&quot;/opt/jenkins/.playbook.yaml&quot;</span>,</span><br><span class="line">                  inventory: <span class="string">&quot;/opt/jenkins/.hosts&quot;</span>,</span><br><span class="line">                  credentialsId: <span class="string">&quot;<span class="variable">$&#123;ansible_ssh_auth&#125;</span>&quot;</span></span><br><span class="line">                )</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>最终效果图如下：</p>
+<p><img src="/images/9872827C3AEA48E7AC16CA0095DADAE6clipboard.png" alt></p>
+<p>根据用户选择的微服务进行发布升级等操作。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io">阿哲</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io/2021/10/02/%E5%9F%BA%E4%BA%8Ejenkins%E5%8F%91%E5%B8%83%E5%BE%AE%E6%9C%8D%E5%8A%A1/">http://liuzhemax.github.io/2021/10/02/%E5%9F%BA%E4%BA%8Ejenkins%E5%8F%91%E5%B8%83%E5%BE%AE%E6%9C%8D%E5%8A%A1/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://liuzhemax.github.io" target="_blank">阿哲技术之路</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a></div><div class="post_share"><div class="social-share" data-image="/medias/%E6%90%AC%E7%A0%96.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2021/10/01/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2/" title="微服务部署"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">微服务部署</div></div></a></div><div class="next-post pull-right"><a href="/2022/05/23/java%E9%A1%B9%E7%9B%AE%E9%95%9C%E5%83%8F%E6%9E%84%E5%BB%BA/" title="JAVA项目镜像构建：Tomcat"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">JAVA项目镜像构建：Tomcat</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2021/10/01/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2/" title="微服务部署"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-10-01</div><div class="title">微服务部署</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">阿哲</div><div class="author-info__description">强大自己是解决问题的唯一办法</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">79</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">7</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">7</div></a></div><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1437626743@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">分享个人经验总结</div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/05/25/alertmanager%E5%91%8A%E8%AD%A6%E5%88%A9%E5%99%A8/" title="无题">无题</a><time datetime="2024-05-25T06:04:37.072Z" title="发表于 2024-05-25 14:04:37">2024-05-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/01/10/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8B/" title="微服务治理istio初探下">微服务治理istio初探下</a><time datetime="2024-01-10T13:45:32.000Z" title="发表于 2024-01-10 21:45:32">2024-01-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/25/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8A/" title="微服务治理istio初探上">微服务治理istio初探上</a><time datetime="2023-12-25T13:45:32.000Z" title="发表于 2023-12-25 21:45:32">2023-12-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/15/%E5%9F%BA%E4%BA%8Ejenkins%E6%9E%84%E5%BB%BA%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8F%91%E5%B8%83%E5%B9%B3%E5%8F%B0/" title="基于Jenkins构建微服务发布平台">基于Jenkins构建微服务发布平台</a><time datetime="2023-12-15T13:45:32.000Z" title="发表于 2023-12-15 21:45:32">2023-12-15</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/11/28/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E8%BF%81%E7%A7%BB/" title="微服务容器化迁移">微服务容器化迁移</a><time datetime="2023-11-28T13:45:32.000Z" title="发表于 2023-11-28 21:45:32">2023-11-28</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="footer_custom_text">阿哲技术之路</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.13.0"></script></div></div></body></html>
