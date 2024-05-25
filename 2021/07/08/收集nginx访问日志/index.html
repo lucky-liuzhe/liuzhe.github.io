@@ -1,0 +1,193 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>收集Nginx访问日志 | 阿哲技术之路</title><meta name="author" content="阿哲"><meta name="copyright" content="阿哲"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="收集Nginx访问日志 安装nginx vim &#x2F;etc&#x2F;yum.repos.d&#x2F;nginx.repo [nginx]name&#x3D;nginx repobaseurl&#x3D;http:&#x2F;&#x2F;nginx.org&#x2F;packages&#x2F;centos&#x2F;7&#x2F;$basearch&#x2F;gpgcheck&#x3D;0enabled&#x3D;1 yum -y install nginxsystemctl start nginx filebeat配置">
+<meta property="og:type" content="article">
+<meta property="og:title" content="收集Nginx访问日志">
+<meta property="og:url" content="http://liuzhemax.github.io/2021/07/08/%E6%94%B6%E9%9B%86nginx%E8%AE%BF%E9%97%AE%E6%97%A5%E5%BF%97/index.html">
+<meta property="og:site_name" content="阿哲技术之路">
+<meta property="og:description" content="收集Nginx访问日志 安装nginx vim &#x2F;etc&#x2F;yum.repos.d&#x2F;nginx.repo [nginx]name&#x3D;nginx repobaseurl&#x3D;http:&#x2F;&#x2F;nginx.org&#x2F;packages&#x2F;centos&#x2F;7&#x2F;$basearch&#x2F;gpgcheck&#x3D;0enabled&#x3D;1 yum -y install nginxsystemctl start nginx filebeat配置">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg">
+<meta property="article:published_time" content="2021-07-08T13:45:32.000Z">
+<meta property="article:modified_time" content="2024-05-25T05:33:07.897Z">
+<meta property="article:author" content="阿哲">
+<meta property="article:tag" content="ELK">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="shortcut icon" href="/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="canonical" href="http://liuzhemax.github.io/2021/07/08/%E6%94%B6%E9%9B%86nginx%E8%AE%BF%E9%97%AE%E6%97%A5%E5%BF%97/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '收集Nginx访问日志',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: false,
+  postUpdate: '2024-05-25 13:33:07'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">64</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">5</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="阿哲技术之路"><img class="site-icon" src="/medias/%E6%90%AC%E7%A0%96.jpg"/><span class="site-name">阿哲技术之路</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">收集Nginx访问日志</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2021-07-08T13:45:32.000Z" title="发表于 2021-07-08 21:45:32">2021-07-08</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-05-25T05:33:07.897Z" title="更新于 2024-05-25 13:33:07">2024-05-25</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/ELK/">ELK</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="收集Nginx访问日志"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><p>收集Nginx访问日志</p>
+<p>安装nginx</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">vim /etc/yum.<span class="property">repos</span>.<span class="property">d</span>/nginx.<span class="property">repo</span> </span><br><span class="line">[nginx]</span><br><span class="line">name=nginx repo</span><br><span class="line">baseurl=<span class="attr">http</span>:<span class="comment">//nginx.org/packages/centos/7/$basearch/</span></span><br><span class="line">gpgcheck=<span class="number">0</span></span><br><span class="line">enabled=<span class="number">1</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">yum -y install nginx</span><br><span class="line">systemctl start nginx</span><br></pre></td></tr></table></figure>
+<p>filebeat配置</p>
+<p>vim /etc/filebeat/filebeat.yml</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">filebeat.<span class="property">inputs</span>:</span><br><span class="line">- <span class="attr">type</span>: log</span><br><span class="line">  <span class="attr">enabled</span>: <span class="literal">true</span></span><br><span class="line">  <span class="attr">paths</span>:</span><br><span class="line">    - <span class="regexp">/var/</span>log/nginx/access.<span class="property">log</span></span><br><span class="line">  <span class="attr">tags</span>: [<span class="string">&quot;nginx&quot;</span>]</span><br><span class="line">  <span class="attr">fields_under_root</span>: <span class="literal">true</span></span><br><span class="line">  <span class="attr">fields</span>:</span><br><span class="line">    <span class="attr">project</span>: microservice</span><br><span class="line">    <span class="attr">app</span>: nginx</span><br><span class="line"></span><br><span class="line">output.<span class="property">logstash</span>:</span><br><span class="line">  <span class="attr">hosts</span>: [<span class="string">&quot;192.168.0.11:5044&quot;</span>]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>重启服务</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">systemctl restart filebeat.<span class="property">service</span></span><br></pre></td></tr></table></figure>
+<p>1.写Grok正则匹配nginx访问日志：</p>
+<p>logstash配置</p>
+<p>vim /opt/elk/logstash/conf.d/test.conf</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">input &#123;</span><br><span class="line">  beats &#123;</span><br><span class="line">   <span class="function"><span class="params">host</span> =&gt;</span> <span class="string">&quot;0.0.0.0&quot;</span></span><br><span class="line">   port =&gt; <span class="number">5044</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">filter &#123;</span><br><span class="line">  grok &#123;</span><br><span class="line">  <span class="function"><span class="params">match</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="string">&quot;message&quot;</span> =&gt; <span class="string">&quot;%&#123;IPV4:remote_addr&#125; - (%&#123;USERNAME:remote_user&#125;|-) \[%&#123;HTTPDATE:time_local&#125;\] \&quot;%&#123;WORD:request_method&#125; %&#123;URIPATHPARAM:request_uri&#125; HTTP/%&#123;NUMBER:http_protocol&#125;\&quot; %&#123;NUMBER:http_status&#125; %&#123;NUMBER:body_bytes_sent&#125; \&quot;%&#123;GREEDYDATA:http_referer&#125;\&quot; \&quot;%&#123;GREEDYDATA:http_user_agent&#125;\&quot; \&quot;(%&#123;IPV4:http_x_forwarded_for&#125;|-)\&quot;&quot;</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> [app] == <span class="string">&quot;product&quot;</span> and [project] == <span class="string">&quot;microservice&quot;</span> &#123;</span><br><span class="line">  mutate &#123;</span><br><span class="line">  <span class="function"><span class="params">add_field</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="string">&quot;[@metadata][target_index]&quot;</span> =&gt; <span class="string">&quot;microservice-product-%&#123;+YYYY.MM&#125;&quot;</span></span><br><span class="line">	&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> [app] == <span class="string">&quot;gateway&quot;</span> and [project] == <span class="string">&quot;microservice&quot;</span> &#123;</span><br><span class="line">  mutate &#123;</span><br><span class="line">  <span class="function"><span class="params">add_field</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="string">&quot;[@metadata][target_index]&quot;</span> =&gt; <span class="string">&quot;microservice-gateway-%&#123;+YYYY.MM.dd&#125;&quot;</span></span><br><span class="line">	&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> [app] == <span class="string">&quot;nginx&quot;</span> and [project] == <span class="string">&quot;microservice&quot;</span> &#123;</span><br><span class="line">  mutate &#123;</span><br><span class="line">  <span class="function"><span class="params">add_field</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="string">&quot;[@metadata][target_index]&quot;</span> =&gt; <span class="string">&quot;microservice-nginx-%&#123;+YYYY.MM.dd&#125;&quot;</span></span><br><span class="line">	&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  mutate &#123;</span><br><span class="line">  <span class="function"><span class="params">add_field</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="string">&quot;[@metadata][target_index]&quot;</span> =&gt; <span class="string">&quot;unknown-%&#123;+YYYY&#125;&quot;</span></span><br><span class="line">	  &#125;</span><br><span class="line">	&#125;</span><br><span class="line">     &#125;</span><br><span class="line">&#125;</span><br><span class="line">output &#123;</span><br><span class="line">  elasticsearch &#123;</span><br><span class="line">  <span class="function"><span class="params">hosts</span> =&gt;</span> <span class="string">&quot;192.168.0.11:9200&quot;</span></span><br><span class="line">  index =&gt; <span class="string">&quot;%&#123;[@metadata][target_index]&#125;&quot;</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>热加载配置</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">kill -<span class="variable constant_">HUP</span> &lt;logstash pid&gt;</span><br></pre></td></tr></table></figure>
+<p>验证</p>
+<p>访问nginx，查看kibana页面</p>
+<p><img src="/images/A4AD1E51431C49809B31DC8FEF453BA7clipboard.png" alt></p>
+<p><img src="/images/97C4F0A455C649B7A95DE40FD3945126clipboard.png" alt></p>
+<p><img src="/images/B50654DE2C414607ACF09DF1AADAAE7Aclipboard.png" alt></p>
+<p><img src="/images/F9735F980D884933A9D1D610E22742B2clipboard.png" alt></p>
+<p><img src="/images/2DB682E024C840DEAB3F2E52365318BCclipboard.png" alt></p>
+<p>2.将Nginx访问日志格式改为JSON收集：</p>
+<p>修改nginx配置文件(Nginx访问日志格式改为JSON)</p>
+<p>vim /etc/nginx/nginx.conf</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">log_format json  <span class="string">&#x27;&#123; &quot;@timestamp&quot;: &quot;$time_iso8601&quot;, &#x27;</span></span><br><span class="line">    <span class="string">&#x27;&quot;remote_addr&quot;: &quot;$remote_addr&quot;, &#x27;</span></span><br><span class="line">    <span class="string">&#x27;&quot;remote_user&quot;: &quot;$remote_user&quot;, &#x27;</span></span><br><span class="line">    <span class="string">&#x27;&quot;body_bytes_sent&quot;: &quot;$body_bytes_sent&quot;, &#x27;</span></span><br><span class="line">    <span class="string">&#x27;&quot;request_time&quot;: &quot;$request_time&quot;, &#x27;</span></span><br><span class="line">    <span class="string">&#x27;&quot;status&quot;: &quot;$status&quot;, &#x27;</span></span><br><span class="line">    <span class="string">&#x27;&quot;request_uri&quot;: &quot;$request_uri&quot;, &#x27;</span></span><br><span class="line">    <span class="string">&#x27;&quot;request_method&quot;: &quot;$request_method&quot;, &#x27;</span></span><br><span class="line">    <span class="string">&#x27;&quot;http_referrer&quot;: &quot;$http_referer&quot;, &#x27;</span></span><br><span class="line">    <span class="string">&#x27;&quot;http_x_forwarded_for&quot;: &quot;$http_x_forwarded_for&quot;, &#x27;</span></span><br><span class="line">    <span class="string">&#x27;&quot;http_user_agent&quot;: &quot;$http_user_agent&quot;&#125;&#x27;</span>;</span><br><span class="line"></span><br><span class="line">access_log  /<span class="keyword">var</span>/log/nginx/access.<span class="property">log</span>  json;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>重新启动服务</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">systemctl restart nginx</span><br></pre></td></tr></table></figure>
+<p>查看访问日志</p>
+<p><img src="/images/3E4E77C66C6F4A9696AE12CE7DE0021Aclipboard.png" alt></p>
+<p>修改logstash配置文件(Logstash再使用JSON过滤插件解析)</p>
+<p>vim /opt/elk/logstash/conf.d/test.conf</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">input &#123;</span><br><span class="line">  beats &#123;</span><br><span class="line">   <span class="function"><span class="params">host</span> =&gt;</span> <span class="string">&quot;0.0.0.0&quot;</span></span><br><span class="line">   port =&gt; <span class="number">5044</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">filter &#123;</span><br><span class="line">  json &#123;</span><br><span class="line">    <span class="function"><span class="params">source</span> =&gt;</span> <span class="string">&quot;message&quot;</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> [app] == <span class="string">&quot;product&quot;</span> and [project] == <span class="string">&quot;microservice&quot;</span> &#123;</span><br><span class="line">  mutate &#123;</span><br><span class="line">  <span class="function"><span class="params">add_field</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="string">&quot;[@metadata][target_index]&quot;</span> =&gt; <span class="string">&quot;microservice-product-%&#123;+YYYY.MM&#125;&quot;</span></span><br><span class="line">	&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> [app] == <span class="string">&quot;gateway&quot;</span> and [project] == <span class="string">&quot;microservice&quot;</span> &#123;</span><br><span class="line">  mutate &#123;</span><br><span class="line">  <span class="function"><span class="params">add_field</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="string">&quot;[@metadata][target_index]&quot;</span> =&gt; <span class="string">&quot;microservice-gateway-%&#123;+YYYY.MM.dd&#125;&quot;</span></span><br><span class="line">	&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> [app] == <span class="string">&quot;nginx&quot;</span> and [project] == <span class="string">&quot;microservice&quot;</span> &#123;</span><br><span class="line">  mutate &#123;</span><br><span class="line">  <span class="function"><span class="params">add_field</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="string">&quot;[@metadata][target_index]&quot;</span> =&gt; <span class="string">&quot;microservice-nginx-%&#123;+YYYY.MM.dd&#125;&quot;</span></span><br><span class="line">	&#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  mutate &#123;</span><br><span class="line">  <span class="function"><span class="params">add_field</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="string">&quot;[@metadata][target_index]&quot;</span> =&gt; <span class="string">&quot;unknown-%&#123;+YYYY&#125;&quot;</span></span><br><span class="line">	  &#125;</span><br><span class="line">	&#125;</span><br><span class="line">     &#125;</span><br><span class="line">&#125;</span><br><span class="line">output &#123;</span><br><span class="line">  elasticsearch &#123;</span><br><span class="line">  <span class="function"><span class="params">hosts</span> =&gt;</span> <span class="string">&quot;192.168.0.11:9200&quot;</span></span><br><span class="line">  index =&gt; <span class="string">&quot;%&#123;[@metadata][target_index]&#125;&quot;</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>热加载配置</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">kill -<span class="variable constant_">HUP</span> &lt;logstash pid&gt;</span><br></pre></td></tr></table></figure>
+<p>在kibana页面上查看</p>
+<p><img src="/images/E5264E355FEF4314AF0449950E4E7096clipboard.png" alt></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io">阿哲</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io/2021/07/08/%E6%94%B6%E9%9B%86nginx%E8%AE%BF%E9%97%AE%E6%97%A5%E5%BF%97/">http://liuzhemax.github.io/2021/07/08/%E6%94%B6%E9%9B%86nginx%E8%AE%BF%E9%97%AE%E6%97%A5%E5%BF%97/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://liuzhemax.github.io" target="_blank">阿哲技术之路</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/ELK/">ELK</a></div><div class="post_share"><div class="social-share" data-image="/medias/%E6%90%AC%E7%A0%96.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2021/07/07/%E6%94%B6%E9%9B%86java%E5%A0%86%E6%A0%88%E6%97%A5%E5%BF%97/" title="收集Java堆栈日志"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">收集Java堆栈日志</div></div></a></div><div class="next-post pull-right"><a href="/2021/07/09/kibana%E9%83%A8%E7%BD%B2/" title="Kibana 部署"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Kibana 部署</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2021/07/11/elk%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%E4%BC%98%E5%8C%96/" title="ELK 系统架构优化"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-07-11</div><div class="title">ELK 系统架构优化</div></div></a></div><div><a href="/2021/07/01/es%E9%9B%86%E7%BE%A4%E9%83%A8%E7%BD%B2%E6%90%AD%E5%BB%BA/" title="es集群部署搭建"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-07-01</div><div class="title">es集群部署搭建</div></div></a></div><div><a href="/2021/07/02/filebeat%E6%97%A5%E5%BF%97%E9%87%87%E9%9B%86%E5%99%A8/" title="Filebeat日志采集器"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-07-02</div><div class="title">Filebeat日志采集器</div></div></a></div><div><a href="/2021/07/09/kibana%E9%83%A8%E7%BD%B2/" title="Kibana 部署"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-07-09</div><div class="title">Kibana 部署</div></div></a></div><div><a href="/2021/07/06/logstash%E8%BF%87%E6%BB%A4%E6%8F%92%E4%BB%B6grok_geoip_date/" title="Logstash 过滤插件Grok GeoIp Date"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-07-06</div><div class="title">Logstash 过滤插件Grok GeoIp Date</div></div></a></div><div><a href="/2021/07/03/logstash%E8%BF%87%E6%BB%A4%E6%8F%92%E4%BB%B6json_kv/" title="Logstash 过滤插件 json kv"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2021-07-03</div><div class="title">Logstash 过滤插件 json kv</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">阿哲</div><div class="author-info__description">强大自己是解决问题的唯一办法</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">64</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">5</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1437626743@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">分享个人经验总结</div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/01/10/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8B/" title="微服务治理istio初探下">微服务治理istio初探下</a><time datetime="2024-01-10T13:45:32.000Z" title="发表于 2024-01-10 21:45:32">2024-01-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/25/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86istio%E5%88%9D%E6%8E%A2%E4%B8%8A/" title="微服务治理istio初探上">微服务治理istio初探上</a><time datetime="2023-12-25T13:45:32.000Z" title="发表于 2023-12-25 21:45:32">2023-12-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/12/15/%E5%9F%BA%E4%BA%8Ejenkins%E6%9E%84%E5%BB%BA%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8F%91%E5%B8%83%E5%B9%B3%E5%8F%B0/" title="基于Jenkins构建微服务发布平台">基于Jenkins构建微服务发布平台</a><time datetime="2023-12-15T13:45:32.000Z" title="发表于 2023-12-15 21:45:32">2023-12-15</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/11/28/%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E8%BF%81%E7%A7%BB/" title="微服务容器化迁移">微服务容器化迁移</a><time datetime="2023-11-28T13:45:32.000Z" title="发表于 2023-11-28 21:45:32">2023-11-28</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2023/11/08/ceph%E5%88%86%E5%B8%83%E5%BC%8F%E5%AD%98%E5%82%A8/" title="Ceph分布式存储">Ceph分布式存储</a><time datetime="2023-11-08T13:45:32.000Z" title="发表于 2023-11-08 21:45:32">2023-11-08</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="footer_custom_text">阿哲技术之路</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.13.0"></script></div></div></body></html>
