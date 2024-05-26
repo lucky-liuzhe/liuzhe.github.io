@@ -3753,7 +3753,7 @@
 <p>Windows设置环境变量： 右击我的电脑-&gt;属性-&gt;高级系统设置-&gt;环境变量-&gt;Path-&gt;编辑-&gt;新建-&gt;粘贴Python安装目录 （例如D:\Python3.11\Scripts）</p>
 <h2 id="Python解释器">Python解释器</h2>
 <p>交互式解释器：</p>
-<p><img src="images/C70792B256AE466A8D7089D8F7F99218clipboard.png" alt></p>
+<p><img src="/images/C70792B256AE466A8D7089D8F7F99218clipboard.png" alt></p>
 <h2 id="运行第一个程序">运行第一个程序</h2>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># vim hello.py </span></span><br><span class="line"><span class="comment">#!/usr/bin/python </span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;Hello World!&quot;</span>) </span><br><span class="line"></span><br><span class="line"><span class="comment"># python hello.py </span></span><br><span class="line">Hello World!</span><br></pre></td></tr></table></figure>
 <h2 id="基本数据类型">基本数据类型</h2>
@@ -3776,7 +3776,7 @@
 <h2 id="算术运算符">算术运算符</h2>
 <p>什么是运算符？</p>
 <p>举个简单的例子 6+6=12，其中两个6被称为操作数，+称为运算符。</p>
-<p><img src="images/559FAF0084B24F44803394692DAF17A1clipboard.png" alt></p>
+<p><img src="/images/559FAF0084B24F44803394692DAF17A1clipboard.png" alt></p>
 <h2 id="变量">变量</h2>
 <p>变量：编程语言中能储存结果或能表示值的抽象概念。</p>
 <p>用途：给一段数据赋予一个简短、易于记忆的名字，方便重用。</p>
@@ -3787,16 +3787,16 @@
 <p>name1, name2 = “zhangsan”,”wangwu”</p>
 <p>变量引用：</p>
 <p>print(变量名)</p>
-<p><img src="images/09B986A2C9EA4A29B1C0EC834C8C6A10clipboard.png" alt></p>
+<p><img src="/images/09B986A2C9EA4A29B1C0EC834C8C6A10clipboard.png" alt></p>
 <p>格式化字符串：</p>
 <p>print(“hello %s”%name)</p>
 <p>保留2位小数点：</p>
 <p>calc = 100 / 88</p>
 <p>print(‘计算结果：%.2f’ %calc)</p>
 <h2 id="赋值操作符">赋值操作符</h2>
-<p><img src="images/109A29D7754F405AA9E7024362220071clipboard.png" alt></p>
+<p><img src="/images/109A29D7754F405AA9E7024362220071clipboard.png" alt></p>
 <h2 id="转义字符">转义字符</h2>
-<p><img src="images/9547A52F08184238A918C234A01B88CCclipboard.png" alt></p>
+<p><img src="/images/9547A52F08184238A918C234A01B88CCclipboard.png" alt></p>
 <p>示例：</p>
 <p>print(“姓名: %s, &quot;年龄：%d” %(name, age))</p>
 <h2 id="获取用户输入">获取用户输入</h2>
