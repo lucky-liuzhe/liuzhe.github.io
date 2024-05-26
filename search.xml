@@ -3916,7 +3916,7 @@
 <p>step 表示切片的步长，如果不指定默认为1</p>
 </li>
 </ul>
-<p><img src="images/B252BCFE0972479CA0C46799B9AFD92Fclipboard.png" alt></p>
+<p><img src="/images/B252BCFE0972479CA0C46799B9AFD92Fclipboard.png" alt></p>
 <p>示例：</p>
 <p>截取第5个字符：s[4]</p>
 <p>截取第1个字符到第5个字符：s[0:5]</p>
@@ -3924,7 +3924,7 @@
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#字符串切片</span></span><br><span class="line">str1 = <span class="string">&#x27;Hello World!&#x27;</span></span><br><span class="line"><span class="built_in">print</span>(str1[<span class="number">4</span>]) <span class="comment">#o</span></span><br><span class="line"><span class="built_in">print</span>(str1[<span class="number">0</span>:<span class="number">5</span>]) <span class="comment">#Hello</span></span><br><span class="line"><span class="built_in">print</span>(str1[-<span class="number">1</span>])  <span class="comment">#!</span></span><br></pre></td></tr></table></figure>
 <h2 id="字符串处理方法">字符串处理方法</h2>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#字符串的方法使用</span></span><br><span class="line">xxoo = <span class="string">&quot;abcdef&quot;</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;首字母大写: %s&quot;</span> % xxoo.capitalize())</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;字符l出现次数: %s&quot;</span> % xxoo.count(<span class="string">&#x27;l&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;感叹号是否结尾: %s&quot;</span> % xxoo.endswith(<span class="string">&#x27;!&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;w字符是否是开头: %s&quot;</span> % xxoo.startswith(<span class="string">&#x27;w&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;w字符索引位置: %s&quot;</span> % xxoo.find(<span class="string">&#x27;w&#x27;</span>)) <span class="comment"># xxoo.index(&#x27;W&#x27;)</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;格式化字符串: Hello&#123;0&#125; world!&quot;</span>.<span class="built_in">format</span>(<span class="string">&#x27;,&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;是否都是小写: %s&quot;</span> % xxoo.islower())</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;是否都是大写: %s&quot;</span> % xxoo.isupper())</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;所有字母转为小写: %s&quot;</span> % xxoo.lower())</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;所有字母转为大写: %s&quot;</span> % xxoo.upper())</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;感叹号替换为句号: %s&quot;</span> % xxoo.replace(<span class="string">&#x27;!&#x27;</span>,<span class="string">&#x27;.&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;以空格分隔切分成列表: %s&quot;</span> % xxoo.split(<span class="string">&#x27; &#x27;</span>))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;切分为一个列表: %s&quot;</span> % xxoo.splitlines())</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;去除两边空格: %s&quot;</span> % xxoo.strip())</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;大小写互换: %s&quot;</span> % xxoo.swapcase())</span><br></pre></td></tr></table></figure>
-<p><img src="images/BE2EF9E638E64A86AED9FB1D10AB24A4clipboard.png" alt></p>
+<p><img src="/images/BE2EF9E638E64A86AED9FB1D10AB24A4clipboard.png" alt></p>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -3939,7 +3939,7 @@
     <content><![CDATA[<h2 id="内建函数">内建函数</h2>
 <p>Python解释器内置了很多函数，你可以直接使用它们。</p>
 <p>在前面学习过的内建函数有：print()、len()、open()、range()</p>
-<p><img src="images/2C0DA00C753D4EF9A4B75F09EB413915clipboard.png" alt></p>
+<p><img src="/images/2C0DA00C753D4EF9A4B75F09EB413915clipboard.png" alt></p>
 <p>参考文档：<a href="https://docs.python.org/zh-cn/3.11/library/functions.html">https://docs.python.org/zh-cn/3.11/library/functions.html</a></p>
 <h2 id="高阶函数">高阶函数</h2>
 <p>内建高阶函数：map()、filter()</p>
@@ -4010,20 +4010,20 @@
     <title>python操作符</title>
     <url>/2024/02/14/python%E6%93%8D%E4%BD%9C%E7%AC%A6/</url>
     <content><![CDATA[<h2 id="操作符有什么用？">操作符有什么用？</h2>
-<p><img src="images/826B3FA47C7043958D702698DB4F25A6clipboard.png" alt></p>
+<p><img src="/images/826B3FA47C7043958D702698DB4F25A6clipboard.png" alt></p>
 <p>操作符：一个特定的符号，用它与其他数据类型连接起来组成一个 表达式。常用于条件判断，根据表达式返回True/False采取动作。</p>
 <h2 id="比较操作符">比较操作符</h2>
 <p>比较操作符：比较两边值</p>
-<p><img src="images/983BD94438074D9AAAA1F95B70E262F6clipboard.png" alt></p>
+<p><img src="/images/983BD94438074D9AAAA1F95B70E262F6clipboard.png" alt></p>
 <h2 id="逻辑操作符">逻辑操作符</h2>
 <p>逻辑操作符：判断条件逻辑</p>
-<p><img src="images/15C8AA9146D245A9836049AD8B348836clipboard.png" alt></p>
+<p><img src="/images/15C8AA9146D245A9836049AD8B348836clipboard.png" alt></p>
 <h2 id="成员操作符">成员操作符</h2>
 <p>成员操作符：判断某个元素是否在数据类型里</p>
-<p><img src="images/C6D5088C7FF84C1FB8D1A8EE33F7E8F4clipboard.png" alt></p>
+<p><img src="/images/C6D5088C7FF84C1FB8D1A8EE33F7E8F4clipboard.png" alt></p>
 <h2 id="身份操作符">身份操作符</h2>
 <p>身份操作符：判断两个对象是否相等</p>
-<p><img src="images/5F29758389ED40DBB13DCD3542904E4Eclipboard.png" alt></p>
+<p><img src="/images/5F29758389ED40DBB13DCD3542904E4Eclipboard.png" alt></p>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -4043,7 +4043,7 @@
 <p>格式：名称 = [“元素1”，“元素2”，…]</p>
 <h3 id="列表：基本操作">列表：基本操作</h3>
 <p>定义列表：computer = [“主机”,“显示器”,“鼠标”,“键盘”]</p>
-<p><img src="images/67512F8DA03040DC80BF7DFD842E942Cclipboard.png" alt></p>
+<p><img src="/images/67512F8DA03040DC80BF7DFD842E942Cclipboard.png" alt></p>
 <h3 id="列表：切片">列表：切片</h3>
 <p>与字符串切片使用方法一样。</p>
 <p>语法格式：list[start:end:step]</p>
@@ -4052,7 +4052,7 @@
 <p>截取第1个字符到第5个元素：computer[0:5]</p>
 <p>截取第1个到倒数第2个元素：computer[0:-1]</p>
 <p>截取最后1个元素：computer[-1]</p>
-<p><img src="images/4C3F05114AE448C495A0AF898867E190clipboard.png" alt></p>
+<p><img src="/images/4C3F05114AE448C495A0AF898867E190clipboard.png" alt></p>
 <h3 id="列表：清空列表">列表：清空列表</h3>
 <p>重新初始化列表</p>
 <p>computer = []</p>
@@ -4063,7 +4063,7 @@
 <p>格式：名称 = （“元素1”，“元素2”，…）</p>
 <h3 id="元组：基本操作">元组：基本操作</h3>
 <p>定义元组：computer = (“主机”,“显示器”,“鼠标”,“键盘”)</p>
-<p><img src="images/53FFB8537A3249FA9DB514E8D0872EE5clipboard.png" alt></p>
+<p><img src="/images/53FFB8537A3249FA9DB514E8D0872EE5clipboard.png" alt></p>
 <p>同样支持切片，与列表使用方法一样。</p>
 <h2 id="集合">集合</h2>
 <p>集合（Set）：是一个无序、不重复元素的序列，主要用于元素去重和关系测试。</p>
@@ -4090,12 +4090,12 @@
 <p>computer = {“主机”,“显示器”,“鼠标”,“键盘”}</p>
 <p>或者</p>
 <p>computer = set([“主机”,“显示器”,“鼠标”,“键盘”,“主机”])</p>
-<p><img src="images/FC44858638A944BE9A1835C26632E00Fclipboard.png" alt></p>
+<p><img src="/images/FC44858638A944BE9A1835C26632E00Fclipboard.png" alt></p>
 <p>列表去重： 如果有元素则删除 随机删除一个元素</p>
 <p>computer = [“主机”,“显示器”,“鼠标”,“键盘”,“显示器”,“鼠标”]</p>
 <p>s = set(computer) print(s)</p>
 <h3 id="集合：关系测试">集合：关系测试</h3>
-<p><img src="images/9C41AD031E164747AE8CDF48265FB4EEclipboard.png" alt></p>
+<p><img src="/images/9C41AD031E164747AE8CDF48265FB4EEclipboard.png" alt></p>
 <p>对两个列表进行关系测试：</p>
 <p>a = set([1, 2, 3, 4, 5, 6])</p>
 <p>b = set([4, 5, 6, 7, 8, 9])</p>
@@ -4106,7 +4106,7 @@
 <p>注意：字典通过key来访问value，因此字典中的key不允许重复。</p>
 <h3 id="字典：基本操作">字典：基本操作</h3>
 <p>定义字典：computer = {“主机”:5000,“显示器”:1000,“鼠标”:60,“键盘”:150}</p>
-<p><img src="images/F07AC8F598934E8992FBE1BE23A9456Dclipboard.png" alt></p>
+<p><img src="/images/F07AC8F598934E8992FBE1BE23A9456Dclipboard.png" alt></p>
 <h3 id="字典：嵌套">字典：嵌套</h3>
 <p>字典里的值不但是可以写整数、字符串，也可以是其他数据类型，例如列表、元组、集 合、字典，这样可满足一个键还包含其他属性。</p>
 <p>computer = {“主机”:{“CPU”:1300,“内存”:400,“硬盘”:200},“显示器”:1000,“鼠标”:60,“键 盘”:[“机械键盘”,“薄膜键盘”]}</p>
@@ -4117,7 +4117,7 @@
 <p>computer[“键盘”]</p>
 <p>computer[“键盘”].append(“其他”)</p>
 <h2 id="常用数据类型转换">常用数据类型转换</h2>
-<p><img src="images/1ADBEB80091D4D5BB325B08B307C7358clipboard.png" alt></p>
+<p><img src="/images/1ADBEB80091D4D5BB325B08B307C7358clipboard.png" alt></p>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -4151,7 +4151,7 @@
 <p>如果需要以字节（二进制）形式读取文件，只需要在mode值追加‘b’即可，例如wb</p>
 <h2 id="文件对象操作">文件对象操作</h2>
 <p>f = open(‘test.txt’)</p>
-<p><img src="images/A2AA6F2EEE33495F98BDC2811D7380D6clipboard.png" alt></p>
+<p><img src="/images/A2AA6F2EEE33495F98BDC2811D7380D6clipboard.png" alt></p>
 <p>示例：遍历打印每一行</p>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="built_in">open</span>(<span class="string">&#x27;computer.txt&#x27;</span>) </span><br><span class="line"><span class="keyword">for</span> line <span class="keyword">in</span> f: </span><br><span class="line">    <span class="built_in">print</span>(line.strip(<span class="string">&#x27;\n&#x27;</span>)) <span class="comment"># 去掉换行符</span></span><br></pre></td></tr></table></figure>
 <h2 id="with语句">with语句</h2>
@@ -4170,7 +4170,7 @@
     <title>python流程控制</title>
     <url>/2024/02/15/python%E6%B5%81%E7%A8%8B%E6%8E%A7%E5%88%B6/</url>
     <content><![CDATA[<h2 id="条件判断">条件判断</h2>
-<p><img src="images/3CECF864F90649F798C7B990481516F0clipboard.png" alt></p>
+<p><img src="/images/3CECF864F90649F798C7B990481516F0clipboard.png" alt></p>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">语法： </span><br><span class="line"><span class="keyword">if</span> &lt;表达式&gt;: </span><br><span class="line">    &lt;代码块&gt; </span><br><span class="line"><span class="keyword">elif</span> &lt;表达式&gt;: </span><br><span class="line">    &lt;代码块&gt; </span><br><span class="line"><span class="keyword">else</span>: </span><br><span class="line">    &lt;代码块&gt;</span><br></pre></td></tr></table></figure>
 <h3 id="条件判断：单分支">条件判断：单分支</h3>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">示例：判断是否成年 </span><br><span class="line">age = <span class="built_in">int</span>(<span class="built_in">input</span>(<span class="string">&quot;请输入你的年龄: &quot;</span>)) </span><br><span class="line"><span class="keyword">if</span> age &gt; <span class="number">18</span>: </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;恭喜，你已经成年！&quot;</span>) </span><br><span class="line"><span class="keyword">else</span>: </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;抱歉，你还未成年！&quot;</span>)</span><br><span class="line">    </span><br><span class="line">简写，也成三目表达式： <span class="string">&quot;恭喜，你已经成年！&quot;</span> <span class="keyword">if</span> age &gt; <span class="number">18</span> <span class="keyword">else</span> <span class="string">&quot;抱歉，你还未成年！&quot;</span></span><br></pre></td></tr></table></figure>
@@ -4178,13 +4178,13 @@
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">示例：根据人的年龄段划分 </span><br><span class="line">age = <span class="built_in">int</span>(<span class="built_in">input</span>(<span class="string">&quot;请输入你的年龄: &quot;</span>)) </span><br><span class="line"><span class="keyword">if</span> age &lt; <span class="number">7</span> : </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;儿童&quot;</span>) </span><br><span class="line"><span class="keyword">elif</span> age &gt;= <span class="number">7</span> <span class="keyword">and</span> age &lt; <span class="number">17</span>: </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;少年&quot;</span>) </span><br><span class="line"><span class="keyword">elif</span> age &gt;= <span class="number">18</span> <span class="keyword">and</span> age &lt; <span class="number">40</span>: </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;青年&quot;</span>) </span><br><span class="line"><span class="keyword">elif</span> age &gt;= <span class="number">41</span> <span class="keyword">and</span> age &lt; <span class="number">48</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;壮年&quot;</span>)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;老年&quot;</span>)   </span><br></pre></td></tr></table></figure>
 <h2 id="循环语句">循环语句</h2>
 <p>在了解编程中的“循环”之前，先试想下这个场景： 在阳台种花，准备种4颗种子，开始逐个挖坑，放一颗种子。</p>
-<p><img src="images/4451617D17494398966292B8E7561286clipboard.png" alt></p>
+<p><img src="/images/4451617D17494398966292B8E7561286clipboard.png" alt></p>
 <p>每一颗种子操作都是相同的，如果我们用一步将6颗 种子重复种下的行为表示出来呢？</p>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> n <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>,<span class="number">5</span>): </span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;开始种花第%s次&quot;</span> %n)</span><br></pre></td></tr></table></figure>
 <p>循环的作用在于将一段代码重复执行多次。</p>
 <p>Python中实现循环常用有两个语句：for、while</p>
 <h3 id="for语句">for语句</h3>
-<p><img src="images/72ED67ACAC454F2C9E57C28B567C2BE8clipboard.png" alt></p>
+<p><img src="/images/72ED67ACAC454F2C9E57C28B567C2BE8clipboard.png" alt></p>
 <p>for语句：一般用于遍历数据类型的元素进行处理，例如字符串、列表。</p>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">语法： </span><br><span class="line"><span class="keyword">for</span> &lt;变量&gt; <span class="keyword">in</span> &lt;序列&gt;: </span><br><span class="line">    &lt;代码块&gt;</span><br></pre></td></tr></table></figure>
 <p>示例1：遍历字符串</p>
@@ -4199,7 +4199,7 @@
 <p>示例：生成0-4序列</p>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>): </span><br><span class="line">    <span class="built_in">print</span>(i)</span><br></pre></td></tr></table></figure>
 <h3 id="while语句">while语句</h3>
-<p><img src="images/B1C32BE1841D48409AAD106DD836A629clipboard.png" alt></p>
+<p><img src="/images/B1C32BE1841D48409AAD106DD836A629clipboard.png" alt></p>
 <p>while语句：在某条件下循环执行一段代码，即重复相同的任务。</p>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">语法： </span><br><span class="line"><span class="keyword">while</span> &lt;表达式&gt;: </span><br><span class="line">    &lt;代码块&gt;</span><br></pre></td></tr></table></figure>
 <p>示例1：当条件满足时停止循环</p>
