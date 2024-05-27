@@ -513,6 +513,272 @@
       </tags>
   </entry>
   <entry>
+    <title>django-url路由系统</title>
+    <url>/2024/03/02/django-url%E8%B7%AF%E7%94%B1%E7%B3%BB%E7%BB%9F/</url>
+    <content><![CDATA[<h2 id="URL路由系统是什么">URL路由系统是什么</h2>
+<p>简而言之，路由系统就是URL路径和视图函数的一个对应关系，也可以称为转发器。</p>
+<h2 id="URL配置">URL配置</h2>
+<p>URL路由系统格式：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># devops/urls.py</span></span><br><span class="line">urlpatterns = [</span><br><span class="line">    path(regex, view, kwargs=<span class="literal">None</span>, name=<span class="literal">None</span>)</span><br><span class="line">]   </span><br></pre></td></tr></table></figure>
+<p>urlpatterns：一个列表，每一个path()函数是一个元素，对应一个视图</p>
+<p>参数：</p>
+<ul>
+<li>
+<p>regex：一个字符串或者正则表达式，匹配URL</p>
+</li>
+<li>
+<p>view：对应一个函数视图或者类视图（as_view()的结果），必须返回一个HttpResponse对象，Django将这个 对象转换成一个HTTP响应</p>
+</li>
+<li>
+<p>kwargs：可选，字典形式数据传递给对应视图</p>
+</li>
+<li>
+<p>name：可选，URL名称</p>
+</li>
+</ul>
+<h2 id="URL路由分发">URL路由分发</h2>
+<p><img src="/images/D0A118729148494DB15656ECF74A4B9Eclipboard.png" alt></p>
+<p>URL路由分发好处：urls配置解耦，方便管理</p>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># devops/urls.py</span></span><br><span class="line"><span class="keyword">from</span> myapp <span class="keyword">import</span> views <span class="keyword">as</span> myapp_views</span><br><span class="line"></span><br><span class="line">urlpatterns = [ </span><br><span class="line">    path(<span class="string">&#x27;index&#x27;</span>, views.index), </span><br><span class="line">    path(<span class="string">&#x27;myapp/&#x27;</span>, include(<span class="string">&#x27;myapp_views.urls&#x27;</span>)), </span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"><span class="comment"># myapp/urls.py</span></span><br><span class="line">urlpatterns = [</span><br><span class="line">    path(<span class="string">&quot;hello&quot;</span>, views.hello)</span><br><span class="line">]  </span><br></pre></td></tr></table></figure>
+<p>访问地址：<a href="http://127.0.0.1:8000/myapp/hello">http://127.0.0.1:8000/myapp/hello</a></p>
+<h2 id="URL正则表达式匹配">URL正则表达式匹配</h2>
+<p>URL路径也可以使用正则表达式匹配，re_path()替代path()</p>
+<p>示例：博客文章归档访问形式</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.urls <span class="keyword">import</span> re_path </span><br><span class="line"><span class="keyword">from</span> devops <span class="keyword">import</span> views</span><br><span class="line"></span><br><span class="line">urlpatterns = [ </span><br><span class="line">    re_path(<span class="string">&#x27;articles/2020/$&#x27;</span>, views.specified_2020), </span><br><span class="line">    re_path(<span class="string">&#x27;^articles/([0-9]&#123;4&#125;)/$&#x27;</span>, views.year_archive), </span><br><span class="line">    re_path(<span class="string">&#x27;^articles/([0-9]&#123;4&#125;)/([0-9]&#123;2&#125;)/$&#x27;</span>, views.month_archive), </span><br><span class="line">    re_path(<span class="string">&#x27;^articles/([0-9]&#123;4&#125;)/([0-9]&#123;2&#125;)/([0-9]+)/$&#x27;</span>, views.article_detail),</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<p>视图：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">specified_2020</span>(<span class="params">request</span>): </span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;指定2020年 文章列表&quot;</span>)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">year_archive</span>(<span class="params">request, year</span>):</span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;%s年 文章列表&quot;</span> % year)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">month_archive</span>(<span class="params">request, year, month</span>):</span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;%s年/%s月 文章列表&quot;</span> % (year, month))</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">article_detail</span>(<span class="params">request, year, month, <span class="built_in">id</span></span>):</span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;%s年/%s月 文章ID: %s&quot;</span> %(year, month, <span class="built_in">id</span>))   </span><br></pre></td></tr></table></figure>
+<p>命名分组语法：(?P<name>pattern) 其中name是名称，pattern是匹配的正则表达式</name></p>
+<p>示例：博客文章归档访问形式</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.urls <span class="keyword">import</span> re_path </span><br><span class="line"><span class="keyword">from</span> devops <span class="keyword">import</span> views</span><br><span class="line"></span><br><span class="line">urlpatterns = [ </span><br><span class="line">    re_path(<span class="string">&#x27;articles/2020/$&#x27;</span>, views.specified_2020), </span><br><span class="line">    re_path(<span class="string">&#x27;^articles/(?P&lt;year&gt;[0-9]&#123;4&#125;)/$&#x27;</span>, views.year_archive),</span><br><span class="line">    re_path(<span class="string">&#x27;^articles/(?P&lt;year&gt;[0-9]&#123;4&#125;)/(?P&lt;month&gt;[0-9]&#123;2&#125;)/$&#x27;</span>, views.month_archive),</span><br><span class="line">    re_path(<span class="string">&#x27;^articles/(?P&lt;year&gt;[0-9]&#123;4&#125;)/(?P&lt;month&gt;[0-9]&#123;2&#125;)/(?P&lt;id&gt;[0-9]+)/$&#x27;</span>, views.article_detail),</span><br><span class="line">]    </span><br></pre></td></tr></table></figure>
+<h2 id="URL名称">URL名称</h2>
+<p>在前端代码里经常会指定URL，例如超链接，提交表单等，这时用URL反查就方便多了。</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line">之前：</span><br><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&quot;/hello&quot;</span>&gt;</span>您好<span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br><span class="line">之后：</span><br><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&quot;&#123;% url &#x27;hello&#x27; %&#125;&quot;</span>&gt;</span>您好<span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Django</category>
+      </categories>
+      <tags>
+        <tag>Django</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>django基本使用</title>
+    <url>/2024/03/01/django%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8/</url>
+    <content><![CDATA[<h2 id="Django-是什么">Django 是什么</h2>
+<p>Django是Python的一个主流Web框架，提供一站式解决方案，开发成本低，内建ORM、数据管理后台、登录 认证、表单、RESTAPI等功能，适合开发中大型项目。</p>
+<p>其他Web框架：</p>
+<ul>
+<li>
+<p>Flask（轻量级）</p>
+</li>
+<li>
+<p>Tornado（异步）</p>
+</li>
+</ul>
+<p>官方文档：<a href="https://docs.djangoproject.com/zh-hans">https://docs.djangoproject.com/zh-hans</a></p>
+<h2 id="安装Django">安装Django</h2>
+<p>安装Django：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">pip install django==<span class="number">3.2</span> -i https://pypi.tuna.tsinghua.edu.cn/simple</span><br></pre></td></tr></table></figure>
+<h2 id="创建项目、创建应用">创建项目、创建应用</h2>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="number">1</span>、创建项目 </span><br><span class="line">django-admin startproject devops </span><br><span class="line"><span class="number">2</span>、创建应用 </span><br><span class="line">python manage.py startapp myapp </span><br><span class="line"><span class="number">3</span>、运行项目 </span><br><span class="line">python manage.py runserver <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8888</span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/6AB0E23D5A9B417392400B1F235AAC00clipboard.png" alt></p>
+<p><img src="/images/E48D50A108DB4F39A70574E763CAA14Cclipboard.png" alt></p>
+<h2 id="牛刀小试：第一个页面、第二个页面">牛刀小试：第一个页面、第二个页面</h2>
+<p>1、添加URL路由</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># devops/urls.py </span></span><br><span class="line"><span class="keyword">from</span> django.contrib <span class="keyword">import</span> admin </span><br><span class="line"><span class="keyword">from</span> django.urls <span class="keyword">import</span> path </span><br><span class="line"><span class="keyword">from</span> devops <span class="keyword">import</span> views</span><br><span class="line"></span><br><span class="line">urlpatterns = [</span><br><span class="line">    path(<span class="string">&#x27;index&#x27;</span>, views.index),  <span class="comment"># /index访问</span></span><br><span class="line">    path(<span class="string">&#x27;admin/&#x27;</span>, admin.site.urls),</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<p>2、添加视图</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># devops/views.py </span></span><br><span class="line"><span class="keyword">from</span> django.http <span class="keyword">import</span> HttpResponse <span class="comment"># 导入处理响应模块</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span>(<span class="params">request</span>): </span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;首页&quot;</span>)    </span><br></pre></td></tr></table></figure>
+<p><img src="/images/989D29361F7B4AC5A3FD70B9D366AC4Eclipboard.png" alt></p>
+<p>案例：网页展示日志文件</p>
+<p>1、添加URL路由</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># devops/urls.py </span></span><br><span class="line"><span class="keyword">from</span> django.contrib <span class="keyword">import</span> admin </span><br><span class="line"><span class="keyword">from</span> django.urls <span class="keyword">import</span> path </span><br><span class="line"><span class="keyword">from</span> devops <span class="keyword">import</span> views</span><br><span class="line"></span><br><span class="line">urlpatterns = [ </span><br><span class="line">    path(<span class="string">&#x27;index&#x27;</span>, views.index), </span><br><span class="line">    path(<span class="string">&#x27;logs&#x27;</span>, views.logs), </span><br><span class="line">    path(<span class="string">&#x27;admin/&#x27;</span>, admin.site.urls),</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<p>2、添加视图</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># devops/views.py </span></span><br><span class="line"><span class="keyword">from</span> django.shortcuts <span class="keyword">import</span> render </span><br><span class="line"><span class="keyword">from</span> django.http <span class="keyword">import</span> HttpResponse</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span>(<span class="params">request</span>): </span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;首页&quot;</span>)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">logs</span>(<span class="params">request</span>): </span><br><span class="line">    <span class="keyword">import</span> os </span><br><span class="line">    current_dir = os.path.dirname(os.path.abspath(__file__)) </span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(current_dir + <span class="string">&#x27;\\access.log&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        result = f.read()</span><br><span class="line">    <span class="keyword">return</span> render(request, <span class="string">&quot;logs.html&quot;</span>, &#123;<span class="string">&quot;result&quot;</span>: result&#125;)    </span><br></pre></td></tr></table></figure>
+<p>3、创建HTML模板</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"># devops/templates/logs.html</span><br><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">title</span>&gt;</span>日志<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">h1</span>&gt;</span>Nginx访问日志<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">pre</span>&gt;</span>&#123;&#123; result &#125;&#125;<span class="tag">&lt;/<span class="name">pre</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="Django工作流程">Django工作流程</h2>
+<p><img src="/images/E957DE8062AC4E7FB138DFBCA17393B2clipboard.png" alt></p>
+]]></content>
+      <categories>
+        <category>Django</category>
+      </categories>
+      <tags>
+        <tag>Django</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>django模板系统</title>
+    <url>/2024/03/04/django%E6%A8%A1%E6%9D%BF%E7%B3%BB%E7%BB%9F/</url>
+    <content><![CDATA[<h2 id="模板是什么">模板是什么</h2>
+<p>Django模板系统：用于自动渲染一个文本文件，一般用于HTML页面。模板引擎渲 染的最终HTML内容返回给客户端浏览器。</p>
+<p>模板文件有两部分组成：</p>
+<ul>
+<li>
+<p>静态部分，例如html、css、js</p>
+</li>
+<li>
+<p>动态部分，django模板语言，类似于jinja语法</p>
+</li>
+</ul>
+<h2 id="变量">变量</h2>
+<p>变量定义：在函数视图render中的context传入，类似于字典对象。</p>
+<p>变量在模板中引用，格式：</p>
+<p>注释：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line">&#123;# 注释内容 #&#125;</span><br></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">request</span>):</span><br><span class="line">    user = &#123;<span class="string">&#x27;name&#x27;</span>: <span class="string">&#x27;阿三&#x27;</span>, <span class="string">&#x27;property&#x27;</span>: &#123;<span class="string">&#x27;sex&#x27;</span>: <span class="string">&#x27;男&#x27;</span>, <span class="string">&#x27;age&#x27;</span>: <span class="number">30</span>&#125;&#125;</span><br><span class="line">    <span class="keyword">return</span> render(request, <span class="string">&#x27;user.html&#x27;</span>, &#123;<span class="string">&#x27;user&#x27;</span>: user&#125;)</span><br></pre></td></tr></table></figure>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">title</span>&gt;</span>用户信息<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">传递过来的字典: &#123;&#123; user &#125;&#125;<span class="tag">&lt;<span class="name">br</span>&gt;</span></span><br><span class="line">姓名: &#123;&#123; user.name &#125;&#125;<span class="tag">&lt;<span class="name">br</span>&gt;</span></span><br><span class="line">性别: &#123;&#123; user.property.sex &#125;&#125;<span class="tag">&lt;<span class="name">br</span>&gt;</span></span><br><span class="line">年龄: &#123;&#123; user.property.age &#125;&#125;<span class="tag">&lt;<span class="name">br</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="标签">标签</h2>
+<h3 id="标签：条件判断">标签：条件判断</h3>
+<p><img src="/images/4A6CD91D015F4B38AF28E8B542D95E33clipboard.png" alt></p>
+<p>if条件判断：判定给定的条件是否满足（True或False），根据判断的结果决定执行的语句。</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line">语法： </span><br><span class="line">&#123;% if <span class="tag">&lt;<span class="name">表达式</span>&gt;</span> %&#125; </span><br><span class="line">    <span class="tag">&lt;<span class="name">内容块</span>&gt;</span> </span><br><span class="line">&#123;% elif <span class="tag">&lt;<span class="name">表达式</span>&gt;</span> %&#125; </span><br><span class="line">    <span class="tag">&lt;<span class="name">内容块</span>&gt;</span> </span><br><span class="line">&#123;% else %&#125; </span><br><span class="line">    <span class="tag">&lt;<span class="name">内容块</span>&gt;</span> </span><br><span class="line">&#123;% endif %&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="标签：操作符">标签：操作符</h3>
+<p><img src="/images/25A09402522C468EA1B35111931BD63Aclipboard.png" alt></p>
+<h3 id="标签：循环">标签：循环</h3>
+<p><img src="/images/C77A9F4BFB064DAEB0820DBEF1D9EAC8clipboard.png" alt></p>
+<p>for循环：一般用于遍历数据类型的元素进行处理，例如列表。</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line">语法： </span><br><span class="line">&#123;% for <span class="tag">&lt;<span class="name">变量</span>&gt;</span> in <span class="tag">&lt;<span class="name">序列</span>&gt;</span> %&#125; </span><br><span class="line">    <span class="tag">&lt;<span class="name">内容块</span>&gt;</span> </span><br><span class="line">&#123;% endfor %&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="常用过滤器">常用过滤器</h2>
+<p>过滤器：在变量被显示前修改值的一种方法。</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line">语法：&#123;&#123; value | 过滤器:参数 &#125;&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="/images/7AAEE6ADA5D84A088C6DE3B76A250F5Aclipboard.png" alt></p>
+<p>参考资料：<a href="https://docs.djangoproject.com/zh-hans/3.1/ref/templates/builtins/">https://docs.djangoproject.com/zh-hans/3.1/ref/templates/builtins/</a></p>
+<h2 id="模板继承">模板继承</h2>
+<p>模板继承主要是为了提高代码重用，减轻开发人员的工作量。 典型应用：网站的头部、尾部信息。</p>
+<p>1、定义一个基础模板，也称为母板，这个页面存放整个网站共用的内容</p>
+<p>templates/base.html</p>
+<p>2、在子模板继承这个母版</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line">&#123;% extends ‘base.html’ %&#125;</span><br></pre></td></tr></table></figure>
+<p>3、在基础模板预留子模板差异化内容</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line">&#123;% block 名称 %&#125; 预留区域 &#123;% endblock %&#125;</span><br></pre></td></tr></table></figure>
+<p>4、在子模板里同样语法引用并填充预留区域内容</p>
+<p><img src="/images/DC8CA3CCA2EF44E4A19FE93E32CF25C6clipboard.png" alt></p>
+<h2 id="模板导入">模板导入</h2>
+<p>模板导入：导入一个模板（一般是某个网页功能）到当前模板</p>
+<p>将一个功能创建为模板：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"># templates/hello.html</span><br><span class="line"><span class="tag">&lt;<span class="name">style</span>&gt;</span><span class="language-css"></span></span><br><span class="line"><span class="language-css">    <span class="selector-class">.hello</span> &#123; </span></span><br><span class="line"><span class="language-css">        <span class="attribute">background-color</span>: red; </span></span><br><span class="line"><span class="language-css">    &#125;</span></span><br><span class="line"><span class="language-css"></span><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;hello&quot;</span>&gt;</span></span><br><span class="line">    子模板</span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span>       </span><br></pre></td></tr></table></figure>
+<p>模板导入：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line">&#123;% extends &#x27;base.html&#x27; %&#125; </span><br><span class="line">&#123;% block title %&#125;首页&#123;% endblock %&#125; </span><br><span class="line">&#123;% block context %&#125;</span><br><span class="line">    <span class="tag">&lt;<span class="name">h1</span>&gt;</span>&gt;这是首页！<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line">    &#123;% include &quot;hello.html&quot; %&#125; </span><br><span class="line">&#123;% endblock %&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="引用静态文件">引用静态文件</h2>
+<p>1、在settings.py配置</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))</span><br><span class="line">STATICFILES_DIRS = (</span><br><span class="line">    os.path.join(BASE_DIR, <span class="string">&#x27;static&#x27;</span>),</span><br><span class="line">) </span><br><span class="line">STATIC_URL = <span class="string">&#x27;/static/&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>注：STATICFILES_DIRS告诉Django哪个目录是“静态文件的文件夹”</p>
+<p>2、在模板文件引用静态文件</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">&quot;stylesheet&quot;</span> <span class="attr">href</span>=<span class="string">&quot;/static/main.css&quot;</span>&gt;</span></span><br><span class="line">或者 </span><br><span class="line">&#123;% load static %&#125; # 在模板文件开头</span><br><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">&quot;stylesheet&quot;</span> <span class="attr">href</span>=<span class="string">&quot;&#123;% static &#x27;main.css&#x27; %&#125;&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Django</category>
+      </categories>
+      <tags>
+        <tag>Django</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>django视图</title>
+    <url>/2024/03/03/django%E8%A7%86%E5%9B%BE/</url>
+    <content><![CDATA[<h2 id="Django内置函数">Django内置函数</h2>
+<p><img src="/images/3A318DC82EB74AAD948E920387264192clipboard.png" alt></p>
+<h2 id="HTTP请求流程">HTTP请求流程</h2>
+<p><img src="/images/8044F21A02454AB28815A3E1F525342Dclipboard.png" alt></p>
+<p><img src="/images/630588136B13476FAEF4DF9D26D5C7C7clipboard.png" alt></p>
+<h2 id="HttpRequest对象">HttpRequest对象</h2>
+<h3 id="HttpRequest对象：常用属性">HttpRequest对象：常用属性</h3>
+<p>Django会建立一个包含请求源数据的HttpRequest对象，当Django加载对应的视图时，HttpRequest 对象将作为函数视图的第一个参数（request），每个视图负责返回一个HttpResponse对象。</p>
+<p>例如：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">index</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;首页&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p><img src="/images/FA8AD22440424358BBCD1CC26CE6E3EAclipboard.png" alt></p>
+<h3 id="HttpRequest对象：常用方法">HttpRequest对象：常用方法</h3>
+<p><img src="/images/F28749AFAF8A46DD87648A1CA7F14BF0clipboard.png" alt></p>
+<h3 id="HttpRequest对象：接收URL参数">HttpRequest对象：接收URL参数</h3>
+<p>URL参数形式：<a href="http://www.baidu.cn/demo/?id=1&amp;value=100">http://www.baidu.cn/demo/?id=1&amp;value=100</a></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">url_args</span>(<span class="params">request</span>): </span><br><span class="line">    args1 = request.GET[<span class="string">&#x27;a&#x27;</span>] </span><br><span class="line">    args2 = request.GET[<span class="string">&#x27;b&#x27;</span>] </span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="built_in">int</span>(args1) + <span class="built_in">int</span>(args2))</span><br></pre></td></tr></table></figure>
+<h3 id="HttpRequest对象：QueryDict对象">HttpRequest对象：QueryDict对象</h3>
+<p>request.GET和request.POST返回的都是一个QueryDict对象，类似于字典。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">index</span>(<span class="params">request</span>): </span><br><span class="line">    req = request.GET </span><br><span class="line">    <span class="built_in">print</span>(<span class="built_in">type</span>(req)) </span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;首页&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p><img src="/images/82FC0A1DB5F64C23B35634CA89CCEBDCclipboard.png" alt></p>
+<h3 id="HttpRequest对象：小结">HttpRequest对象：小结</h3>
+<p>request对象应用场景：</p>
+<ul>
+<li>
+<p>获取客户端信息、请求页面情况</p>
+</li>
+<li>
+<p>接收客户端上传的数据，例如文件</p>
+</li>
+<li>
+<p>根据客户端特定信息做相应的处理，例如根据请求方法</p>
+</li>
+</ul>
+<h2 id="HttpResponse对象">HttpResponse对象</h2>
+<h3 id="HttpResponse对象：HttpResponse函数">HttpResponse对象：HttpResponse函数</h3>
+<p>HttpResponse函数：给浏览器返回数据。</p>
+<p>语法：HTTPResponse(content=响应体，content_type=响应体数据类型，status=状态码)</p>
+<p>示例：返回HTML内容</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.http <span class="keyword">import</span> HttpResponse</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;&lt;h1&gt;Hello Django!&lt;h1&gt;&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>示例：设置响应头</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.http <span class="keyword">import</span> HttpResponse</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>(<span class="params">request</span>):</span><br><span class="line">    res = HttpResponse(<span class="string">&quot;Hello APP!&quot;</span>)</span><br><span class="line">    res[<span class="string">&#x27;name&#x27;</span>] = <span class="string">&quot;amei&quot;</span></span><br><span class="line">    res.status_code = <span class="number">302</span></span><br></pre></td></tr></table></figure>
+<h3 id="HttpResponse对象：render函数">HttpResponse对象：render函数</h3>
+<p>render指定模板，返回一个渲染后的HttpResponse对象。</p>
+<p>语法：render(request, template_name, context=None, content_type=None, status=None, using=None)</p>
+<ul>
+<li>
+<p>request：固定参数，django封装的请求</p>
+</li>
+<li>
+<p>template_name：返回html模板</p>
+</li>
+<li>
+<p>context：传入模板中的内容，用于渲染模板，默认空字典</p>
+</li>
+</ul>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.shortcuts <span class="keyword">import</span> render</span><br><span class="line"><span class="keyword">from</span> datetime <span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">current_datetime</span>(<span class="params">request</span>):</span><br><span class="line">    now = datetime.now()</span><br><span class="line">    <span class="keyword">return</span> render(request, <span class="string">&#x27;demo.html&#x27;</span>, &#123;<span class="string">&#x27;datetime&#x27;</span>: now&#125;)</span><br></pre></td></tr></table></figure>
+<h3 id="HttpResponse对象：redirect函数">HttpResponse对象：redirect函数</h3>
+<p>redirect函数：重定向，发起第二次请求</p>
+<p>语法：redirect(to, *args, **kwargs)</p>
+<p>参数可以是：</p>
+<ul>
+<li>
+<p>一个视图</p>
+</li>
+<li>
+<p>一个绝对的或者相对的URL</p>
+</li>
+<li>
+<p>一个模型，对象是重定向的URL</p>
+</li>
+</ul>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.shortcuts <span class="keyword">import</span> redirect</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">test_redirect</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">return</span> redirect(<span class="string">&#x27;https://www.baidu.com&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="HttpResponse对象：StreamingHttpResponse函数">HttpResponse对象：StreamingHttpResponse函数</h3>
+<p>StreamingHttpResponse函数：流式响应可迭代对象，一般用于响应大数据内容</p>
+<p>示例：下载文件</p>
+<p>URL路由：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">re_path(<span class="string">&#x27;^download/$&#x27;</span>, views.download), </span><br><span class="line">re_path(<span class="string">r&#x27;^down_file/(?P&lt;filename&gt;.*)$&#x27;</span>, views.down_file, name=<span class="string">&quot;down_file&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>视图：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.http <span class="keyword">import</span> StreamingHttpResponse</span><br><span class="line"><span class="keyword">import</span> os </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">download</span>(<span class="params">request</span>):</span><br><span class="line">    file_list = os.listdir(<span class="string">&#x27;upload&#x27;</span>) </span><br><span class="line">    <span class="keyword">return</span> render(request, <span class="string">&quot;download.html&quot;</span>, &#123;<span class="string">&#x27;file_list&#x27;</span>: file_list&#125;)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">down_file</span>(<span class="params">request, filename</span>):</span><br><span class="line">    file_path = os.path.join(<span class="string">&#x27;upload&#x27;</span>, filename)</span><br><span class="line">    response = StreamingHttpResponse(<span class="built_in">open</span>(file_path, <span class="string">&#x27;rb&#x27;</span>)) </span><br><span class="line">    response[<span class="string">&#x27;Content-Type&#x27;</span>] = <span class="string">&#x27;application/octet-stream&#x27;</span> </span><br><span class="line">    response[<span class="string">&#x27;Content-Disposition&#x27;</span>] = <span class="string">&#x27;attachment; filename=%s&#x27;</span> %(os.path.basename(file_path)) <span class="comment"># 指定下载文件名 </span></span><br><span class="line">    <span class="keyword">return</span> response </span><br></pre></td></tr></table></figure>
+<p>模板：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">title</span>&gt;</span>文件列表<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">  &#123;% for i in  file_list %&#125;</span><br><span class="line">     <span class="tag">&lt;<span class="name">p</span>&gt;</span><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&quot;&#123;% url &#x27;down_file&#x27; i  %&#125;&quot;</span>&gt;</span>&#123;&#123; i &#125;&#125;<span class="tag">&lt;/<span class="name">a</span>&gt;</span><span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">  &#123;% endfor %&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="HttpResponse对象：-FileResponse函数">HttpResponse对象： FileResponse函数</h3>
+<p>FileResponse函数： StreamingHttpResponse的子类，针对文件提供响应</p>
+<p>示例：下载文件</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">down_file</span>(<span class="params">request, filename</span>): </span><br><span class="line">    file_path = os.path.join(<span class="string">&#x27;upload&#x27;</span>, filename) </span><br><span class="line">    response = FileResponse(<span class="built_in">open</span>(file_path, <span class="string">&#x27;rb&#x27;</span>)) </span><br><span class="line">    response[<span class="string">&#x27;Content-Type&#x27;</span>] = <span class="string">&#x27;application/octet-stream&#x27;</span></span><br><span class="line">    response[<span class="string">&#x27;Content-Disposition&#x27;</span>] = <span class="string">&#x27;attachment; filename=%s&#x27;</span> %(os.path.basename(file_path))</span><br><span class="line">    <span class="keyword">return</span> response</span><br></pre></td></tr></table></figure>
+<h3 id="HttpResponse对象：-JsonResponse函数">HttpResponse对象： JsonResponse函数</h3>
+<p>JsonResponse函数：响应一个JSON对象</p>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.http <span class="keyword">import</span> JsonResponse </span><br><span class="line"><span class="keyword">def</span> <span class="title function_">test_response</span>(<span class="params">request</span>): </span><br><span class="line">    res = &#123;<span class="string">&#x27;foo&#x27;</span>: <span class="string">&#x27;bar&#x27;</span>&#125; </span><br><span class="line">    <span class="keyword">return</span> JsonResponse(res)</span><br></pre></td></tr></table></figure>
+<p><img src="/images/B034746534EA4C4AB46108B4DB4232EEclipboard.png" alt></p>
+]]></content>
+      <categories>
+        <category>Django</category>
+      </categories>
+      <tags>
+        <tag>Django</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>ELK Stack收集Kubernetes应用日志</title>
     <url>/2023/06/10/elk-stack%E6%94%B6%E9%9B%86kubernetes%E5%BA%94%E7%94%A8%E6%97%A5%E5%BF%97/</url>
     <content><![CDATA[<h2 id="需求背景">需求背景</h2>
