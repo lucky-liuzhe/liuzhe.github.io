@@ -1,0 +1,242 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>django多表操作 | 阿哲技术之路</title><meta name="author" content="阿哲"><meta name="copyright" content="阿哲"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="多表关系 常见的数据模型关系有：   一对一(one-to-one)，OneToOneField   一对多，多对一(one-to-many)，ForeignKey   多对多（many-to-many），ManyToManyField   一对一 一对一：一个表中的每条记录对应另一个表中的每条记录，使用OneToOneField建立关系。 例如：一个人对应一个身份证号，一个身份证号也对应一个人">
+<meta property="og:type" content="article">
+<meta property="og:title" content="django多表操作">
+<meta property="og:url" content="http://liuzhemax.github.io/2024/03/07/django%E5%A4%9A%E8%A1%A8%E6%93%8D%E4%BD%9C/index.html">
+<meta property="og:site_name" content="阿哲技术之路">
+<meta property="og:description" content="多表关系 常见的数据模型关系有：   一对一(one-to-one)，OneToOneField   一对多，多对一(one-to-many)，ForeignKey   多对多（many-to-many），ManyToManyField   一对一 一对一：一个表中的每条记录对应另一个表中的每条记录，使用OneToOneField建立关系。 例如：一个人对应一个身份证号，一个身份证号也对应一个人">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg">
+<meta property="article:published_time" content="2024-03-07T13:45:32.000Z">
+<meta property="article:modified_time" content="2024-05-27T14:42:20.010Z">
+<meta property="article:author" content="阿哲">
+<meta property="article:tag" content="Django">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="shortcut icon" href="/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="canonical" href="http://liuzhemax.github.io/2024/03/07/django%E5%A4%9A%E8%A1%A8%E6%93%8D%E4%BD%9C/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'django多表操作',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-05-27 22:42:20'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">10</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="阿哲技术之路"><img class="site-icon" src="/medias/%E6%90%AC%E7%A0%96.jpg"/><span class="site-name">阿哲技术之路</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">django多表操作</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-03-07T13:45:32.000Z" title="发表于 2024-03-07 21:45:32">2024-03-07</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-05-27T14:42:20.010Z" title="更新于 2024-05-27 22:42:20">2024-05-27</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Django/">Django</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="django多表操作"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h2 id="多表关系">多表关系</h2>
+<p>常见的数据模型关系有：</p>
+<ul>
+<li>
+<p>一对一(one-to-one)，OneToOneField</p>
+</li>
+<li>
+<p>一对多，多对一(one-to-many)，ForeignKey</p>
+</li>
+<li>
+<p>多对多（many-to-many），ManyToManyField</p>
+</li>
+</ul>
+<h2 id="一对一">一对一</h2>
+<p>一对一：一个表中的每条记录对应另一个表中的每条记录，使用OneToOneField建立关系。</p>
+<p>例如：一个人对应一个身份证号，一个身份证号也对应一个人</p>
+<p>应用场景：当一个表想扩展字段，最常用的方式就是在这个表添加一个对一关系</p>
+<h3 id="一对一：创建模型关系">一对一：创建模型关系</h3>
+<p>示例：定义一对一模型关系</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">User</span>(models.Model):</span><br><span class="line">    user = models.CharField(max_length=<span class="number">30</span>, verbose_name=<span class="string">&quot;用户名&quot;</span>)</span><br><span class="line">    name = models.CharField(max_length=<span class="number">30</span>, verbose_name=<span class="string">&quot;姓名&quot;</span>)</span><br><span class="line">    sex = models.CharField(max_length=<span class="number">30</span>, verbose_name=<span class="string">&quot;性别&quot;</span>)</span><br><span class="line">    age = models.IntegerField(verbose_name=<span class="string">&quot;年龄&quot;</span>)</span><br><span class="line">    label = models.CharField(max_length=<span class="number">100</span>, verbose_name=<span class="string">&quot;标签&quot;</span>)</span><br><span class="line"> <span class="keyword">class</span> <span class="title class_">IdCard</span>(models.Model):</span><br><span class="line">    number = models.CharField(max_length=<span class="number">20</span>, verbose_name=<span class="string">&quot;卡号&quot;</span>)</span><br><span class="line">    address = models.CharField(max_length=<span class="number">50</span>, default=<span class="string">&quot;北京&quot;</span>)</span><br><span class="line">    user = models.OneToOneField(User, on_delete=models.CASCADE)  <span class="comment"># 定义一对一的模型关系</span></span><br></pre></td></tr></table></figure>
+<h3 id="一对一：增删改查">一对一：增删改查</h3>
+<p>增：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">方式<span class="number">1</span>：</span><br><span class="line">user_obj = User.objects.create(user=<span class="string">&#x27;alan&#x27;</span>,name=<span class="string">&#x27;阿兰&#x27;</span>,sex=<span class="string">&#x27;女&#x27;</span>,age=<span class="string">&#x27;25&#x27;</span>,label=<span class="string">&quot;运营,漂亮,喜欢购物&quot;</span>)</span><br><span class="line">IdCard.objects.create(user=user_obj, number=<span class="string">&quot;456789&quot;</span>, address=<span class="string">&quot;北京&quot;</span>)</span><br><span class="line">方式<span class="number">2</span>：</span><br><span class="line">user = User()</span><br><span class="line">user.user=<span class="string">&#x27;xiaoming&#x27;</span></span><br><span class="line">user.name = <span class="string">&quot;阿兰&quot;</span></span><br><span class="line">user.sex = <span class="string">&#x27;女&#x27;</span></span><br><span class="line">user.age = <span class="number">25</span></span><br><span class="line">user.label = <span class="string">&quot;运营,漂亮,喜欢购物&quot;</span></span><br><span class="line">user.save()</span><br></pre></td></tr></table></figure>
+<p>向已有用户添加身份证信息：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">user_obj = User.objects.get(user=<span class="string">&quot;amei&quot;</span>)</span><br><span class="line">IdCard.objects.create(user=user_obj, </span><br><span class="line">number=<span class="string">&quot;123456789&quot;</span>, address=<span class="string">&quot;北京&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>查：</p>
+<p>反向查询：通过用户查到身份证信息（user-&gt;idcard）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">user = User.objects.get(user=<span class="string">&quot;amei&quot;</span>) </span><br><span class="line"><span class="built_in">print</span>(user.idcard.number)</span><br><span class="line"><span class="built_in">print</span>(user.idcard.address)</span><br></pre></td></tr></table></figure>
+<p>正向查询：从身份证表查用户（idcard-&gt;user）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">idcard = IdCard.objects.get(user_id=<span class="number">1</span>) </span><br><span class="line"><span class="built_in">print</span>(idcard.user.user)</span><br><span class="line"><span class="built_in">print</span>(idcard.user.name)</span><br></pre></td></tr></table></figure>
+<p>改：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">user_obj = </span><br><span class="line">User.objects.<span class="built_in">filter</span>(user=<span class="string">&quot;amei&quot;</span>).update(age=<span class="string">&quot;26&quot;</span>)</span><br><span class="line">user_obj = User.objects.get(user=<span class="string">&quot;amei&quot;</span>)</span><br><span class="line"><span class="comment"># 修改身份证信息</span></span><br><span class="line">user_obj.idcard.address=<span class="string">&quot;北京&quot;</span></span><br><span class="line">user_obj.idcard.save()</span><br><span class="line"><span class="comment"># 修改用户信息</span></span><br><span class="line">user_obj.age = <span class="number">24</span></span><br><span class="line">user_obj.save()</span><br></pre></td></tr></table></figure>
+<p>删：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">User.objects.<span class="built_in">filter</span>(user=<span class="string">&quot;alan&quot;</span>).delete()</span><br></pre></td></tr></table></figure>
+<h2 id="一对多">一对多</h2>
+<p>一对一是表与表之间的关系，而一对多、多对多是表与表中数据的关系</p>
+<p>一对多：A表中的某个记录对应B表中的多条记录，使用ForeignKey建立关系。</p>
+<p>例如：项目部署涉及表</p>
+<p>一对多：一个项目有多个应用，一个应用只能属于一个项目</p>
+<p>多对多：一个应用部署到多台服务器，一个服务器部署多个应用</p>
+<p><img src="/images/FA258B5EDEF8441DAEF0340F9B5A76CAclipboard.png" alt></p>
+<h3 id="一对多：创建模型关系">一对多：创建模型关系</h3>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Project</span>(models.Model):</span><br><span class="line">    name = models.CharField(max_length=<span class="number">30</span>)</span><br><span class="line">    describe = models.CharField(max_length=<span class="number">100</span>, null=<span class="literal">True</span>)</span><br><span class="line">    datetime = models.DateTimeField(auto_now_add=<span class="literal">True</span>)</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__str__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span>  self.name</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Meta</span>:</span><br><span class="line">        db_table = <span class="string">&#x27;project&#x27;</span></span><br><span class="line">        verbose_name_plural = <span class="string">&#x27;项目&#x27;</span></span><br><span class="line"> <span class="keyword">class</span> <span class="title class_">App</span>(models.Model):</span><br><span class="line">    name = models.CharField(max_length=<span class="number">30</span>)</span><br><span class="line">    describe = models.CharField(max_length=<span class="number">100</span>, null=<span class="literal">True</span>)</span><br><span class="line">    datetime = models.DateTimeField(auto_now_add=<span class="literal">True</span>)</span><br><span class="line">    project = models.ForeignKey(Project, on_delete=models.CASCADE) <span class="comment"># 定义一对多的模型关系</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__str__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span>  self.name</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Meta</span>:</span><br><span class="line">        db_table = <span class="string">&#x27;app&#x27;</span></span><br><span class="line">        verbose_name_plural = <span class="string">&#x27;应用&#x27;</span></span><br><span class="line"> <span class="keyword">class</span> <span class="title class_">Server</span>(models.Model):</span><br><span class="line">    hostname = models.CharField(max_length=<span class="number">30</span>)</span><br><span class="line">    ip = models.GenericIPAddressField()</span><br><span class="line">    describe = models.CharField(max_length=<span class="number">100</span>, null=<span class="literal">True</span>)</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__str__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span>  self.hostname</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Meta</span>:</span><br><span class="line">        db_table = <span class="string">&#x27;server&#x27;</span></span><br><span class="line">        verbose_name_plural = <span class="string">&#x27;服务器&#x27;</span></span><br></pre></td></tr></table></figure>
+<h3 id="一对多：增删改查">一对多：增删改查</h3>
+<p>向项目表添加已知的项目名称：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">Project.objects.create(name=<span class="string">&quot;电商项目&quot;</span>,describe=<span class="string">&quot;电商项目描述...&quot;</span>)</span><br><span class="line">Project.objects.create(name=<span class="string">&quot;在线教育项目&quot;</span>,describe=<span class="string">&quot;在线教育项目描述...&quot;</span>)</span><br><span class="line">Project.objects.create(name=<span class="string">&quot;大数据项目&quot;</span>,describe=<span class="string">&quot;大数据项目描述...&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>创建新应用并加入到项目中：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">project_obj = Project.objects.get(name=<span class="string">&quot;电商项目&quot;</span>)</span><br><span class="line">App.objects.create(name=<span class="string">&quot;product&quot;</span>,describe=<span class="string">&quot;商品服务&quot;</span>,project=project_obj) </span><br></pre></td></tr></table></figure>
+<p>注：操作模型类记得先导入 from myapp.models import Project,App</p>
+<p>正向查询：通过应用名称查询所属项目（app-&gt;project）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">查询某个应用所属项目：</span><br><span class="line">app = App.objects.get(name=<span class="string">&quot;product&quot;</span>)  <span class="comment"># 获取应用</span></span><br><span class="line">app.project.name   <span class="comment"># 根据获取的应用，查询对应项目名称</span></span><br><span class="line">查询所有应用所属项目：</span><br><span class="line">app_list = App.objects.<span class="built_in">all</span>()</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> app_list:</span><br><span class="line">    <span class="built_in">print</span>(i.name, i.project.name, i.project.describe)</span><br></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">release</span>(<span class="params">request</span>):</span><br><span class="line">    app = App.objects.<span class="built_in">all</span>()</span><br><span class="line">    <span class="keyword">return</span>  render(request, <span class="string">&quot;release.html&quot;</span>, &#123;<span class="string">&quot;app&quot;</span>:app&#125;)</span><br><span class="line">    </span><br><span class="line">&#123;% <span class="keyword">for</span> i <span class="keyword">in</span> app_list %&#125;</span><br><span class="line">    &#123;&#123; i.<span class="built_in">id</span> &#125;&#125;</span><br><span class="line">    &#123;&#123; i.name &#125;&#125;</span><br><span class="line">    &#123;&#123; i.describe &#125;&#125;</span><br><span class="line">    &#123;&#123; i.project_id &#125;&#125;</span><br><span class="line">    &#123;&#123; i.project.name &#125;&#125;</span><br><span class="line">&#123;% endfor %&#125;</span><br></pre></td></tr></table></figure>
+<p>反向查询：通过项目名称查询有哪些应用（project-&gt;app）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">查询某个项目有哪些应用：</span><br><span class="line">project = Project.objects.get(name=<span class="string">&quot;电商项目&quot;</span>) <span class="comment"># 获取项目</span></span><br><span class="line">project.app_set.<span class="built_in">all</span>()  <span class="comment"># 根据获取的项目，查询所有应用</span></span><br><span class="line"></span><br><span class="line">查询所有项目有哪些引用：</span><br><span class="line">project = Project.objects.<span class="built_in">all</span>()</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> project:</span><br><span class="line">    <span class="built_in">print</span>(i.name, i.app_set.<span class="built_in">all</span>())</span><br></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">app</span>(<span class="params">request</span>):</span><br><span class="line">    project_list = Project.objects.<span class="built_in">all</span>()</span><br><span class="line">    <span class="keyword">return</span> render(request, <span class="string">&quot;app.html&quot;</span>, &#123;<span class="string">&quot;project_list&quot;</span>: project_list&#125;)</span><br><span class="line">    </span><br><span class="line">&#123;% <span class="keyword">for</span> i <span class="keyword">in</span> project_list %&#125;</span><br><span class="line">    &#123;&#123; i &#125;&#125;</span><br><span class="line">    &#123;% <span class="keyword">for</span> x <span class="keyword">in</span> i.app_set.<span class="built_in">all</span> %&#125;</span><br><span class="line">        &#123;&#123; x &#125;&#125;</span><br><span class="line">    &#123;% endfor %&#125;</span><br><span class="line">&#123;% endfor %&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="多对多">多对多</h2>
+<p>多对多：A表中的某个记录对应B表中的多条记录，B表中的某个记录对应A表中多条记 录。使用ManyToManyField建立关系。</p>
+<p>例如：一个应用部署到多台服务器，一个服务器部署多个应用</p>
+<p><img src="/images/E140AF0A2CC44801BD9E13898998BD6Eclipboard.png" alt></p>
+<h3 id="多对多：创建模型关系">多对多：创建模型关系</h3>
+<p>示例：定义多对多模型关系</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Server</span>(models.Model):</span><br><span class="line">    hostname = models.CharField(max_length=<span class="number">30</span>)</span><br><span class="line">    ip = models.GenericIPAddressField()</span><br><span class="line">    describe = models.CharField(max_length=<span class="number">100</span>, null=<span class="literal">True</span>)</span><br><span class="line">    app = models.ManyToManyField(App)</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__str__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span>  self.hostname</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Meta</span>:</span><br><span class="line">        db_table = <span class="string">&#x27;server&#x27;</span></span><br><span class="line">        verbose_name_plural = <span class="string">&#x27;服务器&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>Django会自动创建一个表来管理多对多关系，称为中间表；这个中间表的名称使用多对多的 名称和包含这张表的模型的名称生成，也可以使用db_table选项指定这个中间表名称。</p>
+<p><img src="/images/690C2450EBED4E568216DB16BEA43EECclipboard.png" alt></p>
+<h3 id="多对多：增删改查">多对多：增删改查</h3>
+<p>添加服务器：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">Server.objects.create(hostname=<span class="string">&quot;ec-test1&quot;</span>, ip=<span class="string">&quot;192.168.1.10&quot;</span>, describe=<span class="string">&quot;电商项目测试服务器1&quot;</span>)</span><br><span class="line">Server.objects.create(hostname=<span class="string">&quot;ec-test2&quot;</span>, ip=<span class="string">&quot;192.168.1.11&quot;</span>, describe=<span class="string">&quot;电商项目测试服务器2&quot;</span>)</span><br><span class="line">Server.objects.create(hostname=<span class="string">&quot;bigdata-test1&quot;</span>, ip=<span class="string">&quot;192.168.1.11&quot;</span>, describe=<span class="string">&quot;大数据项目测试服务器1&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>部署一个应用到指定服务器：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">project_obj = Project.objects.get(name=<span class="string">&quot;电商项目&quot;</span>)</span><br><span class="line">app = App.objects.create(name=<span class="string">&quot;portal&quot;</span>,describe=<span class="string">&quot;前端服务&quot;</span>,project=project_obj)</span><br><span class="line">server = Server.objects.get(hostname=<span class="string">&quot;ec-test1&quot;</span>)</span><br><span class="line">server.app.add(app)  <span class="comment"># 将服务器关联到应用</span></span><br></pre></td></tr></table></figure>
+<p>正向查询：查询服务器部署了哪些应用（server-&gt;app）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">查询某台服务器部署了哪些应用：</span><br><span class="line">server = Server.objects.get(hostname=<span class="string">&quot;ec-test1&quot;</span>)</span><br><span class="line">server.app.<span class="built_in">all</span>()</span><br><span class="line">查询所有服务器部署了哪些应用：</span><br><span class="line">server_list = Server.objects.<span class="built_in">all</span>()</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> server_list:</span><br><span class="line">    <span class="built_in">print</span>(i.hostname, i.app.<span class="built_in">all</span>()) </span><br></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">server</span>(<span class="params">request</span>):</span><br><span class="line">    server_list = Server.objects.<span class="built_in">all</span>()</span><br><span class="line">    <span class="keyword">return</span> render(request, <span class="string">&quot;server.html&quot;</span>, &#123;<span class="string">&quot;server_list&quot;</span>: server_list&#125;)</span><br><span class="line">    </span><br><span class="line">&#123;% <span class="keyword">for</span> i <span class="keyword">in</span> server_list %&#125;</span><br><span class="line">    &#123;&#123; i &#125;&#125;</span><br><span class="line">    &#123;% <span class="keyword">for</span> x <span class="keyword">in</span> i.app.<span class="built_in">all</span> %&#125;</span><br><span class="line">    &#123;&#123; x.name &#125;&#125;</span><br><span class="line">    &#123;% endfor %&#125;</span><br><span class="line">&#123;% endfor %&#125;</span><br></pre></td></tr></table></figure>
+<p>反向查询：查看某个应用部署到哪些服务器，通过项目名称查询有哪些应用（app-&gt;server）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">查询某个应用部署到哪些服务器：</span><br><span class="line">app = App.objects.get(name=<span class="string">&quot;portal&quot;</span>)</span><br><span class="line">app.server_set.<span class="built_in">all</span>()</span><br><span class="line"></span><br><span class="line">查询所有应用部署到哪些服务器：</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> app_list:</span><br><span class="line">    <span class="built_in">print</span>(i.name, i.server_set.<span class="built_in">all</span>())</span><br></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">app_server</span>(<span class="params">request</span>):</span><br><span class="line">     app_list = App.objects.<span class="built_in">all</span>()</span><br><span class="line">     <span class="keyword">return</span> render(request, <span class="string">&quot;app.html&quot;</span>, &#123;<span class="string">&quot;app_list&quot;</span>: app_list&#125;)</span><br><span class="line">     </span><br><span class="line"> &#123;% <span class="keyword">for</span> i <span class="keyword">in</span> app_list %&#125;</span><br><span class="line">     &#123;&#123; i &#125;&#125;</span><br><span class="line">     &#123;% <span class="keyword">for</span> x <span class="keyword">in</span> i.server_set.<span class="built_in">all</span> %&#125;</span><br><span class="line">        &#123;&#123; x &#125;&#125;</span><br><span class="line">     &#123;% endfor %&#125;</span><br><span class="line"> &#123;% endfor %&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="多对多：中间表关系操作">多对多：中间表关系操作</h3>
+<p>增加：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">server = Server.objects.get(hostname=<span class="string">&quot;ec-test1&quot;</span>)  <span class="comment"># 获取已有的服务器</span></span><br><span class="line">server.app.add(<span class="number">3</span>)  <span class="comment"># 将应用id3关联该服务器</span></span><br><span class="line">server.app.add(<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>)  <span class="comment"># 将应用id1、2、3关联该服务器</span></span><br></pre></td></tr></table></figure>
+<p>删除：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">server.app.remove(<span class="number">3</span>) <span class="comment"># 将应用id3与该服务器取消关联</span></span><br></pre></td></tr></table></figure>
+<p>清空:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">server.app.clear() <span class="comment"># 将该服务器取消所有应用关联</span></span><br></pre></td></tr></table></figure>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io">阿哲</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io/2024/03/07/django%E5%A4%9A%E8%A1%A8%E6%93%8D%E4%BD%9C/">http://liuzhemax.github.io/2024/03/07/django%E5%A4%9A%E8%A1%A8%E6%93%8D%E4%BD%9C/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://liuzhemax.github.io" target="_blank">阿哲技术之路</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Django/">Django</a></div><div class="post_share"><div class="social-share" data-image="/medias/%E6%90%AC%E7%A0%96.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/03/06/django-orm%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8/" title="django-orm基本使用"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">django-orm基本使用</div></div></a></div><div class="next-post pull-right"><a href="/2024/03/08/django%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E7%B3%BB%E7%BB%9F/" title="django用户认证系统"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">django用户认证系统</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/03/10/django-csrf%E9%98%B2%E6%8A%A4/" title="django-csrf防护"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-03-10</div><div class="title">django-csrf防护</div></div></a></div><div><a href="/2024/03/06/django-orm%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8/" title="django-orm基本使用"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-03-06</div><div class="title">django-orm基本使用</div></div></a></div><div><a href="/2024/03/09/django-session%E7%AE%A1%E7%90%86/" title="django-session管理"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-03-09</div><div class="title">django-session管理</div></div></a></div><div><a href="/2024/03/02/django-url%E8%B7%AF%E7%94%B1%E7%B3%BB%E7%BB%9F/" title="django-url路由系统"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-03-02</div><div class="title">django-url路由系统</div></div></a></div><div><a href="/2024/03/01/django%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8/" title="django基本使用"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-03-01</div><div class="title">django基本使用</div></div></a></div><div><a href="/2024/03/04/django%E6%A8%A1%E6%9D%BF%E7%B3%BB%E7%BB%9F/" title="django模板系统"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-03-04</div><div class="title">django模板系统</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">阿哲</div><div class="author-info__description">强大自己是解决问题的唯一办法</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">106</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">10</div></a></div><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1437626743@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">分享个人经验总结</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%9A%E8%A1%A8%E5%85%B3%E7%B3%BB"><span class="toc-number">1.</span> <span class="toc-text">多表关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E5%AF%B9%E4%B8%80"><span class="toc-number">2.</span> <span class="toc-text">一对一</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E5%AF%B9%E4%B8%80%EF%BC%9A%E5%88%9B%E5%BB%BA%E6%A8%A1%E5%9E%8B%E5%85%B3%E7%B3%BB"><span class="toc-number">2.1.</span> <span class="toc-text">一对一：创建模型关系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E5%AF%B9%E4%B8%80%EF%BC%9A%E5%A2%9E%E5%88%A0%E6%94%B9%E6%9F%A5"><span class="toc-number">2.2.</span> <span class="toc-text">一对一：增删改查</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E5%AF%B9%E5%A4%9A"><span class="toc-number">3.</span> <span class="toc-text">一对多</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E5%AF%B9%E5%A4%9A%EF%BC%9A%E5%88%9B%E5%BB%BA%E6%A8%A1%E5%9E%8B%E5%85%B3%E7%B3%BB"><span class="toc-number">3.1.</span> <span class="toc-text">一对多：创建模型关系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E5%AF%B9%E5%A4%9A%EF%BC%9A%E5%A2%9E%E5%88%A0%E6%94%B9%E6%9F%A5"><span class="toc-number">3.2.</span> <span class="toc-text">一对多：增删改查</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%9A%E5%AF%B9%E5%A4%9A"><span class="toc-number">4.</span> <span class="toc-text">多对多</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E5%AF%B9%E5%A4%9A%EF%BC%9A%E5%88%9B%E5%BB%BA%E6%A8%A1%E5%9E%8B%E5%85%B3%E7%B3%BB"><span class="toc-number">4.1.</span> <span class="toc-text">多对多：创建模型关系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E5%AF%B9%E5%A4%9A%EF%BC%9A%E5%A2%9E%E5%88%A0%E6%94%B9%E6%9F%A5"><span class="toc-number">4.2.</span> <span class="toc-text">多对多：增删改查</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E5%AF%B9%E5%A4%9A%EF%BC%9A%E4%B8%AD%E9%97%B4%E8%A1%A8%E5%85%B3%E7%B3%BB%E6%93%8D%E4%BD%9C"><span class="toc-number">4.3.</span> <span class="toc-text">多对多：中间表关系操作</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/10/django-csrf%E9%98%B2%E6%8A%A4/" title="django-csrf防护">django-csrf防护</a><time datetime="2024-03-10T13:45:32.000Z" title="发表于 2024-03-10 21:45:32">2024-03-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/09/django-session%E7%AE%A1%E7%90%86/" title="django-session管理">django-session管理</a><time datetime="2024-03-09T13:45:32.000Z" title="发表于 2024-03-09 21:45:32">2024-03-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/08/django%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E7%B3%BB%E7%BB%9F/" title="django用户认证系统">django用户认证系统</a><time datetime="2024-03-08T13:45:32.000Z" title="发表于 2024-03-08 21:45:32">2024-03-08</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/07/django%E5%A4%9A%E8%A1%A8%E6%93%8D%E4%BD%9C/" title="django多表操作">django多表操作</a><time datetime="2024-03-07T13:45:32.000Z" title="发表于 2024-03-07 21:45:32">2024-03-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/06/django-orm%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8/" title="django-orm基本使用">django-orm基本使用</a><time datetime="2024-03-06T13:45:32.000Z" title="发表于 2024-03-06 21:45:32">2024-03-06</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="footer_custom_text">阿哲技术之路</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/dist/canvas-nest.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.13.0"></script></div></div></body></html>

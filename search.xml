@@ -513,6 +513,167 @@
       </tags>
   </entry>
   <entry>
+    <title>django-csrf防护</title>
+    <url>/2024/03/10/django-csrf%E9%98%B2%E6%8A%A4/</url>
+    <content><![CDATA[<h2 id="CSRF是什么">CSRF是什么</h2>
+<p>CSRF（Cross Site Request Forgery）：跨站请求伪造，实现的原 理是CSRF攻击者在用户已经登录目标网站之后，诱使用户访问一个攻 击页面，利用目标网站对用户的信任，以用户身份在攻击页面对目标网 站发起伪造用户操作的请求，达到攻击目的。</p>
+<p><img src="/images/6386C10278484770A5B4D8C0B2760792clipboard.png" alt></p>
+<h2 id="Django-CSRF工作原理">Django CSRF工作原理</h2>
+<p>Django怎么验证一个请求是不是CSRF？</p>
+<p>Django处理客户端请求时，会生成一个随机Token，放到响应内容一起返回，然后需要前端每次POST请求时带上这 个Token，可以放到POST数据里键为csrfmiddlewaretoken，或者放到请求头键为X-CSRFToken，Django从这两个 位置取，每次处理都会拦截验证，通过比对两者是否一致来判断这个请求是不是非法，非法就返回403状态码。</p>
+<h2 id="使用CSRF防护机制">使用CSRF防护机制</h2>
+<p>常见有三种方法可以携带CSRF Token发送给服务端：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line">- from表单添加&#123;% csrf_token %&#125;标签，表单会携带一同提交 </span><br><span class="line"></span><br><span class="line">- 如果你是Ajax请求，需要把csrf token字符串（也是通过拿&#123;% csrf_token %&#125;标签产生的值）放到data里一起提交， 并且键名为csrfmiddlewaretoken或者放到请求头传递服务端 </span><br><span class="line"></span><br><span class="line">- 指定取消某函数视图CSRF防护</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><img src="/images/3992633A619A4F61A077053659D3873Dclipboard.png" alt></p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line">方式1：</span><br><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">method</span>=<span class="string">&quot;post&quot;</span>&gt;</span></span><br><span class="line">    &#123;% csrf_token %&#125;</span><br><span class="line">    用户名: <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;text&quot;</span> <span class="attr">name</span>=<span class="string">&quot;username&quot;</span>&gt;</span><span class="tag">&lt;<span class="name">br</span>&gt;</span></span><br><span class="line">    密码: <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;text&quot;</span> <span class="attr">name</span>=<span class="string">&quot;password&quot;</span>&gt;</span><span class="tag">&lt;<span class="name">br</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">button</span> <span class="attr">type</span>=<span class="string">&quot;submit&quot;</span>&gt;</span>登录<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"> <span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line">方式2：</span><br><span class="line">var csrf_token = $(&quot;[name=&#x27;csrfmiddlewaretoken&#x27;]&quot;).val();</span><br><span class="line">var data = &#123;&#x27;id&#x27;: &#x27;123&#x27;, &#x27;csrfmiddlewaretoken&#x27;: csrf_token&#125;;</span><br><span class="line">$.ajax(&#123;</span><br><span class="line">    type: &quot;POST&quot;,</span><br><span class="line">    url: &quot;/api&quot;,</span><br><span class="line">    data: data,</span><br><span class="line">    dataType: &#x27;json&#x27;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">方式<span class="number">3</span>：</span><br><span class="line"><span class="keyword">from</span> django.views.decorators.csrf <span class="keyword">import</span> csrf_exempt</span><br><span class="line"><span class="meta">@csrf_exempt</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">return</span> render(request, <span class="string">&#x27;index.html&#x27;</span>)</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Django</category>
+      </categories>
+      <tags>
+        <tag>Django</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>django-orm基本使用</title>
+    <url>/2024/03/06/django-orm%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8/</url>
+    <content><![CDATA[<h2 id="了解静态网站与动态网站">了解静态网站与动态网站</h2>
+<p><img src="/images/94E5E1A185CA4402951D3F3F69679E09clipboard.png" alt></p>
+<p><img src="/images/0D2412B7A898421EAB246885BE8E6874clipboard.png" alt></p>
+<h2 id="ORM-是什么">ORM 是什么</h2>
+<p>对象关系映射（Object Relational Mapping，ORM）：是一种程序设计技术，用于实现面向对象编程语言 里不同类型系统的数据之间的转换。简单来说就是在编程语言中实现的一种虚拟对象数据库。我们对虚拟对象 数据库进行操作，它会转换成具体的SQL去操作数据库，这样一来我们就不需要学习复杂的SQL语句了。</p>
+<p>ORM优势：不必熟悉复杂的SQL语句，容易上手，避免新手写SQL效率问题。</p>
+<p><img src="/images/89AC71DE3AA7498BAA2C9EC2DC693BEEclipboard.png" alt></p>
+<h2 id="Model（模型类）">Model（模型类）</h2>
+<p>1、使用模型类定义一个User表，包含多字段</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># myapp/models.py</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">User</span>(models.Model):</span><br><span class="line">    user = models.CharField(max_length=<span class="number">30</span>) <span class="comment"># 用户名 </span></span><br><span class="line">    name = models.CharField(max_length=<span class="number">30</span>) <span class="comment"># 姓名 </span></span><br><span class="line">    sex = models.CharField(max_length=<span class="number">10</span>) <span class="comment"># 性别</span></span><br><span class="line">    age = models.IntegerField() <span class="comment"># 年龄 </span></span><br><span class="line">    label = models.CharField(max_length=<span class="number">100</span>) <span class="comment"># 标签</span></span><br></pre></td></tr></table></figure>
+<p>2、在settings.py配置文件中INSTALLED_APPS列表添加APP名称</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">INSTALLED_APPS = [ </span><br><span class="line">    <span class="comment">#... </span></span><br><span class="line">    <span class="string">&#x27;myapp&#x27;</span>, </span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<p>3、将模型类生成具体的数据库表</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 生成迁移文件 </span></span><br><span class="line">python manage.py makemigrations </span><br><span class="line"><span class="comment"># 执行迁移文件生成表 </span></span><br><span class="line">python mange.py migrate</span><br></pre></td></tr></table></figure>
+<p>4、进入数据库查看表</p>
+<p>生成表名的默认格式：应用名_模型类名小写</p>
+<h2 id="使用MySQL数据库">使用MySQL数据库</h2>
+<p>1、使用docker启动一个mysql实例</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">docker run -d \</span><br><span class="line">  --name db \</span><br><span class="line">  -p 3306:3306 \</span><br><span class="line">  -v mysqldata:/var/lib/mysql \</span><br><span class="line">  -e MYSQL_ROOT_PASSWORD=123456 \ </span><br><span class="line">  mysql:5.7 --character-set-server=utf8</span><br></pre></td></tr></table></figure>
+<p>2、使用pip工具安装pymysql模块</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">pip install pymysql</span><br></pre></td></tr></table></figure>
+<p>3、修改django默认连接数据库</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># devops/settings.py</span></span><br><span class="line">DATABASES = &#123; </span><br><span class="line">    <span class="string">&#x27;default&#x27;</span>: &#123; </span><br><span class="line">        <span class="string">&#x27;ENGINE&#x27;</span>: <span class="string">&#x27;django.db.backends.mysql&#x27;</span>, </span><br><span class="line">        <span class="string">&#x27;NAME&#x27;</span>: <span class="string">&#x27;test&#x27;</span>, </span><br><span class="line">        <span class="string">&#x27;USER&#x27;</span>: <span class="string">&#x27;root&#x27;</span>, </span><br><span class="line">        <span class="string">&#x27;PASSWORD&#x27;</span>: <span class="string">&#x27;123456&#x27;</span>, </span><br><span class="line">        <span class="string">&#x27;HOST&#x27;</span>: <span class="string">&#x27;192.168.1.11&#x27;</span>, </span><br><span class="line">        <span class="string">&#x27;PORT&#x27;</span>: <span class="string">&#x27;3306&#x27;</span>, </span><br><span class="line">    &#125; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>4、指定数据库驱动</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># myapp/__init__.py</span></span><br><span class="line"><span class="keyword">import</span> pymysql</span><br><span class="line">pymysql.install_as_MySQLdb()</span><br></pre></td></tr></table></figure>
+<p>5、执行迁移文件生成表</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">python mange.py migrate</span><br></pre></td></tr></table></figure>
+<h2 id="ORM增删改查">ORM增删改查</h2>
+<p>增：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> myapp.models <span class="keyword">import</span> User</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">user_add</span>(<span class="params">request</span>):</span><br><span class="line">    User.objects.create(</span><br><span class="line">    user=<span class="string">&#x27;zhangsan&#x27;</span>,</span><br><span class="line">    name=<span class="string">&#x27;张三&#x27;</span>,</span><br><span class="line">    sex=<span class="string">&#x27;男&#x27;</span>,</span><br><span class="line">    age=<span class="string">&#x27;30&#x27;</span>,</span><br><span class="line">    label=<span class="string">&quot;IT,讲师,老司机&quot;</span></span><br><span class="line">    )</span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;用户添加成功！&quot;</span>)</span><br><span class="line">    </span><br><span class="line">或者用save方法保存：</span><br><span class="line">obj = User(</span><br><span class="line">    user=user,</span><br><span class="line">    name=name,</span><br><span class="line">    sex=sex,</span><br><span class="line">    age=age,</span><br><span class="line">    label=label</span><br><span class="line">    )</span><br><span class="line">obj.save()</span><br></pre></td></tr></table></figure>
+<p>查：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">user_list</span>(<span class="params">request</span>):</span><br><span class="line">    user_list = User.objects.<span class="built_in">all</span>()</span><br><span class="line">    <span class="keyword">return</span> render(request, <span class="string">&quot;user.html&quot;</span>, &#123;<span class="string">&#x27;user_list&#x27;</span>: user_list&#125;)</span><br><span class="line">    </span><br><span class="line"><span class="comment"># 获取所有数据</span></span><br><span class="line">User.objects.<span class="built_in">all</span>() </span><br><span class="line"><span class="comment"># 加条件获取数据</span></span><br><span class="line">User.objects.<span class="built_in">filter</span>(user=<span class="string">&#x27;amei&#x27;</span>)</span><br><span class="line"><span class="comment"># 获取单条数据</span></span><br><span class="line">User.objects.<span class="built_in">filter</span>(age__gt=<span class="number">28</span>) </span><br><span class="line">User.objects.get(<span class="built_in">id</span>=<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+<p>改：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">User.objects.<span class="built_in">filter</span>(user=<span class="string">&#x27;amei&#x27;</span>).update(age=<span class="number">27</span>,label=<span class="string">&#x27;公关,漂亮,喜欢购物&#x27;</span>)</span><br><span class="line">或者</span><br><span class="line">obj = User.objects.get(user=<span class="string">&#x27;amei&#x27;</span>)</span><br><span class="line">obj.age = <span class="number">25</span></span><br><span class="line">obj.save()</span><br></pre></td></tr></table></figure>
+<p>删：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">User.objects.<span class="built_in">filter</span>(<span class="built_in">id</span>=<span class="number">3</span>).delete()</span><br><span class="line">或者 </span><br><span class="line">obj = User.objects.get(<span class="built_in">id</span>=<span class="number">2</span>) </span><br><span class="line">obj.delete()</span><br></pre></td></tr></table></figure>
+<h2 id="Django内置管理后台">Django内置管理后台</h2>
+<p>管理后台：一个网站一般都会开发一个后台系统，为管理员提供一种更简单的数据库操作方式。</p>
+<p><img src="/images/EED3F4410E1A4F96B8B175BE8ECBC129clipboard.png" alt></p>
+<p>1、访问URL</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.contrib <span class="keyword">import</span> admin <span class="comment"># 内建管理后台功能</span></span><br><span class="line"><span class="keyword">from</span> django.urls <span class="keyword">import</span> path</span><br><span class="line">urlpatterns = [</span><br><span class="line">     path(<span class="string">&#x27;admin/&#x27;</span>, admin.site.urls),  <span class="comment"># 内建管理后台访问地址</span></span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<p>2、创建管理员账号</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">python manage.py createsuperuser</span><br></pre></td></tr></table></figure>
+<p>3、注册模型</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># myapp/admin.py</span></span><br><span class="line"><span class="keyword">from</span> django.contrib <span class="keyword">import</span> admin</span><br><span class="line"><span class="keyword">from</span> myapp <span class="keyword">import</span> models</span><br><span class="line">admin.site.register(models.User) </span><br></pre></td></tr></table></figure>
+<p>4、设置语言和时区</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># devops/settings.py</span></span><br><span class="line">LANGUAGE_CODE = <span class="string">&#x27;zh-hans&#x27;</span></span><br><span class="line">TIME_ZONE = <span class="string">&#x27;Asia/Shanghai&#x27;</span></span><br><span class="line">USE_I18N = <span class="literal">True</span></span><br><span class="line">USE_L10N = <span class="literal">True</span></span><br><span class="line">USE_TZ = <span class="literal">False</span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/39F4D4BED2234603834981AC7915056Eclipboard.png" alt></p>
+<h2 id="模型中的Meta类与方法">模型中的Meta类与方法</h2>
+<p>Django模型类的Meta是一个内部类,它用于定义一些Django模型类的行为特性。</p>
+<p>以下是该常用属性：</p>
+<p><img src="/images/3E7993007F9F4BB5BB53916745C28751clipboard.png" alt></p>
+<p>示例：模型类Meta与方法使用</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">User</span>(models.Model):</span><br><span class="line">    user = models.CharField(max_length=<span class="number">30</span>)</span><br><span class="line">    name = models.CharField(max_length=<span class="number">30</span>)</span><br><span class="line">    sex = models.CharField(max_length=<span class="number">30</span>)</span><br><span class="line">    age = models.IntegerField()</span><br><span class="line">    label = models.CharField(max_length=<span class="number">100</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Meta</span>:</span><br><span class="line">        app_label = <span class="string">&quot;myapp&quot;</span>      <span class="comment"># 指定APP名称</span></span><br><span class="line">        db_table = <span class="string">&quot;myapp_user&quot;</span>  <span class="comment"># 自定义生成的表名</span></span><br><span class="line">        verbose_name = <span class="string">&quot;用户表&quot;</span>  <span class="comment"># 对象的可读名称</span></span><br><span class="line">        verbose_name_plural = <span class="string">&quot;用户表&quot;</span>    <span class="comment"># 名称复数形式</span></span><br><span class="line">        ordering = [<span class="string">&quot;sex&quot;</span>]       <span class="comment"># 对象的默认顺序，用于获取对象列表时</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__str__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span> self.name      <span class="comment"># 返回字段值</span></span><br></pre></td></tr></table></figure>
+<h2 id="模型类常用字段与选项">模型类常用字段与选项</h2>
+<p><img src="/images/39F2E7BC69F94D24A8035EA24A03A813clipboard.png" alt></p>
+<p><img src="/images/26C7AB78197542B2A11754111D6ABC5Cclipboard.png" alt></p>
+<h2 id="QuerySet对象序列化">QuerySet对象序列化</h2>
+<p>序列化：将Python对象转为传输的数据格式，例如json</p>
+<p>反序列化：将传输的数据格式转为Python对象</p>
+<p>ORM查询返回的是QuerySet对象，如果你要提供数据接口，这显然是不行的。</p>
+<p>有两种方法可以转为JSON字符串：</p>
+<ul>
+<li>
+<p>使用内建函数 serializers</p>
+</li>
+<li>
+<p>遍历QuerySet对象将字段拼接成字典，再通过json库编码</p>
+</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.core <span class="keyword">import</span> serializers</span><br><span class="line">obj = User.objects.<span class="built_in">all</span>()</span><br><span class="line">data = serializers.serialize(<span class="string">&#x27;json&#x27;</span>, obj)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> json</span><br><span class="line">obj = User.objects.<span class="built_in">all</span>()</span><br><span class="line">l = [] <span class="comment"># [&#123;&#125;,&#123;&#125;]</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> obj:</span><br><span class="line">    d = &#123;&#125;</span><br><span class="line">    d[<span class="string">&#x27;name&#x27;</span>] = i.name</span><br><span class="line">    d[<span class="string">&#x27;user&#x27;</span>] = i.user</span><br><span class="line">    d[<span class="string">&#x27;sex&#x27;</span>] = i.sex</span><br><span class="line">    d[<span class="string">&#x27;age&#x27;</span>] = i.age</span><br><span class="line">    d[<span class="string">&#x27;label&#x27;</span>] = i.label</span><br><span class="line">    l.append(d)</span><br><span class="line">json_data = json.dumps(l)</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Django</category>
+      </categories>
+      <tags>
+        <tag>Django</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>django-session管理</title>
+    <url>/2024/03/09/django-session%E7%AE%A1%E7%90%86/</url>
+    <content><![CDATA[<h2 id="Session与Cookie是什么">Session与Cookie是什么</h2>
+<p>就像你去电商平台购物一样，而网站采用是HTTP协议，它本身就是一个无状态的，是记不住你上次来做了什 么事，那怎么记住每个用户呢。 于是，服务器给每个用户贴了一个小纸条，上面记录了服务器给我们返回的一些信息。然后服务器看到这张 小纸条就知道我们是谁了。</p>
+<p>这个小纸条就是Cookie。那么Cookie怎么工作的呢？</p>
+<ol>
+<li>
+<p>浏览器第一次访问服务器时，服务器此时肯定不知道它的身份，所以创建一个独特的身份标识数据，格式 为key=value，放入到Set-Cookie字段里，随着响应报文发给浏览器。</p>
+</li>
+<li>
+<p>浏览器看到有Set-Cookie字段以后就知道这是服务器给的身份标识，于是就保存起来，下次请求时会自动 将此key=value值放入到Cookie字段中发给服务器。</p>
+</li>
+<li>
+<p>服务器收到请求报文后，发现Cookie字段中有值，就能根据此值识别用户的身份然后提供个性化的服务。</p>
+</li>
+</ol>
+<p><img src="/images/A58506BB21654F168E25E8CDD282D8BBclipboard.png" alt></p>
+<p>有了Cookie实现了有状态这一需求，那为什么又来一个Session呢？</p>
+<p>试想一下，如果将用户账户的一些信息都存入Cookie中的话，一旦信息被拦截，那么所有的账户信息都会可 能被泄露丢，这是不安全的。所以就出现了Session，在一次会话中将重要信息保存在Session中，浏览器只 记录SessionId一个SessionId对应一次会话请求。</p>
+<p><img src="/images/03FEC9F09E124736A7B565F47EA77B14clipboard.png" alt></p>
+<h2 id="Django使用Session">Django使用Session</h2>
+<p><img src="/images/D9F464FD6C3146F0B594B3F3A1D62825clipboard.png" alt></p>
+<p>在settings.py配置文件中设置客户端Cookie：</p>
+<p><img src="/images/2FEA9AB36A324D2D8A83687F9259DA4Cclipboard.png" alt></p>
+<p>在视图中操作Session：</p>
+<p><img src="/images/9D68E45CBCFF409799617704627C3AEDclipboard.png" alt></p>
+<h2 id="自己实现用户登录认证">自己实现用户登录认证</h2>
+<p>案例：自己实现登录认证机制</p>
+<ol>
+<li>
+<p>登录</p>
+</li>
+<li>
+<p>视图验证登录</p>
+</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> devops2.user_login <span class="keyword">import</span> login_decorator</span><br><span class="line"></span><br><span class="line"><span class="meta">@login_decorator  </span><span class="comment">#自定义认证登录装饰器</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">return</span> render(request,<span class="string">&#x27;index.html&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">login</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">if</span> request.method ==<span class="string">&#x27;GET&#x27;</span>:</span><br><span class="line">        <span class="keyword">return</span> render(request,<span class="string">&#x27;login.html&#x27;</span>)</span><br><span class="line">    <span class="keyword">elif</span> request.method == <span class="string">&#x27;POST&#x27;</span>:</span><br><span class="line">        username = request.POST.get(<span class="string">&#x27;username&#x27;</span>)</span><br><span class="line">        password = request.POST.get(<span class="string">&#x27;password&#x27;</span>)</span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        ###############内置认证机制################</span></span><br><span class="line"><span class="string">        #验证用户</span></span><br><span class="line"><span class="string">        user = auth.authenticate(username=username,password=password)  #验证通过返回用户名，否则返回None</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">        if user:</span></span><br><span class="line"><span class="string">            auth.login(request,user)  #将request与用户对象（包含session）传给login()函数</span></span><br><span class="line"><span class="string">            request.session[&#x27;username&#x27;] = username  #往session临时存储数据</span></span><br><span class="line"><span class="string">            return redirect(&#x27;/&#x27;)   #跳转到首页</span></span><br><span class="line"><span class="string">        else:</span></span><br><span class="line"><span class="string">            msg = &#x27;用户名或密码错误&#x27;</span></span><br><span class="line"><span class="string">            return render(request,&#x27;login.html&#x27;,&#123;&#x27;msg&#x27;:msg&#125;)</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        <span class="comment">#自定义用户认证</span></span><br><span class="line"></span><br><span class="line">        user_obj = User.objects.get(user=username)</span><br><span class="line">        <span class="keyword">if</span> user_obj.user:</span><br><span class="line">            <span class="keyword">if</span> user_obj.password == password:</span><br><span class="line">                request.session[<span class="string">&#x27;is_login&#x27;</span>] = <span class="literal">True</span></span><br><span class="line">                request.session[<span class="string">&#x27;username&#x27;</span>] = username</span><br><span class="line">                <span class="keyword">return</span> redirect(<span class="string">&#x27;/&#x27;</span>)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                msg = <span class="string">&#x27;用户名或密码错误!&#x27;</span></span><br><span class="line">                <span class="keyword">return</span> render(request, <span class="string">&#x27;login.html&#x27;</span>, &#123;<span class="string">&#x27;msg&#x27;</span>: msg&#125;)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            msg = <span class="string">&#x27;用户名或密码错误!&#x27;</span></span><br><span class="line">            <span class="keyword">return</span> render(request, <span class="string">&#x27;login.html&#x27;</span>, &#123;<span class="string">&#x27;msg&#x27;</span>: msg&#125;)</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>退出登录</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">logout</span>(<span class="params">request</span>):</span><br><span class="line">    auth.logout(request)</span><br><span class="line">    <span class="keyword">return</span> redirect(<span class="string">&#x27;/login&#x27;</span>)   <span class="comment">#跳转到登录页</span></span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>装饰器</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.shortcuts <span class="keyword">import</span> redirect</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">#登录装饰器</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">login_decorator</span>(<span class="params">func</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">inner</span>(<span class="params">request</span>):</span><br><span class="line">        is_login = request.session.get(<span class="string">&#x27;is_login&#x27;</span>,<span class="literal">False</span>)</span><br><span class="line">        <span class="keyword">if</span> is_login:</span><br><span class="line">            <span class="keyword">return</span> func(request)  <span class="comment">#执行原函数</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">return</span> redirect(<span class="string">&#x27;/login&#x27;</span>)</span><br><span class="line">    <span class="keyword">return</span> inner</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Django</category>
+      </categories>
+      <tags>
+        <tag>Django</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>django-url路由系统</title>
     <url>/2024/03/02/django-url%E8%B7%AF%E7%94%B1%E7%B3%BB%E7%BB%9F/</url>
     <content><![CDATA[<h2 id="URL路由系统是什么">URL路由系统是什么</h2>
@@ -608,6 +769,103 @@
       </tags>
   </entry>
   <entry>
+    <title>django多表操作</title>
+    <url>/2024/03/07/django%E5%A4%9A%E8%A1%A8%E6%93%8D%E4%BD%9C/</url>
+    <content><![CDATA[<h2 id="多表关系">多表关系</h2>
+<p>常见的数据模型关系有：</p>
+<ul>
+<li>
+<p>一对一(one-to-one)，OneToOneField</p>
+</li>
+<li>
+<p>一对多，多对一(one-to-many)，ForeignKey</p>
+</li>
+<li>
+<p>多对多（many-to-many），ManyToManyField</p>
+</li>
+</ul>
+<h2 id="一对一">一对一</h2>
+<p>一对一：一个表中的每条记录对应另一个表中的每条记录，使用OneToOneField建立关系。</p>
+<p>例如：一个人对应一个身份证号，一个身份证号也对应一个人</p>
+<p>应用场景：当一个表想扩展字段，最常用的方式就是在这个表添加一个对一关系</p>
+<h3 id="一对一：创建模型关系">一对一：创建模型关系</h3>
+<p>示例：定义一对一模型关系</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">User</span>(models.Model):</span><br><span class="line">    user = models.CharField(max_length=<span class="number">30</span>, verbose_name=<span class="string">&quot;用户名&quot;</span>)</span><br><span class="line">    name = models.CharField(max_length=<span class="number">30</span>, verbose_name=<span class="string">&quot;姓名&quot;</span>)</span><br><span class="line">    sex = models.CharField(max_length=<span class="number">30</span>, verbose_name=<span class="string">&quot;性别&quot;</span>)</span><br><span class="line">    age = models.IntegerField(verbose_name=<span class="string">&quot;年龄&quot;</span>)</span><br><span class="line">    label = models.CharField(max_length=<span class="number">100</span>, verbose_name=<span class="string">&quot;标签&quot;</span>)</span><br><span class="line"> <span class="keyword">class</span> <span class="title class_">IdCard</span>(models.Model):</span><br><span class="line">    number = models.CharField(max_length=<span class="number">20</span>, verbose_name=<span class="string">&quot;卡号&quot;</span>)</span><br><span class="line">    address = models.CharField(max_length=<span class="number">50</span>, default=<span class="string">&quot;北京&quot;</span>)</span><br><span class="line">    user = models.OneToOneField(User, on_delete=models.CASCADE)  <span class="comment"># 定义一对一的模型关系</span></span><br></pre></td></tr></table></figure>
+<h3 id="一对一：增删改查">一对一：增删改查</h3>
+<p>增：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">方式<span class="number">1</span>：</span><br><span class="line">user_obj = User.objects.create(user=<span class="string">&#x27;alan&#x27;</span>,name=<span class="string">&#x27;阿兰&#x27;</span>,sex=<span class="string">&#x27;女&#x27;</span>,age=<span class="string">&#x27;25&#x27;</span>,label=<span class="string">&quot;运营,漂亮,喜欢购物&quot;</span>)</span><br><span class="line">IdCard.objects.create(user=user_obj, number=<span class="string">&quot;456789&quot;</span>, address=<span class="string">&quot;北京&quot;</span>)</span><br><span class="line">方式<span class="number">2</span>：</span><br><span class="line">user = User()</span><br><span class="line">user.user=<span class="string">&#x27;xiaoming&#x27;</span></span><br><span class="line">user.name = <span class="string">&quot;阿兰&quot;</span></span><br><span class="line">user.sex = <span class="string">&#x27;女&#x27;</span></span><br><span class="line">user.age = <span class="number">25</span></span><br><span class="line">user.label = <span class="string">&quot;运营,漂亮,喜欢购物&quot;</span></span><br><span class="line">user.save()</span><br></pre></td></tr></table></figure>
+<p>向已有用户添加身份证信息：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">user_obj = User.objects.get(user=<span class="string">&quot;amei&quot;</span>)</span><br><span class="line">IdCard.objects.create(user=user_obj, </span><br><span class="line">number=<span class="string">&quot;123456789&quot;</span>, address=<span class="string">&quot;北京&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>查：</p>
+<p>反向查询：通过用户查到身份证信息（user-&gt;idcard）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">user = User.objects.get(user=<span class="string">&quot;amei&quot;</span>) </span><br><span class="line"><span class="built_in">print</span>(user.idcard.number)</span><br><span class="line"><span class="built_in">print</span>(user.idcard.address)</span><br></pre></td></tr></table></figure>
+<p>正向查询：从身份证表查用户（idcard-&gt;user）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">idcard = IdCard.objects.get(user_id=<span class="number">1</span>) </span><br><span class="line"><span class="built_in">print</span>(idcard.user.user)</span><br><span class="line"><span class="built_in">print</span>(idcard.user.name)</span><br></pre></td></tr></table></figure>
+<p>改：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">user_obj = </span><br><span class="line">User.objects.<span class="built_in">filter</span>(user=<span class="string">&quot;amei&quot;</span>).update(age=<span class="string">&quot;26&quot;</span>)</span><br><span class="line">user_obj = User.objects.get(user=<span class="string">&quot;amei&quot;</span>)</span><br><span class="line"><span class="comment"># 修改身份证信息</span></span><br><span class="line">user_obj.idcard.address=<span class="string">&quot;北京&quot;</span></span><br><span class="line">user_obj.idcard.save()</span><br><span class="line"><span class="comment"># 修改用户信息</span></span><br><span class="line">user_obj.age = <span class="number">24</span></span><br><span class="line">user_obj.save()</span><br></pre></td></tr></table></figure>
+<p>删：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">User.objects.<span class="built_in">filter</span>(user=<span class="string">&quot;alan&quot;</span>).delete()</span><br></pre></td></tr></table></figure>
+<h2 id="一对多">一对多</h2>
+<p>一对一是表与表之间的关系，而一对多、多对多是表与表中数据的关系</p>
+<p>一对多：A表中的某个记录对应B表中的多条记录，使用ForeignKey建立关系。</p>
+<p>例如：项目部署涉及表</p>
+<p>一对多：一个项目有多个应用，一个应用只能属于一个项目</p>
+<p>多对多：一个应用部署到多台服务器，一个服务器部署多个应用</p>
+<p><img src="/images/FA258B5EDEF8441DAEF0340F9B5A76CAclipboard.png" alt></p>
+<h3 id="一对多：创建模型关系">一对多：创建模型关系</h3>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Project</span>(models.Model):</span><br><span class="line">    name = models.CharField(max_length=<span class="number">30</span>)</span><br><span class="line">    describe = models.CharField(max_length=<span class="number">100</span>, null=<span class="literal">True</span>)</span><br><span class="line">    datetime = models.DateTimeField(auto_now_add=<span class="literal">True</span>)</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__str__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span>  self.name</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Meta</span>:</span><br><span class="line">        db_table = <span class="string">&#x27;project&#x27;</span></span><br><span class="line">        verbose_name_plural = <span class="string">&#x27;项目&#x27;</span></span><br><span class="line"> <span class="keyword">class</span> <span class="title class_">App</span>(models.Model):</span><br><span class="line">    name = models.CharField(max_length=<span class="number">30</span>)</span><br><span class="line">    describe = models.CharField(max_length=<span class="number">100</span>, null=<span class="literal">True</span>)</span><br><span class="line">    datetime = models.DateTimeField(auto_now_add=<span class="literal">True</span>)</span><br><span class="line">    project = models.ForeignKey(Project, on_delete=models.CASCADE) <span class="comment"># 定义一对多的模型关系</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__str__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span>  self.name</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Meta</span>:</span><br><span class="line">        db_table = <span class="string">&#x27;app&#x27;</span></span><br><span class="line">        verbose_name_plural = <span class="string">&#x27;应用&#x27;</span></span><br><span class="line"> <span class="keyword">class</span> <span class="title class_">Server</span>(models.Model):</span><br><span class="line">    hostname = models.CharField(max_length=<span class="number">30</span>)</span><br><span class="line">    ip = models.GenericIPAddressField()</span><br><span class="line">    describe = models.CharField(max_length=<span class="number">100</span>, null=<span class="literal">True</span>)</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__str__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span>  self.hostname</span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Meta</span>:</span><br><span class="line">        db_table = <span class="string">&#x27;server&#x27;</span></span><br><span class="line">        verbose_name_plural = <span class="string">&#x27;服务器&#x27;</span></span><br></pre></td></tr></table></figure>
+<h3 id="一对多：增删改查">一对多：增删改查</h3>
+<p>向项目表添加已知的项目名称：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">Project.objects.create(name=<span class="string">&quot;电商项目&quot;</span>,describe=<span class="string">&quot;电商项目描述...&quot;</span>)</span><br><span class="line">Project.objects.create(name=<span class="string">&quot;在线教育项目&quot;</span>,describe=<span class="string">&quot;在线教育项目描述...&quot;</span>)</span><br><span class="line">Project.objects.create(name=<span class="string">&quot;大数据项目&quot;</span>,describe=<span class="string">&quot;大数据项目描述...&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>创建新应用并加入到项目中：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">project_obj = Project.objects.get(name=<span class="string">&quot;电商项目&quot;</span>)</span><br><span class="line">App.objects.create(name=<span class="string">&quot;product&quot;</span>,describe=<span class="string">&quot;商品服务&quot;</span>,project=project_obj) </span><br></pre></td></tr></table></figure>
+<p>注：操作模型类记得先导入 from myapp.models import Project,App</p>
+<p>正向查询：通过应用名称查询所属项目（app-&gt;project）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">查询某个应用所属项目：</span><br><span class="line">app = App.objects.get(name=<span class="string">&quot;product&quot;</span>)  <span class="comment"># 获取应用</span></span><br><span class="line">app.project.name   <span class="comment"># 根据获取的应用，查询对应项目名称</span></span><br><span class="line">查询所有应用所属项目：</span><br><span class="line">app_list = App.objects.<span class="built_in">all</span>()</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> app_list:</span><br><span class="line">    <span class="built_in">print</span>(i.name, i.project.name, i.project.describe)</span><br></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">release</span>(<span class="params">request</span>):</span><br><span class="line">    app = App.objects.<span class="built_in">all</span>()</span><br><span class="line">    <span class="keyword">return</span>  render(request, <span class="string">&quot;release.html&quot;</span>, &#123;<span class="string">&quot;app&quot;</span>:app&#125;)</span><br><span class="line">    </span><br><span class="line">&#123;% <span class="keyword">for</span> i <span class="keyword">in</span> app_list %&#125;</span><br><span class="line">    &#123;&#123; i.<span class="built_in">id</span> &#125;&#125;</span><br><span class="line">    &#123;&#123; i.name &#125;&#125;</span><br><span class="line">    &#123;&#123; i.describe &#125;&#125;</span><br><span class="line">    &#123;&#123; i.project_id &#125;&#125;</span><br><span class="line">    &#123;&#123; i.project.name &#125;&#125;</span><br><span class="line">&#123;% endfor %&#125;</span><br></pre></td></tr></table></figure>
+<p>反向查询：通过项目名称查询有哪些应用（project-&gt;app）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">查询某个项目有哪些应用：</span><br><span class="line">project = Project.objects.get(name=<span class="string">&quot;电商项目&quot;</span>) <span class="comment"># 获取项目</span></span><br><span class="line">project.app_set.<span class="built_in">all</span>()  <span class="comment"># 根据获取的项目，查询所有应用</span></span><br><span class="line"></span><br><span class="line">查询所有项目有哪些引用：</span><br><span class="line">project = Project.objects.<span class="built_in">all</span>()</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> project:</span><br><span class="line">    <span class="built_in">print</span>(i.name, i.app_set.<span class="built_in">all</span>())</span><br></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">app</span>(<span class="params">request</span>):</span><br><span class="line">    project_list = Project.objects.<span class="built_in">all</span>()</span><br><span class="line">    <span class="keyword">return</span> render(request, <span class="string">&quot;app.html&quot;</span>, &#123;<span class="string">&quot;project_list&quot;</span>: project_list&#125;)</span><br><span class="line">    </span><br><span class="line">&#123;% <span class="keyword">for</span> i <span class="keyword">in</span> project_list %&#125;</span><br><span class="line">    &#123;&#123; i &#125;&#125;</span><br><span class="line">    &#123;% <span class="keyword">for</span> x <span class="keyword">in</span> i.app_set.<span class="built_in">all</span> %&#125;</span><br><span class="line">        &#123;&#123; x &#125;&#125;</span><br><span class="line">    &#123;% endfor %&#125;</span><br><span class="line">&#123;% endfor %&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="多对多">多对多</h2>
+<p>多对多：A表中的某个记录对应B表中的多条记录，B表中的某个记录对应A表中多条记 录。使用ManyToManyField建立关系。</p>
+<p>例如：一个应用部署到多台服务器，一个服务器部署多个应用</p>
+<p><img src="/images/E140AF0A2CC44801BD9E13898998BD6Eclipboard.png" alt></p>
+<h3 id="多对多：创建模型关系">多对多：创建模型关系</h3>
+<p>示例：定义多对多模型关系</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Server</span>(models.Model):</span><br><span class="line">    hostname = models.CharField(max_length=<span class="number">30</span>)</span><br><span class="line">    ip = models.GenericIPAddressField()</span><br><span class="line">    describe = models.CharField(max_length=<span class="number">100</span>, null=<span class="literal">True</span>)</span><br><span class="line">    app = models.ManyToManyField(App)</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__str__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span>  self.hostname</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">class</span> <span class="title class_">Meta</span>:</span><br><span class="line">        db_table = <span class="string">&#x27;server&#x27;</span></span><br><span class="line">        verbose_name_plural = <span class="string">&#x27;服务器&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>Django会自动创建一个表来管理多对多关系，称为中间表；这个中间表的名称使用多对多的 名称和包含这张表的模型的名称生成，也可以使用db_table选项指定这个中间表名称。</p>
+<p><img src="/images/690C2450EBED4E568216DB16BEA43EECclipboard.png" alt></p>
+<h3 id="多对多：增删改查">多对多：增删改查</h3>
+<p>添加服务器：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">Server.objects.create(hostname=<span class="string">&quot;ec-test1&quot;</span>, ip=<span class="string">&quot;192.168.1.10&quot;</span>, describe=<span class="string">&quot;电商项目测试服务器1&quot;</span>)</span><br><span class="line">Server.objects.create(hostname=<span class="string">&quot;ec-test2&quot;</span>, ip=<span class="string">&quot;192.168.1.11&quot;</span>, describe=<span class="string">&quot;电商项目测试服务器2&quot;</span>)</span><br><span class="line">Server.objects.create(hostname=<span class="string">&quot;bigdata-test1&quot;</span>, ip=<span class="string">&quot;192.168.1.11&quot;</span>, describe=<span class="string">&quot;大数据项目测试服务器1&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>部署一个应用到指定服务器：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">project_obj = Project.objects.get(name=<span class="string">&quot;电商项目&quot;</span>)</span><br><span class="line">app = App.objects.create(name=<span class="string">&quot;portal&quot;</span>,describe=<span class="string">&quot;前端服务&quot;</span>,project=project_obj)</span><br><span class="line">server = Server.objects.get(hostname=<span class="string">&quot;ec-test1&quot;</span>)</span><br><span class="line">server.app.add(app)  <span class="comment"># 将服务器关联到应用</span></span><br></pre></td></tr></table></figure>
+<p>正向查询：查询服务器部署了哪些应用（server-&gt;app）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">查询某台服务器部署了哪些应用：</span><br><span class="line">server = Server.objects.get(hostname=<span class="string">&quot;ec-test1&quot;</span>)</span><br><span class="line">server.app.<span class="built_in">all</span>()</span><br><span class="line">查询所有服务器部署了哪些应用：</span><br><span class="line">server_list = Server.objects.<span class="built_in">all</span>()</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> server_list:</span><br><span class="line">    <span class="built_in">print</span>(i.hostname, i.app.<span class="built_in">all</span>()) </span><br></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">server</span>(<span class="params">request</span>):</span><br><span class="line">    server_list = Server.objects.<span class="built_in">all</span>()</span><br><span class="line">    <span class="keyword">return</span> render(request, <span class="string">&quot;server.html&quot;</span>, &#123;<span class="string">&quot;server_list&quot;</span>: server_list&#125;)</span><br><span class="line">    </span><br><span class="line">&#123;% <span class="keyword">for</span> i <span class="keyword">in</span> server_list %&#125;</span><br><span class="line">    &#123;&#123; i &#125;&#125;</span><br><span class="line">    &#123;% <span class="keyword">for</span> x <span class="keyword">in</span> i.app.<span class="built_in">all</span> %&#125;</span><br><span class="line">    &#123;&#123; x.name &#125;&#125;</span><br><span class="line">    &#123;% endfor %&#125;</span><br><span class="line">&#123;% endfor %&#125;</span><br></pre></td></tr></table></figure>
+<p>反向查询：查看某个应用部署到哪些服务器，通过项目名称查询有哪些应用（app-&gt;server）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">查询某个应用部署到哪些服务器：</span><br><span class="line">app = App.objects.get(name=<span class="string">&quot;portal&quot;</span>)</span><br><span class="line">app.server_set.<span class="built_in">all</span>()</span><br><span class="line"></span><br><span class="line">查询所有应用部署到哪些服务器：</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> app_list:</span><br><span class="line">    <span class="built_in">print</span>(i.name, i.server_set.<span class="built_in">all</span>())</span><br></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">app_server</span>(<span class="params">request</span>):</span><br><span class="line">     app_list = App.objects.<span class="built_in">all</span>()</span><br><span class="line">     <span class="keyword">return</span> render(request, <span class="string">&quot;app.html&quot;</span>, &#123;<span class="string">&quot;app_list&quot;</span>: app_list&#125;)</span><br><span class="line">     </span><br><span class="line"> &#123;% <span class="keyword">for</span> i <span class="keyword">in</span> app_list %&#125;</span><br><span class="line">     &#123;&#123; i &#125;&#125;</span><br><span class="line">     &#123;% <span class="keyword">for</span> x <span class="keyword">in</span> i.server_set.<span class="built_in">all</span> %&#125;</span><br><span class="line">        &#123;&#123; x &#125;&#125;</span><br><span class="line">     &#123;% endfor %&#125;</span><br><span class="line"> &#123;% endfor %&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="多对多：中间表关系操作">多对多：中间表关系操作</h3>
+<p>增加：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">server = Server.objects.get(hostname=<span class="string">&quot;ec-test1&quot;</span>)  <span class="comment"># 获取已有的服务器</span></span><br><span class="line">server.app.add(<span class="number">3</span>)  <span class="comment"># 将应用id3关联该服务器</span></span><br><span class="line">server.app.add(<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>)  <span class="comment"># 将应用id1、2、3关联该服务器</span></span><br></pre></td></tr></table></figure>
+<p>删除：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">server.app.remove(<span class="number">3</span>) <span class="comment"># 将应用id3与该服务器取消关联</span></span><br></pre></td></tr></table></figure>
+<p>清空:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">server.app.clear() <span class="comment"># 将该服务器取消所有应用关联</span></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Django</category>
+      </categories>
+      <tags>
+        <tag>Django</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>django模板系统</title>
     <url>/2024/03/04/django%E6%A8%A1%E6%9D%BF%E7%B3%BB%E7%BB%9F/</url>
     <content><![CDATA[<h2 id="模板是什么">模板是什么</h2>
@@ -667,6 +925,62 @@
 <p>注：STATICFILES_DIRS告诉Django哪个目录是“静态文件的文件夹”</p>
 <p>2、在模板文件引用静态文件</p>
 <figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">&quot;stylesheet&quot;</span> <span class="attr">href</span>=<span class="string">&quot;/static/main.css&quot;</span>&gt;</span></span><br><span class="line">或者 </span><br><span class="line">&#123;% load static %&#125; # 在模板文件开头</span><br><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">&quot;stylesheet&quot;</span> <span class="attr">href</span>=<span class="string">&quot;&#123;% static &#x27;main.css&#x27; %&#125;&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Django</category>
+      </categories>
+      <tags>
+        <tag>Django</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>django用户认证系统</title>
+    <url>/2024/03/08/django%E7%94%A8%E6%88%B7%E8%AE%A4%E8%AF%81%E7%B3%BB%E7%BB%9F/</url>
+    <content><![CDATA[<h2 id="内置用户认证系统">内置用户认证系统</h2>
+<p>Django内置一个用户认证系统，使用auth模块实现。 auth模块提供了登录、注册、效验、修改密码、注销、验证用户是否登录等功能。</p>
+<p><img src="/images/1EC11F41D7A7453EAA9DF261FF30CC98clipboard.png" alt></p>
+<p>Django默认创建的数据库表：</p>
+<ul>
+<li>
+<p>auth_user ：用户表</p>
+</li>
+<li>
+<p>auth_user_groups ：用户所属组的表</p>
+</li>
+<li>
+<p>auth_user_user_permissions ：用户权限表</p>
+</li>
+<li>
+<p>auth_group ：用户组表</p>
+</li>
+<li>
+<p>auth_group_permissions ：用户组权限表</p>
+</li>
+<li>
+<p>auth_permission ：存放全部权限的表，其他的表的权限都是从此表中外键连接过去的</p>
+</li>
+<li>
+<p>django_session ：保存HTTP状态</p>
+</li>
+<li>
+<p>django_migrations ：数据库迁移记录</p>
+</li>
+</ul>
+<h2 id="auth模块使用">auth模块使用</h2>
+<h3 id="auth模块：login">auth模块：login()</h3>
+<p>示例：登录认证</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.contrib <span class="keyword">import</span> auth</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">login</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">if</span> reqeust.method == <span class="string">&#x27;GET&#x27;</span>:</span><br><span class="line">        <span class="keyword">return</span> render(request, <span class="string">&#x27;login.html&#x27;</span>)</span><br><span class="line">    <span class="keyword">if</span> request.method == <span class="string">&#x27;POST&#x27;</span>:</span><br><span class="line">        username = request.POST.get(<span class="string">&#x27;username&#x27;</span>)</span><br><span class="line">        password = request.POST.get(<span class="string">&#x27;password&#x27;</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 1. 对用户数据验证</span></span><br><span class="line">        user = auth.authenticate(username=username, password=password)</span><br><span class="line">        <span class="comment"># 如果效验成功，返回一个用户对象，否则返回一个None</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> user:</span><br><span class="line">            <span class="comment"># 2. 验证通过后，将request与用户对象（包含session）传给login()函数</span></span><br><span class="line">            auth.login(request, user)</span><br><span class="line">            <span class="comment"># 3. 跳转到首页</span></span><br><span class="line">            <span class="keyword">return</span> redirect(<span class="string">&quot;/&quot;</span>)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            msg = <span class="string">&quot;用户名或密码错误！&quot;</span></span><br><span class="line">            <span class="keyword">return</span> render(request, <span class="string">&#x27;login.html&#x27;</span>,&#123;<span class="string">&#x27;msg&#x27;</span>: msg&#125;)</span><br></pre></td></tr></table></figure>
+<p>登录表单：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">form</span> <span class="attr">method</span>=<span class="string">&quot;post&quot;</span>&gt;</span></span><br><span class="line">    用户名: <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;text&quot;</span> <span class="attr">name</span>=<span class="string">&quot;username&quot;</span>&gt;</span><span class="tag">&lt;<span class="name">br</span>&gt;</span></span><br><span class="line">    密码: <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;text&quot;</span> <span class="attr">name</span>=<span class="string">&quot;password&quot;</span>&gt;</span><span class="tag">&lt;<span class="name">br</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">button</span> <span class="attr">type</span>=<span class="string">&quot;submit&quot;</span>&gt;</span>登录<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">span</span> <span class="attr">style</span>=<span class="string">&quot;color: red&quot;</span>&gt;</span>&#123;&#123; msg &#125;&#125;<span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br><span class="line"> <span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="auth模块：logout">auth模块：logout()</h3>
+<p>示例：退出登录</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.contrib.auth <span class="keyword">import</span> login,logout</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">logout</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="comment"># 清除当前用户的session信息</span></span><br><span class="line">    auth.logout(request)</span><br><span class="line">    <span class="keyword">return</span> redirect(<span class="string">&#x27;/login&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="auth模块：login-required装饰器">auth模块：login_required装饰器</h3>
+<p>login_required装饰器：判断用户是否登录，如果没有登录引导至登录页面，登录 成功后跳转到目的页面。</p>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.contrib.auth.decorators <span class="keyword">import</span> login_required</span><br><span class="line"><span class="meta">@login_required()</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">return</span> render(request, <span class="string">&#x27;index.html&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p>在settings.py文件设置没有登录默认跳转页面：</p>
+<p>LOGIN_URL = ‘/login/’</p>
 ]]></content>
       <categories>
         <category>Django</category>
@@ -958,66 +1272,6 @@
       </tags>
   </entry>
   <entry>
-    <title>es集群部署搭建</title>
-    <url>/2021/07/01/es%E9%9B%86%E7%BE%A4%E9%83%A8%E7%BD%B2%E6%90%AD%E5%BB%BA/</url>
-    <content><![CDATA[<p>需求背景：</p>
-<p>• 业务发展越来越庞大，服务器越来越多</p>
-<p>• 各种访问日志、应用日志、错误日志量越来越多</p>
-<p>• 开发人员排查问题，需要到服务器上查日志，效率低、权限不好控制</p>
-<p>• 运维需实时关注业务访问情况</p>
-<p>ELK 介绍</p>
-<p>ELK 是三个开源软件的缩写，提供一套完整的企业级日志平台解决方案。</p>
-<p>分别是：</p>
-<p>• Elasticsearch：搜索、分析和存储数据</p>
-<p>• Logstash ：采集日志、格式化、过滤，最后将数据推送到Elasticsearch存储</p>
-<p>• Kibana：数据可视化</p>
-<p>• Beats ：集合了多种单一用途数据采集器，用于实现从边缘机器向 Logstash 和 Elasticsearch 发送数据。里面应用最多的是Filebeat，是一个轻量级日志采集器。</p>
-<p>ELK 架构</p>
-<p><img src="/images/309B516B5F4845EEA1276D3F81723F92clipboard.png" alt></p>
-<p>Elasticsearch</p>
-<p>Elasticsearch（简称ES）是一个分布式、RESTful 风格的搜索和数据分析引擎， 用于集中存储日志数据。</p>
-<p>Elasticsearch术语：</p>
-<p>• Index：索引是多个文档的集合</p>
-<p>• Document：Index里每条记录称为Document，若干文档构建一个Index</p>
-<p>• Type：一个Index可以定义一种或多种类型，将Document逻辑分组</p>
-<p>• Field：ES存储的最小单元</p>
-<p><img src="/images/925765D488F24475BB04C6B3469D54CEclipboard.png" alt></p>
-<p>ES 部署</p>
-<p>下载地址：<a href="https://www.elastic.co/cn/downloads/elasticsearch">https://www.elastic.co/cn/downloads/elasticsearch</a></p>
-<p>支持多种部署方式：</p>
-<p>• 二进制包    • yum      • rpm     • docker</p>
-<p>二进制部署（集群方式安装，3台节点一样）：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> /opt/elk</span><br><span class="line">tar -zxf elasticsearch-7.9.3-linux-x86_64.tar.gz </span><br><span class="line"><span class="built_in">mv</span> elasticsearch-7.9.3-linux-x86_64.tar.gz  /opt/elk/elasticsearch</span><br><span class="line">useradd es <span class="comment"># 出于安全考虑，默认不能用root账号启动 </span></span><br><span class="line"><span class="built_in">chown</span> -R es:es elasticsearch</span><br><span class="line"></span><br><span class="line">启动先决条件： </span><br><span class="line">• 调整进程最大打开文件数数量 </span><br><span class="line"><span class="comment"># 临时设置 ulimit -n 65535 </span></span><br><span class="line"><span class="comment"># 永久设置，重启生效 vi /etc/security/limits.conf </span></span><br><span class="line">* hard nofile 65535 </span><br><span class="line">* soft nofile 65535</span><br><span class="line"></span><br><span class="line">• 调整进程最大虚拟内存区域数量 </span><br><span class="line"><span class="comment"># 临时设置 sysctl -w vm.max_map_count=262144 </span></span><br><span class="line"><span class="comment"># 永久设置 echo &quot;vm.max_map_count=262144&quot; &gt;&gt; /etc/sysctl.conf </span></span><br><span class="line">sysctl -p</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>修改配置文件（集群方式）</p>
-<p>节点1:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># vim config/elasticsearch.yml </span></span><br><span class="line">cluster.name: elk-cluster <span class="comment"># 集群名称 </span></span><br><span class="line">node.name: node-1 <span class="comment"># 集群节点名称 </span></span><br><span class="line"><span class="comment">#path.data: /path/to/data # 数据目录 </span></span><br><span class="line"><span class="comment">#path.logs: /path/to/logs # 日志目录 </span></span><br><span class="line">network.host: 0.0.0.0 <span class="comment"># 监听地址 </span></span><br><span class="line">http.port: 9200 <span class="comment"># 监听端口 </span></span><br><span class="line"><span class="comment"># transport.tcp.port: 9300 #内部节点之间通信端口 </span></span><br><span class="line">discovery.seed_hosts: [<span class="string">&quot;192.168.0.11&quot;</span>, <span class="string">&quot;192.168.0.12&quot;</span>,<span class="string">&quot;192.168.0.13&quot;</span>]<span class="comment"># 集群节点列表 </span></span><br><span class="line">cluster.initial_master_nodes: [<span class="string">&quot;node-1&quot;</span>] <span class="comment"># 首次启动指定的Master节点</span></span><br></pre></td></tr></table></figure>
-<p>节点2，3配置注意：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#节点名称更改</span></span><br><span class="line">node.name: node-2 <span class="comment"># 集群节点名称 </span></span><br><span class="line">node.name: node-3 <span class="comment"># 集群节点名称 </span></span><br><span class="line"><span class="comment">#在节点2或节点3不启用cluster.initial_master_nodes参数，注释掉</span></span><br></pre></td></tr></table></figure>
-<p>配置系统服务管理（3台节点一样）：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">vim /usr/lib/systemd/system/elasticsearch.service </span><br><span class="line">[Unit]</span><br><span class="line">Description=elasticsearch</span><br><span class="line">[Service]</span><br><span class="line">User=es</span><br><span class="line">LimitNOFILE=65535</span><br><span class="line">ExecStart=/opt/elk/elasticsearch/bin/elasticsearch</span><br><span class="line">ExecReload=/bin/kill -HUP <span class="variable">$MAINPID</span></span><br><span class="line">KillMode=process</span><br><span class="line">Restart=on-failure</span><br><span class="line">[Install]</span><br><span class="line">WantedBy=multi-user.target</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>验证：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">查看集群节点：</span><br><span class="line">curl -XGET <span class="string">&#x27;http://127.0.0.1:9200/_cat/nodes?pretty&#x27;</span> </span><br><span class="line">查询集群状态： </span><br><span class="line">curl -i -XGET http://127.0.0.1:9200/_cluster/health?pretty</span><br></pre></td></tr></table></figure>
-<p>图形页面管理ES</p>
-<p>管理ES的图形页面系统推荐：</p>
-<p>• ElasticHD</p>
-<p>• cerebro</p>
-<p>部署ElasticHD（直接解压后台启动，端口是9800）</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">unzip elasticHD_linux_amd64.zip -d /opt/elk/</span><br><span class="line"><span class="built_in">cd</span> /opt/elk/</span><br><span class="line"><span class="built_in">nohup</span> ./ElasticHD &amp;</span><br><span class="line"><span class="built_in">tail</span> -f nohup.out </span><br></pre></td></tr></table></figure>
-<p><img src="/images/F867066D7EF24F008064D1921424A05Fclipboard.png" alt></p>
-<p>最后我想说的是，部署了3个节点，如果节点2和节点3的elasticsearch目录下的配置文件是从节点1（master节点）复制过来的，那么就要删除/opt/elk/elasticsearch/data目录下的nodes文件，之后重启节点2、3的es进程即可，否则只会显示一个master节点。</p>
-<p>报错：搭建es集群，启动三个es节点，访问elasticsearch-head时只显示一个master</p>
-<p>参考连接：</p>
-<p><a href="https://blog.csdn.net/iot_learner/article/details/108640133">https://blog.csdn.net/iot_learner/article/details/108640133</a></p>
-<p><a href="https://www.cnblogs.com/biehongli/p/11650045.html">https://www.cnblogs.com/biehongli/p/11650045.html</a></p>
-]]></content>
-      <categories>
-        <category>ELK</category>
-      </categories>
-      <tags>
-        <tag>ELK</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Filebeat日志采集器</title>
     <url>/2021/07/02/filebeat%E6%97%A5%E5%BF%97%E9%87%87%E9%9B%86%E5%99%A8/</url>
     <content><![CDATA[<p>Filebeat介绍</p>
@@ -1084,6 +1338,66 @@
       </categories>
       <tags>
         <tag>Prometheus</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>es集群部署搭建</title>
+    <url>/2021/07/01/es%E9%9B%86%E7%BE%A4%E9%83%A8%E7%BD%B2%E6%90%AD%E5%BB%BA/</url>
+    <content><![CDATA[<p>需求背景：</p>
+<p>• 业务发展越来越庞大，服务器越来越多</p>
+<p>• 各种访问日志、应用日志、错误日志量越来越多</p>
+<p>• 开发人员排查问题，需要到服务器上查日志，效率低、权限不好控制</p>
+<p>• 运维需实时关注业务访问情况</p>
+<p>ELK 介绍</p>
+<p>ELK 是三个开源软件的缩写，提供一套完整的企业级日志平台解决方案。</p>
+<p>分别是：</p>
+<p>• Elasticsearch：搜索、分析和存储数据</p>
+<p>• Logstash ：采集日志、格式化、过滤，最后将数据推送到Elasticsearch存储</p>
+<p>• Kibana：数据可视化</p>
+<p>• Beats ：集合了多种单一用途数据采集器，用于实现从边缘机器向 Logstash 和 Elasticsearch 发送数据。里面应用最多的是Filebeat，是一个轻量级日志采集器。</p>
+<p>ELK 架构</p>
+<p><img src="/images/309B516B5F4845EEA1276D3F81723F92clipboard.png" alt></p>
+<p>Elasticsearch</p>
+<p>Elasticsearch（简称ES）是一个分布式、RESTful 风格的搜索和数据分析引擎， 用于集中存储日志数据。</p>
+<p>Elasticsearch术语：</p>
+<p>• Index：索引是多个文档的集合</p>
+<p>• Document：Index里每条记录称为Document，若干文档构建一个Index</p>
+<p>• Type：一个Index可以定义一种或多种类型，将Document逻辑分组</p>
+<p>• Field：ES存储的最小单元</p>
+<p><img src="/images/925765D488F24475BB04C6B3469D54CEclipboard.png" alt></p>
+<p>ES 部署</p>
+<p>下载地址：<a href="https://www.elastic.co/cn/downloads/elasticsearch">https://www.elastic.co/cn/downloads/elasticsearch</a></p>
+<p>支持多种部署方式：</p>
+<p>• 二进制包    • yum      • rpm     • docker</p>
+<p>二进制部署（集群方式安装，3台节点一样）：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> /opt/elk</span><br><span class="line">tar -zxf elasticsearch-7.9.3-linux-x86_64.tar.gz </span><br><span class="line"><span class="built_in">mv</span> elasticsearch-7.9.3-linux-x86_64.tar.gz  /opt/elk/elasticsearch</span><br><span class="line">useradd es <span class="comment"># 出于安全考虑，默认不能用root账号启动 </span></span><br><span class="line"><span class="built_in">chown</span> -R es:es elasticsearch</span><br><span class="line"></span><br><span class="line">启动先决条件： </span><br><span class="line">• 调整进程最大打开文件数数量 </span><br><span class="line"><span class="comment"># 临时设置 ulimit -n 65535 </span></span><br><span class="line"><span class="comment"># 永久设置，重启生效 vi /etc/security/limits.conf </span></span><br><span class="line">* hard nofile 65535 </span><br><span class="line">* soft nofile 65535</span><br><span class="line"></span><br><span class="line">• 调整进程最大虚拟内存区域数量 </span><br><span class="line"><span class="comment"># 临时设置 sysctl -w vm.max_map_count=262144 </span></span><br><span class="line"><span class="comment"># 永久设置 echo &quot;vm.max_map_count=262144&quot; &gt;&gt; /etc/sysctl.conf </span></span><br><span class="line">sysctl -p</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>修改配置文件（集群方式）</p>
+<p>节点1:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># vim config/elasticsearch.yml </span></span><br><span class="line">cluster.name: elk-cluster <span class="comment"># 集群名称 </span></span><br><span class="line">node.name: node-1 <span class="comment"># 集群节点名称 </span></span><br><span class="line"><span class="comment">#path.data: /path/to/data # 数据目录 </span></span><br><span class="line"><span class="comment">#path.logs: /path/to/logs # 日志目录 </span></span><br><span class="line">network.host: 0.0.0.0 <span class="comment"># 监听地址 </span></span><br><span class="line">http.port: 9200 <span class="comment"># 监听端口 </span></span><br><span class="line"><span class="comment"># transport.tcp.port: 9300 #内部节点之间通信端口 </span></span><br><span class="line">discovery.seed_hosts: [<span class="string">&quot;192.168.0.11&quot;</span>, <span class="string">&quot;192.168.0.12&quot;</span>,<span class="string">&quot;192.168.0.13&quot;</span>]<span class="comment"># 集群节点列表 </span></span><br><span class="line">cluster.initial_master_nodes: [<span class="string">&quot;node-1&quot;</span>] <span class="comment"># 首次启动指定的Master节点</span></span><br></pre></td></tr></table></figure>
+<p>节点2，3配置注意：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#节点名称更改</span></span><br><span class="line">node.name: node-2 <span class="comment"># 集群节点名称 </span></span><br><span class="line">node.name: node-3 <span class="comment"># 集群节点名称 </span></span><br><span class="line"><span class="comment">#在节点2或节点3不启用cluster.initial_master_nodes参数，注释掉</span></span><br></pre></td></tr></table></figure>
+<p>配置系统服务管理（3台节点一样）：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">vim /usr/lib/systemd/system/elasticsearch.service </span><br><span class="line">[Unit]</span><br><span class="line">Description=elasticsearch</span><br><span class="line">[Service]</span><br><span class="line">User=es</span><br><span class="line">LimitNOFILE=65535</span><br><span class="line">ExecStart=/opt/elk/elasticsearch/bin/elasticsearch</span><br><span class="line">ExecReload=/bin/kill -HUP <span class="variable">$MAINPID</span></span><br><span class="line">KillMode=process</span><br><span class="line">Restart=on-failure</span><br><span class="line">[Install]</span><br><span class="line">WantedBy=multi-user.target</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>验证：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">查看集群节点：</span><br><span class="line">curl -XGET <span class="string">&#x27;http://127.0.0.1:9200/_cat/nodes?pretty&#x27;</span> </span><br><span class="line">查询集群状态： </span><br><span class="line">curl -i -XGET http://127.0.0.1:9200/_cluster/health?pretty</span><br></pre></td></tr></table></figure>
+<p>图形页面管理ES</p>
+<p>管理ES的图形页面系统推荐：</p>
+<p>• ElasticHD</p>
+<p>• cerebro</p>
+<p>部署ElasticHD（直接解压后台启动，端口是9800）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">unzip elasticHD_linux_amd64.zip -d /opt/elk/</span><br><span class="line"><span class="built_in">cd</span> /opt/elk/</span><br><span class="line"><span class="built_in">nohup</span> ./ElasticHD &amp;</span><br><span class="line"><span class="built_in">tail</span> -f nohup.out </span><br></pre></td></tr></table></figure>
+<p><img src="/images/F867066D7EF24F008064D1921424A05Fclipboard.png" alt></p>
+<p>最后我想说的是，部署了3个节点，如果节点2和节点3的elasticsearch目录下的配置文件是从节点1（master节点）复制过来的，那么就要删除/opt/elk/elasticsearch/data目录下的nodes文件，之后重启节点2、3的es进程即可，否则只会显示一个master节点。</p>
+<p>报错：搭建es集群，启动三个es节点，访问elasticsearch-head时只显示一个master</p>
+<p>参考连接：</p>
+<p><a href="https://blog.csdn.net/iot_learner/article/details/108640133">https://blog.csdn.net/iot_learner/article/details/108640133</a></p>
+<p><a href="https://www.cnblogs.com/biehongli/p/11650045.html">https://www.cnblogs.com/biehongli/p/11650045.html</a></p>
+]]></content>
+      <categories>
+        <category>ELK</category>
+      </categories>
+      <tags>
+        <tag>ELK</tag>
       </tags>
   </entry>
   <entry>
