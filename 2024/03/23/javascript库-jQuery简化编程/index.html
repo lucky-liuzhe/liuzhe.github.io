@@ -1,0 +1,260 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>javascript库-jQuery简化编程 | 阿哲技术之路</title><meta name="author" content="阿哲"><meta name="copyright" content="阿哲"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="jQuery介绍 jQuery 是一个 JavaScript 库。极大地简化了 JavaScript 编程，例如JS原生代码几十行 实现的功能，jQuery可能一两行就可以实现，因此得到前端程序猿广泛应用。 官方网站： https:&#x2F;&#x2F;jquery.com 发展至今，主要有三个大版本：   1.x：常用版本   2.x，3.x：除非特殊要求，一般用的少   基本使用 下载地址： https:&#x2F;&#x2F;c">
+<meta property="og:type" content="article">
+<meta property="og:title" content="javascript库-jQuery简化编程">
+<meta property="og:url" content="http://liuzhemax.github.io/2024/03/23/javascript%E5%BA%93-jQuery%E7%AE%80%E5%8C%96%E7%BC%96%E7%A8%8B/index.html">
+<meta property="og:site_name" content="阿哲技术之路">
+<meta property="og:description" content="jQuery介绍 jQuery 是一个 JavaScript 库。极大地简化了 JavaScript 编程，例如JS原生代码几十行 实现的功能，jQuery可能一两行就可以实现，因此得到前端程序猿广泛应用。 官方网站： https:&#x2F;&#x2F;jquery.com 发展至今，主要有三个大版本：   1.x：常用版本   2.x，3.x：除非特殊要求，一般用的少   基本使用 下载地址： https:&#x2F;&#x2F;c">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg">
+<meta property="article:published_time" content="2024-03-23T13:45:32.000Z">
+<meta property="article:modified_time" content="2024-05-28T13:36:04.129Z">
+<meta property="article:author" content="阿哲">
+<meta property="article:tag" content="Web前端">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="shortcut icon" href="/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="canonical" href="http://liuzhemax.github.io/2024/03/23/javascript%E5%BA%93-jQuery%E7%AE%80%E5%8C%96%E7%BC%96%E7%A8%8B/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'javascript库-jQuery简化编程',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-05-28 21:36:04'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">110</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">11</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="阿哲技术之路"><img class="site-icon" src="/medias/%E6%90%AC%E7%A0%96.jpg"/><span class="site-name">阿哲技术之路</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">javascript库-jQuery简化编程</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-03-23T13:45:32.000Z" title="发表于 2024-03-23 21:45:32">2024-03-23</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-05-28T13:36:04.129Z" title="更新于 2024-05-28 21:36:04">2024-05-28</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Web%E5%89%8D%E7%AB%AF/">Web前端</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="javascript库-jQuery简化编程"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h2 id="jQuery介绍">jQuery介绍</h2>
+<p>jQuery 是一个 JavaScript 库。极大地简化了 JavaScript 编程，例如JS原生代码几十行 实现的功能，jQuery可能一两行就可以实现，因此得到前端程序猿广泛应用。</p>
+<p>官方网站： <a target="_blank" rel="noopener" href="https://jquery.com">https://jquery.com</a></p>
+<p>发展至今，主要有三个大版本：</p>
+<ul>
+<li>
+<p>1.x：常用版本</p>
+</li>
+<li>
+<p>2.x，3.x：除非特殊要求，一般用的少</p>
+</li>
+</ul>
+<h2 id="基本使用">基本使用</h2>
+<p>下载地址：</p>
+<p><a target="_blank" rel="noopener" href="https://cdn.bootcdn.net/ajax/libs/jquery/1.12.4/jquery.min.js">https://cdn.bootcdn.net/ajax/libs/jquery/1.12.4/jquery.min.js</a></p>
+<p>jQuery代码编写位置与JS位置一样，但需要先head标签里引入jquery.min.js文件：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;head&gt;</span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span> <span class="attr">src</span>=<span class="string">&quot;https://cdn.bootcdn.net/ajax/libs/jquery/1.12.4/jquery.min.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br><span class="line">&lt;/head&gt;</span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span>&gt;</span><span class="language-javascript"></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    <span class="comment">// jquery代码</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+<p>JQuery语法：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;button type=<span class="string">&quot;button&quot;</span> id=<span class="string">&quot;btn&quot;</span>&gt;点我&lt;/button&gt;</span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span>&gt;</span><span class="language-javascript"></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">$(<span class="string">&quot;#btn&quot;</span>).<span class="title function_">click</span>(<span class="keyword">function</span> (<span class="params"></span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    <span class="title function_">alert</span>(<span class="string">&#x27;亲，有什么可以帮助你的？&#x27;</span>)</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">&#125;)</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+<p>基础语法是：$(selector).action()</p>
+<ul>
+<li>
+<p>$：代表jQuery本身</p>
+</li>
+<li>
+<p>(selector)：选择器，查找HTML元素</p>
+</li>
+<li>
+<p>action()：对元素的操作</p>
+</li>
+</ul>
+<p>JS语法：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;button type=<span class="string">&quot;button&quot;</span> id=<span class="string">&quot;btn&quot;</span>&gt;点我&lt;/button&gt;</span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span>&gt;</span><span class="language-javascript"></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    <span class="keyword">var</span> x = <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&quot;btn&quot;</span>)</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    x.<span class="property">onclick</span> = <span class="keyword">function</span> (<span class="params"></span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        <span class="title function_">alert</span>(<span class="string">&#x27;亲，有什么可以帮助你的？&#x27;</span>)</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    &#125;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+<h2 id="选择器">选择器</h2>
+<p><img src="/images/7B8A45E0982946A4A7A8CEEFFAAE6EB4clipboard.png" alt></p>
+<h2 id="操作HTML">操作HTML</h2>
+<p>隐藏和显示元素：</p>
+<ul>
+<li>
+<p>hide() ：隐藏某个元素</p>
+</li>
+<li>
+<p>show() ：显示某个元素</p>
+</li>
+<li>
+<p>toggle() ：hide()和show()方法之间切换</p>
+</li>
+</ul>
+<p>示例：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;p id=<span class="string">&quot;demo&quot;</span>&gt;这是一个段落。&lt;/p&gt;</span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">button</span> <span class="attr">id</span>=<span class="string">&quot;hide&quot;</span> <span class="attr">type</span>=<span class="string">&quot;button&quot;</span>&gt;</span>隐藏<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">button</span> <span class="attr">id</span>=<span class="string">&quot;show&quot;</span> <span class="attr">type</span>=<span class="string">&quot;button&quot;</span>&gt;</span>显示<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">button</span> <span class="attr">id</span>=<span class="string">&quot;toggle&quot;</span> <span class="attr">type</span>=<span class="string">&quot;button&quot;</span>&gt;</span>切换<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span>&gt;</span><span class="language-javascript"></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    $(<span class="string">&quot;#hide&quot;</span>).<span class="title function_">click</span>(<span class="keyword">function</span> (<span class="params"></span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        $(<span class="string">&quot;p&quot;</span>).<span class="title function_">hide</span>();</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    &#125;);</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    $(<span class="string">&quot;#show&quot;</span>).<span class="title function_">click</span>(<span class="keyword">function</span> (<span class="params"></span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        $(<span class="string">&quot;p&quot;</span>).<span class="title function_">show</span>();</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    &#125;);</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    $(<span class="string">&quot;#toggle&quot;</span>).<span class="title function_">click</span>(<span class="keyword">function</span> (<span class="params"></span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        $(<span class="string">&quot;p&quot;</span>).<span class="title function_">toggle</span>();</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    &#125;)</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+<p>获取与设置内容：</p>
+<ul>
+<li>
+<p>text() 设置或返回所选元素的文本内容</p>
+</li>
+<li>
+<p>html() 设置或返回所选元素的HTML内容</p>
+</li>
+<li>
+<p>val() 设置或返回表单字段的值</p>
+</li>
+</ul>
+<p>示例：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;p id=<span class="string">&quot;txt&quot;</span>&gt;这是一个&lt;b&gt;段落&lt;<span class="regexp">/b&gt;。&lt;/</span>p&gt;</span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">button</span> <span class="attr">type</span>=<span class="string">&quot;button&quot;</span> <span class="attr">id</span>=<span class="string">&quot;btn1&quot;</span>&gt;</span>显示文本<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">button</span> <span class="attr">type</span>=<span class="string">&quot;button&quot;</span> <span class="attr">id</span>=<span class="string">&quot;btn2&quot;</span>&gt;</span>显示HTML<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">p</span> <span class="attr">id</span>=<span class="string">&quot;demo&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">p</span>&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span>&gt;</span><span class="language-javascript"></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    $(<span class="string">&quot;#btn1&quot;</span>).<span class="title function_">click</span>(<span class="keyword">function</span> (<span class="params"></span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        x = $(<span class="string">&quot;#txt&quot;</span>).<span class="title function_">text</span>();</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        $(<span class="string">&quot;#demo&quot;</span>).<span class="title function_">text</span>(x).<span class="title function_">css</span>(<span class="string">&quot;color&quot;</span>,<span class="string">&quot;red&quot;</span>)   <span class="comment">//不会解析b标签</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    &#125;);</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    $(<span class="string">&quot;#btn2&quot;</span>).<span class="title function_">click</span>(<span class="keyword">function</span> (<span class="params"></span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        x = $(<span class="string">&quot;#txt&quot;</span>).<span class="title function_">html</span>();   <span class="comment">//获取</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        $(<span class="string">&quot;#demo&quot;</span>).<span class="title function_">html</span>(x).<span class="title function_">css</span>(<span class="string">&quot;color&quot;</span>,<span class="string">&quot;red&quot;</span>)   <span class="comment">//会解析b标签，.html()设置</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    &#125;)</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;h1&gt;欢迎访问运维管理系统&lt;/h1&gt;</span><br><span class="line">用户名：&lt;input type=<span class="string">&quot;text&quot;</span> id=<span class="string">&quot;uname&quot;</span> name=<span class="string">&quot;username&quot;</span>&gt;&lt;br&gt;</span><br><span class="line">密码：&lt;input type=<span class="string">&quot;text&quot;</span> id=<span class="string">&quot;pwd&quot;</span> name=<span class="string">&quot;password&quot;</span>&gt;&lt;br&gt;</span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">button</span> <span class="attr">type</span>=<span class="string">&quot;button&quot;</span> <span class="attr">id</span>=<span class="string">&quot;btn&quot;</span>&gt;</span>显示输入内容<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">p</span> <span class="attr">id</span>=<span class="string">&quot;demo&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">p</span>&gt;</span></span>   </span><br><span class="line"></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span>&gt;</span><span class="language-javascript"></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    $(<span class="string">&quot;#btn&quot;</span>).<span class="title function_">click</span>(<span class="keyword">function</span> (<span class="params"></span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        x = $(<span class="string">&quot;#uname&quot;</span>).<span class="title function_">val</span>();</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        y = $(<span class="string">&quot;#pwd&quot;</span>).<span class="title function_">val</span>();</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        $(<span class="string">&quot;#demo&quot;</span>).<span class="title function_">text</span>(x + <span class="string">&#x27;，&#x27;</span> + y).<span class="title function_">css</span>(<span class="string">&quot;color&quot;</span>,<span class="string">&quot;red&quot;</span>)  </span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    &#125;)</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+<p>设置CSS样式：</p>
+<ul>
+<li>
+<p>css() 设置或返回样式属性（键值）</p>
+</li>
+<li>
+<p>addClass() 向被选元素添加一个或多个类样式</p>
+</li>
+<li>
+<p>removeClass() 从被选元素中删除一个或多个类样式</p>
+</li>
+<li>
+<p>toggleClass() 对被选元素进行添加/删除类样式的切换操作</p>
+</li>
+</ul>
+<p>示例：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;div id=<span class="string">&quot;demo&quot;</span>&gt;</span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">p</span>&gt;</span>这是一个段落<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span></span><br><span class="line">&lt;/div&gt;</span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">button</span> <span class="attr">id</span>=<span class="string">&quot;btn&quot;</span>&gt;</span>添加样式<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    $(<span class="string">&quot;#btn&quot;</span>).<span class="title function_">click</span>(<span class="keyword">function</span> (<span class="params"></span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        $(<span class="string">&quot;#demo p&quot;</span>).<span class="title function_">css</span>(<span class="string">&quot;color&quot;</span>, <span class="string">&quot;red&quot;</span>)</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        <span class="comment">// $(&quot;#demo p&quot;).css(&#123;&quot;color&quot;:&quot;red&quot;,&quot;font-size&quot;: &quot;30px&quot;&#125;)</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        <span class="comment">// $(&quot;#demo&quot;).addClass(&quot;cls&quot;)</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        <span class="comment">// $(&quot;#demo&quot;).removeClass(&quot;cls&quot;)</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    &#125;)</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+<h2 id="Ajax-前后端数据交互">Ajax 前后端数据交互</h2>
+<p>Ajax（Asynchronous JavaScript And XML，异步JavaScript和XML），AJAX 是一种在无需重新加载 整个网页的情况下，能够更新部分网页的技术。例如在不刷新页面的情况下查询数据、登录验证等</p>
+<p>无刷新的好处：</p>
+<ul>
+<li>
+<p>减少带宽、服务器负载</p>
+</li>
+<li>
+<p>提高用户体验</p>
+</li>
+</ul>
+<p><img src="/images/8C2DCF76B0494FBD948D190A3617084Eclipboard.png" alt></p>
+<p>jQuery Ajax主要使用$.ajax()方法实现，用于向服务端发送HTTP请求。</p>
+<p>语法：$.ajax([settings]);</p>
+<p>settings 是$.ajax ( )方法的参数列表，用于配置 Ajax 请求的键值对集合，参数如下：</p>
+<p><img src="/images/96F68165A7EA483EA35369F3D73B3B7Fclipboard.png" alt></p>
+<p>Ajax使用案例</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;div id=<span class="string">&#x27;demo&#x27;</span>&gt;</span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">p</span> <span class="attr">id</span>=<span class="string">&#x27;notice&#x27;</span> <span class="attr">style</span>=<span class="string">&quot;color: red;&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">p</span>&gt;</span></span></span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">h1</span>&gt;</span>用户列表<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span></span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">ul</span>&gt;</span><span class="tag">&lt;/<span class="name">ul</span>&gt;</span></span></span><br><span class="line">&lt;/div&gt;</span><br><span class="line"></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span>&gt;</span><span class="language-javascript"></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    $.<span class="title function_">ajax</span>(&#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    <span class="attr">type</span>: <span class="string">&quot;GET&quot;</span>,</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    <span class="attr">url</span>: <span class="string">&quot;http://www.baidu.cn/test-table/user.json&quot;</span>,</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    <span class="attr">success</span>: <span class="keyword">function</span> (<span class="params">result</span>) &#123;   <span class="comment">// result是API返回的JSON数据</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        <span class="keyword">if</span>(result.<span class="property">code</span> == <span class="number">200</span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">            <span class="keyword">for</span> (i <span class="keyword">in</span> result.<span class="property">data</span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">                $(<span class="string">&#x27;#demo ul&#x27;</span>).<span class="title function_">append</span>(<span class="string">&quot;&lt;li&gt;&quot;</span> + result.<span class="property">data</span>[i][<span class="string">&#x27;username&#x27;</span>] + <span class="string">&quot;&lt;/li&gt;&quot;</span>); <span class="comment">// 将li标签追加到ul标签</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">            &#125;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        &#125; <span class="keyword">else</span> &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">            $(<span class="string">&#x27;#notice&#x27;</span>).<span class="title function_">text</span>(<span class="string">&#x27;数据获取失败！&#x27;</span>)</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">            &#125;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    &#125;,</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    <span class="attr">error</span>: <span class="keyword">function</span> (<span class="params"></span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        $(<span class="string">&#x27;#notice&#x27;</span>).<span class="title function_">text</span>(<span class="string">&#x27;连接服务器失败，请稍后再试！&#x27;</span>)</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    &#125;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    &#125;)</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+<p>回调函数：参数引用一个函数，并将数据作为参数传递给该函数。</p>
+<p><img src="/images/6891E606464148ECA6DAC9F7C92EF61Dclipboard.png" alt></p>
+<p>jqXHR：一个XMLHttpRequest对象</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io">阿哲</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io/2024/03/23/javascript%E5%BA%93-jQuery%E7%AE%80%E5%8C%96%E7%BC%96%E7%A8%8B/">http://liuzhemax.github.io/2024/03/23/javascript%E5%BA%93-jQuery%E7%AE%80%E5%8C%96%E7%BC%96%E7%A8%8B/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://liuzhemax.github.io" target="_blank">阿哲技术之路</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Web%E5%89%8D%E7%AB%AF/">Web前端</a></div><div class="post_share"><div class="social-share" data-image="/medias/%E6%90%AC%E7%A0%96.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-full"><a href="/2024/03/22/javascript%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%84%9A%E6%9C%AC%E8%AF%AD%E8%A8%80/" title="javascript客户端脚本语言"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">javascript客户端脚本语言</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/03/21/css%E6%A0%B7%E5%BC%8F%E8%AF%AD%E8%A8%80/" title="css样式语言"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-03-21</div><div class="title">css样式语言</div></div></a></div><div><a href="/2024/03/20/html%E6%A0%87%E8%AE%B0%E8%AF%AD%E8%A8%80/" title="html标记语言"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-03-20</div><div class="title">html标记语言</div></div></a></div><div><a href="/2024/03/22/javascript%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%84%9A%E6%9C%AC%E8%AF%AD%E8%A8%80/" title="javascript客户端脚本语言"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-03-22</div><div class="title">javascript客户端脚本语言</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">阿哲</div><div class="author-info__description">强大自己是解决问题的唯一办法</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">110</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">11</div></a></div><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1437626743@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">分享个人经验总结</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#jQuery%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.</span> <span class="toc-text">jQuery介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8"><span class="toc-number">2.</span> <span class="toc-text">基本使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%89%E6%8B%A9%E5%99%A8"><span class="toc-number">3.</span> <span class="toc-text">选择器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%93%8D%E4%BD%9CHTML"><span class="toc-number">4.</span> <span class="toc-text">操作HTML</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Ajax-%E5%89%8D%E5%90%8E%E7%AB%AF%E6%95%B0%E6%8D%AE%E4%BA%A4%E4%BA%92"><span class="toc-number">5.</span> <span class="toc-text">Ajax 前后端数据交互</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/23/javascript%E5%BA%93-jQuery%E7%AE%80%E5%8C%96%E7%BC%96%E7%A8%8B/" title="javascript库-jQuery简化编程">javascript库-jQuery简化编程</a><time datetime="2024-03-23T13:45:32.000Z" title="发表于 2024-03-23 21:45:32">2024-03-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/22/javascript%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%84%9A%E6%9C%AC%E8%AF%AD%E8%A8%80/" title="javascript客户端脚本语言">javascript客户端脚本语言</a><time datetime="2024-03-22T13:45:32.000Z" title="发表于 2024-03-22 21:45:32">2024-03-22</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/21/css%E6%A0%B7%E5%BC%8F%E8%AF%AD%E8%A8%80/" title="css样式语言">css样式语言</a><time datetime="2024-03-21T13:45:32.000Z" title="发表于 2024-03-21 21:45:32">2024-03-21</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/20/html%E6%A0%87%E8%AE%B0%E8%AF%AD%E8%A8%80/" title="html标记语言">html标记语言</a><time datetime="2024-03-20T13:45:32.000Z" title="发表于 2024-03-20 21:45:32">2024-03-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/10/django-csrf%E9%98%B2%E6%8A%A4/" title="django-csrf防护">django-csrf防护</a><time datetime="2024-03-10T13:45:32.000Z" title="发表于 2024-03-10 21:45:32">2024-03-10</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="footer_custom_text">阿哲技术之路</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/dist/canvas-nest.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.13.0"></script></div></div></body></html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>javascript客户端脚本语言 | 阿哲技术之路</title><meta name="author" content="阿哲"><meta name="copyright" content="阿哲"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="JavaScript介绍，基本使用  JavaScript（简称JS）：是一种轻量级客户端脚本语言，通常被直接嵌入 HTML 页面，在浏览器上执行。 JavaScript的主要用途：   使网页具有交互性，例如响应用户点击，给用户提供更好的体验   处理表单，检验用户输入，并及时反馈提醒   浏览器与服务端进行数据通信，主要使用Ajax异步传输   在网页中添加标签，添加样式，改变标签属性等">
+<meta property="og:type" content="article">
+<meta property="og:title" content="javascript客户端脚本语言">
+<meta property="og:url" content="http://liuzhemax.github.io/2024/03/22/javascript%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%84%9A%E6%9C%AC%E8%AF%AD%E8%A8%80/index.html">
+<meta property="og:site_name" content="阿哲技术之路">
+<meta property="og:description" content="JavaScript介绍，基本使用  JavaScript（简称JS）：是一种轻量级客户端脚本语言，通常被直接嵌入 HTML 页面，在浏览器上执行。 JavaScript的主要用途：   使网页具有交互性，例如响应用户点击，给用户提供更好的体验   处理表单，检验用户输入，并及时反馈提醒   浏览器与服务端进行数据通信，主要使用Ajax异步传输   在网页中添加标签，添加样式，改变标签属性等">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg">
+<meta property="article:published_time" content="2024-03-22T13:45:32.000Z">
+<meta property="article:modified_time" content="2024-05-28T13:35:53.371Z">
+<meta property="article:author" content="阿哲">
+<meta property="article:tag" content="Web前端">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="shortcut icon" href="/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="canonical" href="http://liuzhemax.github.io/2024/03/22/javascript%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%84%9A%E6%9C%AC%E8%AF%AD%E8%A8%80/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'javascript客户端脚本语言',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-05-28 21:35:53'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">110</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">11</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="阿哲技术之路"><img class="site-icon" src="/medias/%E6%90%AC%E7%A0%96.jpg"/><span class="site-name">阿哲技术之路</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">javascript客户端脚本语言</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-03-22T13:45:32.000Z" title="发表于 2024-03-22 21:45:32">2024-03-22</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-05-28T13:35:53.371Z" title="更新于 2024-05-28 21:35:53">2024-05-28</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Web%E5%89%8D%E7%AB%AF/">Web前端</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="javascript客户端脚本语言"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h2 id="JavaScript介绍，基本使用">JavaScript介绍，基本使用</h2>
+<p><img src="/images/033CAC4185C845C6A0E9DCD3638C0883clipboard.png" alt></p>
+<p>JavaScript（简称JS）：是一种轻量级客户端脚本语言，通常被直接嵌入 HTML 页面，在浏览器上执行。</p>
+<p>JavaScript的主要用途：</p>
+<ul>
+<li>
+<p>使网页具有交互性，例如响应用户点击，给用户提供更好的体验</p>
+</li>
+<li>
+<p>处理表单，检验用户输入，并及时反馈提醒</p>
+</li>
+<li>
+<p>浏览器与服务端进行数据通信，主要使用Ajax异步传输</p>
+</li>
+<li>
+<p>在网页中添加标签，添加样式，改变标签属性等</p>
+</li>
+</ul>
+<p>1、内部方式（内嵌样式），在body标签中使用</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;script type=<span class="string">&quot;text/javascript&quot;</span>&gt;</span><br><span class="line">    &lt;!--</span><br><span class="line">    javaScript语言</span><br><span class="line">    --&gt;</span><br><span class="line">&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+<p>2、外部导入方式（推荐），在head标签中使用</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;script type=<span class="string">&quot;text/javascript&quot;</span> src=<span class="string">&quot;my.js&quot;</span>&gt;&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;script&gt;</span><br><span class="line">    <span class="keyword">var</span> name = <span class="string">&quot;hello&quot;</span>;  <span class="comment">// 定义变量</span></span><br><span class="line">    <span class="title function_">alert</span>(name); <span class="comment">// 警告框方法，浏览器提示消息</span></span><br><span class="line">    <span class="comment">/* alert(&quot;你好&quot;) */</span>  <span class="comment">// 单行与多行注释  </span></span><br><span class="line">&lt;/script&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="事件">事件</h2>
+<p>事件：指的是当HTML中发生某些事件时所调用的方法（处理程序）。</p>
+<p>例如点击按钮，点击后做相应操作，例如弹出一句话</p>
+<p>示例：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">button</span> <span class="attr">type</span>=<span class="string">&quot;button&quot;</span> <span class="attr">onclick</span>=<span class="string">&quot;alert(&#x27;亲，有什么可以帮助你的？&#x27;)&quot;</span>&gt;</span>点我<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>
+<p>onclick：是一个常用CSS事件属性，当元素有鼠标点击时触发JS脚本。</p>
+</li>
+<li>
+<p>alert()：是一个JS内置函数，在浏览器输出警告框。一般于代码测试，可判断脚本执行位置 或者输出变量值。</p>
+</li>
+</ul>
+<h2 id="选择器">选择器</h2>
+<p>想操作元素，必须先找到元素，主要通过以下三种方法：</p>
+<ul>
+<li>
+<p>通过id（常用）</p>
+</li>
+<li>
+<p>通过类名</p>
+</li>
+<li>
+<p>通过标签名</p>
+</li>
+</ul>
+<p>示例：通过id查找元素</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;button type=<span class="string">&quot;button&quot;</span> id=<span class="string">&quot;btn&quot;</span>&gt;点我&lt;/button&gt;</span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    <span class="keyword">var</span> x = <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&quot;btn&quot;</span>); <span class="comment">//获取id为btn的元素</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    x.<span class="property">onclick</span> = <span class="keyword">function</span> (<span class="params"></span>) &#123;   <span class="comment">//绑定点击事件</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        <span class="title function_">alert</span>(<span class="string">&#x27;亲，有什么可以帮助你的？&#x27;</span>)</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    &#125;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+<p>示例：通过标签名</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;div id=<span class="string">&quot;main&quot;</span>&gt;</span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world！1<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span></span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world！2<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span></span><br><span class="line">    <span class="language-xml"><span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world！3<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span></span><br><span class="line">&lt;/div&gt;</span><br><span class="line"></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span>&gt;</span><span class="language-javascript"></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    <span class="keyword">var</span> x = <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&quot;main&quot;</span>);  <span class="comment">//获取id为main的元素</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    <span class="keyword">var</span> y = x.<span class="title function_">getElementsByTagName</span>(<span class="string">&quot;p&quot;</span>);  <span class="comment">// 返回的是一个集合，下标获取</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    <span class="variable language_">document</span>.<span class="title function_">write</span>(<span class="string">&quot;div中的第二段文本是：&quot;</span> + y[<span class="number">1</span>].<span class="property">innerHTML</span>);  <span class="comment">//向当前文档写入内容</span></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+<h2 id="JS操作HTML">JS操作HTML</h2>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">插入内容：</span><br><span class="line"><span class="variable language_">document</span>.<span class="title function_">write</span>(<span class="string">&quot;&lt;p&gt;这是JS写入的段落&lt;/p&gt;&quot;</span>);  <span class="comment">//向文档写入HTML内容</span></span><br><span class="line">x = <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;demo&#x27;</span>); <span class="comment">//获取id为demo的元素</span></span><br><span class="line">x.<span class="property">innerHTML</span>=<span class="string">&quot;Hello&quot;</span>   <span class="comment">//向元素插入HTML内容</span></span><br><span class="line"></span><br><span class="line">改变标签属性：</span><br><span class="line"><span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&quot;image&quot;</span>).<span class="property">src</span>=<span class="string">&quot;b.jpg&quot;</span>   <span class="comment">//修改img标签src属性值</span></span><br><span class="line"></span><br><span class="line">改变标签样式：</span><br><span class="line">x = <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&quot;p&quot;</span>)  <span class="comment">//获取id为p的元素</span></span><br><span class="line">x.<span class="property">style</span>.<span class="property">color</span>=<span class="string">&quot;blue&quot;</span>   <span class="comment">//字体颜色</span></span><br></pre></td></tr></table></figure>
+<h2 id="数据类型：字符串、数组、对象">数据类型：字符串、数组、对象</h2>
+<h3 id="数据类型：字符串">数据类型：字符串</h3>
+<p>在JS中，数据类型有：字符串、数字、布尔、数组、对象、Null、Undefined</p>
+<p>字符串处理：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> s = <span class="string">&quot;hello world&quot;</span>;</span><br><span class="line">s.<span class="property">length</span>;  <span class="comment">// 字符串长度</span></span><br><span class="line">s[<span class="number">4</span>]   <span class="comment">//根据索引获取值</span></span><br><span class="line">s.<span class="title function_">replace</span>(<span class="string">&#x27;h&#x27;</span>,<span class="string">&#x27;H&#x27;</span>);  <span class="comment">//替换某个字符</span></span><br><span class="line">s.<span class="title function_">split</span>(<span class="string">&quot;分隔符&quot;</span>)  <span class="comment">//分隔为数组</span></span><br><span class="line">s.<span class="title function_">match</span>(<span class="string">&quot;w&quot;</span>) <span class="comment">//找到返回匹配的字符，否则返回null</span></span><br></pre></td></tr></table></figure>
+<p>字符串拼接：“+”</p>
+<h3 id="数据类型：数组">数据类型：数组</h3>
+<p>数组：是一个序列的数据结构。</p>
+<p>定义：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> computer = <span class="keyword">new</span> <span class="title class_">Array</span>();</span><br><span class="line">或</span><br><span class="line"><span class="keyword">var</span> computer = [<span class="string">&quot;主机&quot;</span>,<span class="string">&quot;显示器&quot;</span>,<span class="string">&quot;键盘&quot;</span>,<span class="string">&quot;鼠标&quot;</span>]</span><br></pre></td></tr></table></figure>
+<p>向数组添加元素：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">computer[<span class="number">0</span>]=<span class="string">&quot;主机&quot;</span>;</span><br><span class="line">computer[<span class="number">1</span>]=<span class="string">&quot;显示器&quot;</span>;</span><br><span class="line">computer[<span class="number">2</span>]=<span class="string">&quot;键盘&quot;</span>;</span><br><span class="line">或</span><br><span class="line">computer.<span class="title function_">push</span>(<span class="string">&quot;鼠标&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>通过索引获取元素：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">computer[<span class="number">2</span>]</span><br></pre></td></tr></table></figure>
+<h3 id="数据类型：对象">数据类型：对象</h3>
+<p>对象：是一个具有映射关系的数据结构。用于存储有一定关系的元素。</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">格式：d = &#123;<span class="string">&#x27;key1&#x27;</span>:value1, <span class="string">&#x27;key2&#x27;</span>:value2, <span class="string">&#x27;key3&#x27;</span>:value3&#125;</span><br></pre></td></tr></table></figure>
+<p>注意：对象通过key来访问value，因此字典中的key不允许重复。</p>
+<p>定义：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> user = &#123;</span><br><span class="line">    <span class="attr">name</span>:<span class="string">&quot;阿美&quot;</span>,</span><br><span class="line">    <span class="attr">sex</span>: <span class="string">&quot;女&quot;</span>,</span><br><span class="line">    <span class="attr">age</span>:<span class="string">&quot;30&quot;</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>通过键查询值：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">n = user.<span class="property">name</span>;</span><br><span class="line">或</span><br><span class="line">sex = user[<span class="string">&#x27;sex&#x27;</span>];</span><br></pre></td></tr></table></figure>
+<p>增加或修改：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">user.<span class="property">height</span> = <span class="string">&quot;180cm&quot;</span></span><br><span class="line">user[<span class="string">&#x27;height&#x27;</span>] = <span class="string">&quot;180cm&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="操作符">操作符</h2>
+<p>操作符：一个特定的符号，用它与其他数据 类型连接起来组成一个表达式。常用于条件 判断，根据表达式返回True/False采取动作。</p>
+<p><img src="/images/35BE0A2A14EB445AA555EF06683E8F5Cclipboard.png" alt></p>
+<h2 id="流程控制">流程控制</h2>
+<h3 id="条件判断">条件判断</h3>
+<p>if条件判断：判定给定的条件是否满足（True或False）， 根据判断的结果决定执行的语句。</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">语法：</span><br><span class="line"><span class="keyword">if</span> (表达式) &#123;</span><br><span class="line">    &lt;代码块&gt;</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> (表达式) &#123;</span><br><span class="line">    &lt;代码块&gt;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    &lt;代码块&gt;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="/images/912A5B802DBE47FF8C7707289EB755D0clipboard.png" alt></p>
+<p>示例：根据用户点击做不同操作</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;img id=<span class="string">&quot;myimage&quot;</span> src=<span class="string">&quot;img/off.jpg&quot;</span> alt=<span class="string">&quot;&quot;</span>&gt;</span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">button</span> <span class="attr">type</span>=<span class="string">&quot;button&quot;</span> <span class="attr">onclick</span>=<span class="string">&quot;changeImage(&#x27;on&#x27;)&quot;</span>&gt;</span>开灯<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">button</span> <span class="attr">type</span>=<span class="string">&quot;button&quot;</span> <span class="attr">onclick</span>=<span class="string">&quot;changeImage(&#x27;off&#x27;)&quot;</span>&gt;</span>关灯<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span>&gt;</span><span class="language-javascript"></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    <span class="keyword">function</span> <span class="title function_">changeImage</span>(<span class="params">status</span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        x = <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;myimage&#x27;</span>);</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        <span class="keyword">if</span> (status == <span class="string">&#x27;on&#x27;</span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">            x.<span class="property">src</span> = <span class="string">&quot;img/on.jpg&quot;</span>;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (status == <span class="string">&#x27;off&#x27;</span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">            x.<span class="property">src</span> = <span class="string">&quot;img/off.jpg&quot;</span>;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        &#125;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    &#125;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+<p><img src="/images/865ACBF92B7E4DA6864AB063CE239291clipboard.png" alt></p>
+<h3 id="循环">循环</h3>
+<p>for循环：一般用于遍历数据类型的元素进行处理，例如字符串、数组、对象。</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">语法：</span><br><span class="line"><span class="keyword">for</span> (&lt;变量&gt; <span class="keyword">in</span> &lt;序列&gt;) &#123;</span><br><span class="line">    &lt;代码块&gt;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="/images/ACE4A72B2A254D6EB98240F30B2DA3DCclipboard.png" alt></p>
+<p>示例：遍历数组</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> computer = [<span class="string">&quot;主机&quot;</span>,<span class="string">&quot;显示器&quot;</span>,<span class="string">&quot;键盘&quot;</span>,<span class="string">&quot;鼠标&quot;</span>];</span><br><span class="line">方式<span class="number">1</span>：</span><br><span class="line"><span class="keyword">for</span>(i <span class="keyword">in</span> computer) &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(computer[i])  <span class="comment">// 使用索引获取值</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">方式<span class="number">2</span>：</span><br><span class="line">computer.<span class="title function_">forEach</span>(<span class="keyword">function</span> (<span class="params">e</span>) &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(e)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<p>示例：遍历对象</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> user = &#123;<span class="attr">name</span>:<span class="string">&quot;阿良&quot;</span>,<span class="attr">sex</span>:<span class="string">&quot;男&quot;</span>,<span class="attr">age</span>:<span class="string">&quot;30&quot;</span>&#125;;</span><br><span class="line">方式<span class="number">1</span>：</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">let</span> k <span class="keyword">in</span> user) &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(k + <span class="string">&quot;:&quot;</span> + user[k])</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">方式<span class="number">2</span>：</span><br><span class="line"><span class="title class_">Object</span>.<span class="title function_">keys</span>(user).<span class="title function_">forEach</span>(<span class="keyword">function</span> (<span class="params">k</span>) &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(k + <span class="string">&quot;:&quot;</span> + user[k]) </span><br><span class="line">&#125;)  </span><br></pre></td></tr></table></figure>
+<h2 id="函数">函数</h2>
+<h3 id="函数：定义与调用">函数：定义与调用</h3>
+<p>函数：是指一段可以直接被另一段程序或代码引用的程序或代码。</p>
+<p>在编写代码时，常将一些常用的功能模块编写成函数，放在函数库中供公共使用，可 减少重复编写程序段和简化代码结构。</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">语法：</span><br><span class="line"><span class="keyword">function</span> 函数名称(参数<span class="number">1</span>, 参数<span class="number">2</span>, ...) &#123;</span><br><span class="line">    &lt;代码块&gt;</span><br><span class="line">    <span class="keyword">return</span> &lt;表达式&gt;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;button type=<span class="string">&quot;button&quot;</span> id=<span class="string">&quot;btn&quot;</span> onclick=<span class="string">&quot;hello()&quot;</span>&gt;你好&lt;/button&gt;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">hello</span>(<span class="params"></span>) &#123;</span><br><span class="line">    <span class="title function_">alert</span>(<span class="string">&quot;hello world&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="函数参数：接收参数">函数参数：接收参数</h3>
+<p>示例：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;button type=<span class="string">&quot;button&quot;</span> onclick=<span class="string">&quot;myFunc(&#x27;阿强&#x27;, &#x27;30&#x27;)&quot;</span>&gt;点我&lt;/button&gt;</span><br><span class="line"></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/javascript&quot;</span>&gt;</span><span class="language-javascript"></span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    <span class="keyword">function</span> <span class="title function_">myFunc</span>(<span class="params">name, age</span>) &#123;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">        <span class="title function_">alert</span>(<span class="string">&quot;欢迎&quot;</span> + name + <span class="string">&quot;, 今年&quot;</span> + age);</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml">    &#125;</span></span></span><br><span class="line"><span class="language-javascript"><span class="language-xml"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+<h3 id="函数：匿名函数与箭头函数">函数：匿名函数与箭头函数</h3>
+<p>匿名函数与箭头函数：没有名字的函数，一般仅用于单个表达式。</p>
+<p>示例：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;script type=<span class="string">&quot;text/javascript&quot;</span>&gt;</span><br><span class="line">    <span class="comment">// 普通函数</span></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">sum1</span>(<span class="params">x,y</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> x+y;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 匿名函数</span></span><br><span class="line">    sum2 = <span class="keyword">function</span>(<span class="params">x,y</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> x+y;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 箭头函数，相比匿名函数又简化了很多</span></span><br><span class="line">    sum3 = <span class="function">(<span class="params">x,y</span>) =&gt;</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> x+y;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title function_">sum1</span>(<span class="number">1</span>,<span class="number">2</span>))</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title function_">sum2</span>(<span class="number">3</span>,<span class="number">4</span>))</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title function_">sum3</span>(<span class="number">5</span>,<span class="number">6</span>))</span><br><span class="line">&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+<h2 id="Window对象：location属性">Window对象：location属性</h2>
+<p>示例：刷新按钮</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">&lt;button type=<span class="string">&quot;button&quot;</span> onclick=<span class="string">&quot;location.reload()&quot;</span>&gt;刷新当前页面&lt;/button&gt;</span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">button</span> <span class="attr">type</span>=<span class="string">&quot;button&quot;</span> <span class="attr">onclick</span>=<span class="string">&quot;location.href=location.href&quot;</span>&gt;</span>重新请求当前页面<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">button</span> <span class="attr">type</span>=<span class="string">&quot;button&quot;</span> <span class="attr">onclick</span>=<span class="string">&quot;location.href=&#x27;http://www.baidu.com&#x27;&quot;</span>&gt;</span>请求别的页面<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io">阿哲</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io/2024/03/22/javascript%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%84%9A%E6%9C%AC%E8%AF%AD%E8%A8%80/">http://liuzhemax.github.io/2024/03/22/javascript%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%84%9A%E6%9C%AC%E8%AF%AD%E8%A8%80/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://liuzhemax.github.io" target="_blank">阿哲技术之路</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Web%E5%89%8D%E7%AB%AF/">Web前端</a></div><div class="post_share"><div class="social-share" data-image="/medias/%E6%90%AC%E7%A0%96.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/03/21/css%E6%A0%B7%E5%BC%8F%E8%AF%AD%E8%A8%80/" title="css样式语言"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">css样式语言</div></div></a></div><div class="next-post pull-right"><a href="/2024/03/23/javascript%E5%BA%93-jQuery%E7%AE%80%E5%8C%96%E7%BC%96%E7%A8%8B/" title="javascript库-jQuery简化编程"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">javascript库-jQuery简化编程</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/03/21/css%E6%A0%B7%E5%BC%8F%E8%AF%AD%E8%A8%80/" title="css样式语言"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-03-21</div><div class="title">css样式语言</div></div></a></div><div><a href="/2024/03/20/html%E6%A0%87%E8%AE%B0%E8%AF%AD%E8%A8%80/" title="html标记语言"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-03-20</div><div class="title">html标记语言</div></div></a></div><div><a href="/2024/03/23/javascript%E5%BA%93-jQuery%E7%AE%80%E5%8C%96%E7%BC%96%E7%A8%8B/" title="javascript库-jQuery简化编程"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-03-23</div><div class="title">javascript库-jQuery简化编程</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">阿哲</div><div class="author-info__description">强大自己是解决问题的唯一办法</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">110</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">11</div></a></div><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1437626743@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">分享个人经验总结</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#JavaScript%E4%BB%8B%E7%BB%8D%EF%BC%8C%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8"><span class="toc-number">1.</span> <span class="toc-text">JavaScript介绍，基本使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8B%E4%BB%B6"><span class="toc-number">2.</span> <span class="toc-text">事件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%89%E6%8B%A9%E5%99%A8"><span class="toc-number">3.</span> <span class="toc-text">选择器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JS%E6%93%8D%E4%BD%9CHTML"><span class="toc-number">4.</span> <span class="toc-text">JS操作HTML</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%EF%BC%9A%E5%AD%97%E7%AC%A6%E4%B8%B2%E3%80%81%E6%95%B0%E7%BB%84%E3%80%81%E5%AF%B9%E8%B1%A1"><span class="toc-number">5.</span> <span class="toc-text">数据类型：字符串、数组、对象</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%EF%BC%9A%E5%AD%97%E7%AC%A6%E4%B8%B2"><span class="toc-number">5.1.</span> <span class="toc-text">数据类型：字符串</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%EF%BC%9A%E6%95%B0%E7%BB%84"><span class="toc-number">5.2.</span> <span class="toc-text">数据类型：数组</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%EF%BC%9A%E5%AF%B9%E8%B1%A1"><span class="toc-number">5.3.</span> <span class="toc-text">数据类型：对象</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%93%8D%E4%BD%9C%E7%AC%A6"><span class="toc-number">6.</span> <span class="toc-text">操作符</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B5%81%E7%A8%8B%E6%8E%A7%E5%88%B6"><span class="toc-number">7.</span> <span class="toc-text">流程控制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9D%A1%E4%BB%B6%E5%88%A4%E6%96%AD"><span class="toc-number">7.1.</span> <span class="toc-text">条件判断</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BE%AA%E7%8E%AF"><span class="toc-number">7.2.</span> <span class="toc-text">循环</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%87%BD%E6%95%B0"><span class="toc-number">8.</span> <span class="toc-text">函数</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%BD%E6%95%B0%EF%BC%9A%E5%AE%9A%E4%B9%89%E4%B8%8E%E8%B0%83%E7%94%A8"><span class="toc-number">8.1.</span> <span class="toc-text">函数：定义与调用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%BD%E6%95%B0%E5%8F%82%E6%95%B0%EF%BC%9A%E6%8E%A5%E6%94%B6%E5%8F%82%E6%95%B0"><span class="toc-number">8.2.</span> <span class="toc-text">函数参数：接收参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%BD%E6%95%B0%EF%BC%9A%E5%8C%BF%E5%90%8D%E5%87%BD%E6%95%B0%E4%B8%8E%E7%AE%AD%E5%A4%B4%E5%87%BD%E6%95%B0"><span class="toc-number">8.3.</span> <span class="toc-text">函数：匿名函数与箭头函数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Window%E5%AF%B9%E8%B1%A1%EF%BC%9Alocation%E5%B1%9E%E6%80%A7"><span class="toc-number">9.</span> <span class="toc-text">Window对象：location属性</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/23/javascript%E5%BA%93-jQuery%E7%AE%80%E5%8C%96%E7%BC%96%E7%A8%8B/" title="javascript库-jQuery简化编程">javascript库-jQuery简化编程</a><time datetime="2024-03-23T13:45:32.000Z" title="发表于 2024-03-23 21:45:32">2024-03-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/22/javascript%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%84%9A%E6%9C%AC%E8%AF%AD%E8%A8%80/" title="javascript客户端脚本语言">javascript客户端脚本语言</a><time datetime="2024-03-22T13:45:32.000Z" title="发表于 2024-03-22 21:45:32">2024-03-22</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/21/css%E6%A0%B7%E5%BC%8F%E8%AF%AD%E8%A8%80/" title="css样式语言">css样式语言</a><time datetime="2024-03-21T13:45:32.000Z" title="发表于 2024-03-21 21:45:32">2024-03-21</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/20/html%E6%A0%87%E8%AE%B0%E8%AF%AD%E8%A8%80/" title="html标记语言">html标记语言</a><time datetime="2024-03-20T13:45:32.000Z" title="发表于 2024-03-20 21:45:32">2024-03-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/10/django-csrf%E9%98%B2%E6%8A%A4/" title="django-csrf防护">django-csrf防护</a><time datetime="2024-03-10T13:45:32.000Z" title="发表于 2024-03-10 21:45:32">2024-03-10</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="footer_custom_text">阿哲技术之路</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/dist/canvas-nest.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.13.0"></script></div></div></body></html>
