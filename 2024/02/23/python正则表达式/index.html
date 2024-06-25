@@ -1,0 +1,189 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>python正则表达式 | 阿哲技术之路</title><meta name="author" content="阿哲"><meta name="copyright" content="阿哲"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="什么是正则表达式 正则表达式是对字符串操作的一种逻辑方式，就是用实现定义好的一些特定字符及这些特定字符的组 合，组成一个规则字符串，这个规则字符串就是表达对字符串的逻辑，给定一个正则表达式和另一个 字符串，通过正则表达式从字符串我们想要的部分。 re 标准库 Python正则表达式主要由re标准库提供，拥有了基本所有的表达式。  语法：re.compile(pattern, flags&#x3D;0) pa">
+<meta property="og:type" content="article">
+<meta property="og:title" content="python正则表达式">
+<meta property="og:url" content="http://liuzhemax.github.io/2024/02/23/python%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/index.html">
+<meta property="og:site_name" content="阿哲技术之路">
+<meta property="og:description" content="什么是正则表达式 正则表达式是对字符串操作的一种逻辑方式，就是用实现定义好的一些特定字符及这些特定字符的组 合，组成一个规则字符串，这个规则字符串就是表达对字符串的逻辑，给定一个正则表达式和另一个 字符串，通过正则表达式从字符串我们想要的部分。 re 标准库 Python正则表达式主要由re标准库提供，拥有了基本所有的表达式。  语法：re.compile(pattern, flags&#x3D;0) pa">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg">
+<meta property="article:published_time" content="2024-02-23T13:45:32.000Z">
+<meta property="article:modified_time" content="2024-06-25T07:34:40.450Z">
+<meta property="article:author" content="阿哲">
+<meta property="article:tag" content="Python">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://liuzhemax.github.io/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="shortcut icon" href="/medias/%E6%90%AC%E7%A0%96.jpg"><link rel="canonical" href="http://liuzhemax.github.io/2024/02/23/python%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'python正则表达式',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-06-25 15:34:40'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">111</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">11</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="not-top-img" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="阿哲技术之路"><img class="site-icon" src="/medias/%E6%90%AC%E7%A0%96.jpg"/><span class="site-name">阿哲技术之路</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav></header><main class="layout" id="content-inner"><div id="post"><div id="post-info"><h1 class="post-title">python正则表达式</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-02-23T13:45:32.000Z" title="发表于 2024-02-23 21:45:32">2024-02-23</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-06-25T07:34:40.450Z" title="更新于 2024-06-25 15:34:40">2024-06-25</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Python/">Python</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="python正则表达式"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div><article class="post-content" id="article-container"><h2 id="什么是正则表达式">什么是正则表达式</h2>
+<p>正则表达式是对字符串操作的一种逻辑方式，就是用实现定义好的一些特定字符及这些特定字符的组 合，组成一个规则字符串，这个规则字符串就是表达对字符串的逻辑，给定一个正则表达式和另一个 字符串，通过正则表达式从字符串我们想要的部分。</p>
+<h2 id="re-标准库">re 标准库</h2>
+<p>Python正则表达式主要由re标准库提供，拥有了基本所有的表达式。</p>
+<p><img src="/images/8691DBE21A7C46D189E5B0FC625F0DA8clipboard.png" alt></p>
+<p>语法：re.compile(pattern, flags=0)</p>
+<p>pattern 指的是正则表达式。flags是标志位的修饰符，用于控制表达式匹配模式</p>
+<p>示例1：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line">s = <span class="string">&quot;this is test string&quot;</span></span><br><span class="line">pattern = re.<span class="built_in">compile</span>(<span class="string">&#x27;this&#x27;</span>)</span><br><span class="line">result = pattern.<span class="keyword">match</span>(s)</span><br><span class="line"><span class="built_in">print</span>(result.group())   </span><br><span class="line"><span class="comment">#匹配成功后，result对象会增加一个group()</span></span><br><span class="line">方法，可以用它来获取匹配结果</span><br></pre></td></tr></table></figure>
+<p>语法：re.match(pattern, string, flags=0)</p>
+<p>示例2：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">result = re.<span class="keyword">match</span>(<span class="string">&#x27;this&#x27;</span>, s) </span><br><span class="line"><span class="built_in">print</span>(result.group())</span><br></pre></td></tr></table></figure>
+<p>小结：案例1好处是先使用compile把正则表达式编译一个对象， 方便再次使用。案例2更直观。</p>
+<h2 id="代表字符">代表字符</h2>
+<p><img src="/images/A608A62811C34CB9A4FC5DAFD05F467Aclipboard.png" alt></p>
+<p>“r”表示原始字符串，有了它，字符串里的特殊意义符号就会自动加转义符。</p>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">s = <span class="string">&quot;123\\abc&quot;</span></span><br><span class="line">result = re.<span class="keyword">match</span>(<span class="string">r&quot;123\\abc&quot;</span>, s)</span><br><span class="line"><span class="built_in">print</span>(result)</span><br></pre></td></tr></table></figure>
+<h2 id="代表数量">代表数量</h2>
+<p><img src="/images/F43A13B2F06C463CB6D9D99188BDE03Dclipboard.png" alt></p>
+<h2 id="代表边界">代表边界</h2>
+<p><img src="/images/A89C411A460E43E4B054AF100AB9656Dclipboard.png" alt></p>
+<h2 id="代表分组">代表分组</h2>
+<p><img src="/images/719D56BC81E3494A8A599464FE776B3Cclipboard.png" alt></p>
+<h2 id="贪婪模式与非贪婪模式">贪婪模式与非贪婪模式</h2>
+<p>贪婪模式：尽可能最多匹配</p>
+<p>非贪婪模式：尽可能最少匹配，一般在量词（*、+）后面加个？问号就是非贪婪模式。</p>
+<p>示例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">s = <span class="string">&quot;hello 666666&quot;</span></span><br><span class="line">result = re.<span class="keyword">match</span>(<span class="string">&quot;hello 6+&quot;</span>, s)  <span class="comment"># 贪婪匹配</span></span><br><span class="line"><span class="built_in">print</span>(result)</span><br><span class="line">result = re.<span class="keyword">match</span>(<span class="string">&quot;hello 6+?&quot;</span>, s)  <span class="comment"># 非贪婪匹配</span></span><br><span class="line"><span class="built_in">print</span>(result)</span><br></pre></td></tr></table></figure>
+<h2 id="re-标准库其他方法">re 标准库其他方法</h2>
+<p><img src="/images/5288A68849DF4CD8B5FA2AEFB840C052clipboard.png" alt></p>
+<h2 id="标志位">标志位</h2>
+<p><img src="/images/7E76E0FB679E48F7B68244DCED142CA3clipboard.png" alt></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io">阿哲</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://liuzhemax.github.io/2024/02/23/python%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/">http://liuzhemax.github.io/2024/02/23/python%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://liuzhemax.github.io" target="_blank">阿哲技术之路</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Python/">Python</a></div><div class="post_share"><div class="social-share" data-image="/medias/%E6%90%AC%E7%A0%96.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/02/22/python%E8%87%AA%E5%AE%9A%E4%B9%89%E6%A8%A1%E5%9D%97%E5%8F%8A%E5%AF%BC%E5%85%A5%E6%96%B9%E6%B3%95/" title="python自定义模块及导入方法"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">python自定义模块及导入方法</div></div></a></div><div class="next-post pull-right"><a href="/2024/02/23/python%E5%B8%B8%E7%94%A8%E6%A0%87%E5%87%86%E5%BA%93/" title="python常用标准库"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">python常用标准库</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2024/02/17/python%E5%87%BD%E6%95%B0/" title="python函数"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-02-17</div><div class="title">python函数</div></div></a></div><div><a href="/2024/02/12/python%E5%AD%97%E7%AC%A6%E4%B8%B2/" title="python字符串"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-02-12</div><div class="title">python字符串</div></div></a></div><div><a href="/2024/02/11/python%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" title="python基础知识"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-02-11</div><div class="title">python基础知识</div></div></a></div><div><a href="/2024/02/18/python%E5%B8%B8%E7%94%A8%E5%86%85%E5%BB%BA%E5%87%BD%E6%95%B0/" title="常用内建函数"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-02-18</div><div class="title">常用内建函数</div></div></a></div><div><a href="/2024/02/23/python%E5%B8%B8%E7%94%A8%E6%A0%87%E5%87%86%E5%BA%93/" title="python常用标准库"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-02-23</div><div class="title">python常用标准库</div></div></a></div><div><a href="/2024/02/14/python%E6%93%8D%E4%BD%9C%E7%AC%A6/" title="python操作符"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2024-02-14</div><div class="title">python操作符</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/medias/%E6%90%AC%E7%A0%96.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">阿哲</div><div class="author-info__description">强大自己是解决问题的唯一办法</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">111</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">11</div></a></div><div class="card-info-social-icons is-center"><a class="social-icon" href="mailto:1437626743@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">分享个人经验总结</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">什么是正则表达式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#re-%E6%A0%87%E5%87%86%E5%BA%93"><span class="toc-number">2.</span> <span class="toc-text">re 标准库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E8%A1%A8%E5%AD%97%E7%AC%A6"><span class="toc-number">3.</span> <span class="toc-text">代表字符</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E8%A1%A8%E6%95%B0%E9%87%8F"><span class="toc-number">4.</span> <span class="toc-text">代表数量</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E8%A1%A8%E8%BE%B9%E7%95%8C"><span class="toc-number">5.</span> <span class="toc-text">代表边界</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E8%A1%A8%E5%88%86%E7%BB%84"><span class="toc-number">6.</span> <span class="toc-text">代表分组</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B4%AA%E5%A9%AA%E6%A8%A1%E5%BC%8F%E4%B8%8E%E9%9D%9E%E8%B4%AA%E5%A9%AA%E6%A8%A1%E5%BC%8F"><span class="toc-number">7.</span> <span class="toc-text">贪婪模式与非贪婪模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#re-%E6%A0%87%E5%87%86%E5%BA%93%E5%85%B6%E4%BB%96%E6%96%B9%E6%B3%95"><span class="toc-number">8.</span> <span class="toc-text">re 标准库其他方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%87%E5%BF%97%E4%BD%8D"><span class="toc-number">9.</span> <span class="toc-text">标志位</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/23/javascript%E5%BA%93-jQuery%E7%AE%80%E5%8C%96%E7%BC%96%E7%A8%8B/" title="javascript库-jQuery简化编程">javascript库-jQuery简化编程</a><time datetime="2024-03-23T13:45:32.000Z" title="发表于 2024-03-23 21:45:32">2024-03-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/22/javascript%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%84%9A%E6%9C%AC%E8%AF%AD%E8%A8%80/" title="javascript客户端脚本语言">javascript客户端脚本语言</a><time datetime="2024-03-22T13:45:32.000Z" title="发表于 2024-03-22 21:45:32">2024-03-22</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/21/css%E6%A0%B7%E5%BC%8F%E8%AF%AD%E8%A8%80/" title="css样式语言">css样式语言</a><time datetime="2024-03-21T13:45:32.000Z" title="发表于 2024-03-21 21:45:32">2024-03-21</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/20/html%E6%A0%87%E8%AE%B0%E8%AF%AD%E8%A8%80/" title="html标记语言">html标记语言</a><time datetime="2024-03-20T13:45:32.000Z" title="发表于 2024-03-20 21:45:32">2024-03-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/10/django-csrf%E9%98%B2%E6%8A%A4/" title="django-csrf防护">django-csrf防护</a><time datetime="2024-03-10T13:45:32.000Z" title="发表于 2024-03-10 21:45:32">2024-03-10</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="footer_custom_text">阿哲技术之路</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/dist/canvas-nest.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.13.0"></script></div></div></body></html>
